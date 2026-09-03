@@ -24,25 +24,32 @@ class PantallaStock(Screen):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             column_spacing=12,
+            expand=True,
         )
 
-        self.campo_nombre = ft.TextField(label="Nombre")
-        self.campo_costo = ft.TextField(label="Costo $", keyboard_type=ft.KeyboardType.NUMBER)
-        self.campo_precio = ft.TextField(label="Precio $", keyboard_type=ft.KeyboardType.NUMBER)
-        self.campo_stock = ft.TextField(label="Stock", value="0", keyboard_type=ft.KeyboardType.NUMBER)
-        self.campo_minimo = ft.TextField(label="Minimo", value="5", keyboard_type=ft.KeyboardType.NUMBER)
+        self.campo_nombre = ft.TextField(label="Nombre", expand=True)
+        self.campo_costo = ft.TextField(label="Costo $", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+        self.campo_precio = ft.TextField(label="Precio $", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+        self.campo_stock = ft.TextField(label="Stock", value="0", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+        self.campo_minimo = ft.TextField(label="Minimo", value="5", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+
+        # Wrapper horizontal scroll para DataTable (Flet 0.28.3)
+        tabla_scroll = ft.Container(
+            content=ft.Row([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            expand=True,
+        )
 
         return ft.Column([
             ft.Text("Stock", size=30, weight=ft.FontWeight.BOLD),
             self.campo_buscar,
-            ft.Column([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            tabla_scroll,
             ft.Divider(),
             ft.Text("Nuevo producto", size=16, weight=ft.FontWeight.BOLD),
             ft.Row([
                 self.campo_nombre, self.campo_costo, self.campo_precio,
                 self.campo_stock, self.campo_minimo,
                 ft.ElevatedButton("Guardar", on_click=self.guardar_nuevo),
-            ], spacing=8),
+            ], spacing=8, scroll=ft.ScrollMode.AUTO),
         ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
     # ─── filtro ───────────────────────────────────────────────────────
@@ -137,8 +144,7 @@ class PantallaStock(Screen):
                         int(campo_stock.value or 0),
                         int(campo_minimo.value or 5),
                     )
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.filtrar_datos()
                     self.mostrar_alerta("Producto actualizado")
                 except ValueError:
@@ -147,6 +153,9 @@ class PantallaStock(Screen):
                     print(f"Error al guardar: {ex}")
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text("Editar producto"),
                 content=ft.Column([
                     campo_nombre,
@@ -157,11 +166,9 @@ class PantallaStock(Screen):
                     ft.TextButton("Cancelar", on_click=lambda e: self.cerrar_dialogo(dialogo)),
                     ft.ElevatedButton("Guardar", on_click=guardar),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error editar_producto: {ex}")
 
@@ -174,7 +181,7 @@ class PantallaStock(Screen):
                 return
 
             texto_actual = ft.Text(f"Stock actual: {p['stock']}", size=16, weight=ft.FontWeight.BOLD)
-            campo = ft.TextField(label="Cantidad", value="1", keyboard_type=ft.KeyboardType.NUMBER)
+            campo = ft.TextField(label="Cantidad", value="1", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
 
             def aplicar(cantidad):
                 try:
@@ -185,6 +192,7 @@ class PantallaStock(Screen):
                     texto_actual.value = f"Stock actual: {p['stock']}"
                     campo.value = "1"
                     self.filtrar_datos()
+                    self.pagina.update()
                 except Exception as ex:
                     print(f"Error aplicar: {ex}")
 
@@ -194,8 +202,7 @@ class PantallaStock(Screen):
                     if c == 0:
                         return
                     ajustar_stock(pid, c)
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.filtrar_datos()
                     self.mostrar_alerta(f"Stock de {p['nombre']} actualizado")
                 except ValueError:
@@ -204,6 +211,9 @@ class PantallaStock(Screen):
                     print(f"Error confirmar: {ex}")
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text(f"Ajustar stock — {p['nombre']}"),
                 content=ft.Column([
                     texto_actual,
@@ -213,17 +223,15 @@ class PantallaStock(Screen):
                         campo,
                         ft.ElevatedButton("+1", on_click=lambda e: aplicar(1)),
                         ft.ElevatedButton("+10", on_click=lambda e: aplicar(10)),
-                    ], spacing=6),
+                    ], spacing=6, scroll=ft.ScrollMode.AUTO),
                 ], spacing=12, tight=True),
                 actions=[
                     ft.TextButton("Cerrar", on_click=lambda e: self.cerrar_dialogo(dialogo)),
                     ft.ElevatedButton("Aplicar y cerrar", on_click=confirmar),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error ajustar_stock_dialog: {ex}")
 
@@ -238,8 +246,7 @@ class PantallaStock(Screen):
             def confirmar(e):
                 try:
                     ok = eliminar_producto(pid)
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.filtrar_datos()
                     if ok:
                         self.mostrar_alerta(f"'{p['nombre']}' eliminado")
@@ -249,6 +256,9 @@ class PantallaStock(Screen):
                     print(f"Error confirmar eliminar: {ex}")
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text("Eliminar producto"),
                 content=ft.Text(f"¿Eliminar '{p['nombre']}'?\nNo se puede deshacer."),
                 actions=[
@@ -256,28 +266,16 @@ class PantallaStock(Screen):
                     ft.ElevatedButton("Eliminar", on_click=confirmar,
                                       style=ft.ButtonStyle(bgcolor=ft.Colors.RED, color=ft.Colors.WHITE)),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error eliminar_producto: {ex}")
 
-    # ─── helpers ────────────────────────────────────────────────────
+    # ─── helpers (heredados de Screen, mantienen compatibilidad) ───
 
     def cerrar_dialogo(self, dialogo):
-        try:
-            dialogo.open = False
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error cerrar dialogo: {ex}")
+        return super().cerrar_dialogo(dialogo)
 
     def mostrar_alerta(self, texto):
-        try:
-            sb = ft.SnackBar(ft.Text(texto), open=True, duration=4000)
-            if sb not in self.pagina.overlay:
-                self.pagina.overlay.append(sb)
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+        return super().mostrar_alerta(texto)

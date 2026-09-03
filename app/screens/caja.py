@@ -38,15 +38,28 @@ class PantallaCaja(Screen):
         )
         self.campo_cantidad = ft.TextField(label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER)
 
-        self.lista_carrito = ft.Column(spacing=4)
+        # Carrito con altura limitada + ListView auto_scroll (Flet 0.28.3)
+        # Usamos ListView dentro de Container(height=280) para evitar que empuje el total fuera de vista
+        self.lista_carrito = ft.ListView(expand=True, spacing=4, auto_scroll=True)
         self.texto_total = ft.Text("$0", size=36, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)
         self.texto_items = ft.Text("0 items", size=13, color=ft.Colors.GREY_500)
+
+        carrito_container = ft.Container(
+            content=self.lista_carrito,
+            height=280,
+            expand=False,
+            border_radius=8,
+            bgcolor=ft.Colors.SURFACE,
+            padding=8,
+            border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+        )
 
         return ft.Column([
             ft.Text("Caja", size=30, weight=ft.FontWeight.BOLD),
             ft.Row([self.combo_cliente, self.combo_pago], spacing=12),
             ft.Row([self.combo_producto, self.campo_cantidad,
-                    ft.ElevatedButton("Agregar", icon=ft.Icons.ADD, on_click=self.agregar_item)], spacing=12),
+                    ft.ElevatedButton("Agregar", icon=ft.Icons.ADD, on_click=self.agregar_item)], spacing=12, scroll=ft.ScrollMode.AUTO),
             ft.Divider(),
             ft.Row([
                 ft.Text("Carrito", weight=ft.FontWeight.BOLD),
@@ -54,8 +67,7 @@ class PantallaCaja(Screen):
                 ft.Container(expand=True),
                 ft.TextButton("Vaciar", icon=ft.Icons.DELETE_SWEEP, on_click=self.vaciar_carrito),
             ]),
-            ft.Container(content=self.lista_carrito, expand=True, border_radius=8,
-                         bgcolor=ft.Colors.SURFACE, padding=8),
+            carrito_container,
             ft.Divider(),
             ft.Row([ft.Text("TOTAL", size=20, weight=ft.FontWeight.BOLD), self.texto_total],
                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
@@ -182,13 +194,5 @@ class PantallaCaja(Screen):
             print(f"Error cobrar_carrito: {ex}")
             self.mostrar_alerta(f"Error al cobrar: {ex}")
 
-    # ─── helpers ────────────────────────────────────────────────────
-
-    def mostrar_alerta(self, texto):
-        try:
-            sb = ft.SnackBar(ft.Text(texto), open=True, duration=4000)
-            if sb not in self.pagina.overlay:
-                self.pagina.overlay.append(sb)
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+    # Nota: mostrar_alerta heredado de Screen (usa page.snack_bar, no overlay). No duplicar.
+    # Flet 0.28.3: page.snack_bar + sb.open=True + page.update()

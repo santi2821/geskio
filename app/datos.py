@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta, datetime
 import uuid
 
 productos = [
@@ -18,6 +18,12 @@ clientes = [
     {"id": "c1", "nombre": "Juan Perez", "telefono": "3511234567"},
     {"id": "c2", "nombre": "Maria Garcia", "telefono": "3519876543"},
     {"id": "c3", "nombre": "Carlos Lopez", "telefono": "3515551234"},
+]
+
+proveedores = [
+    {"id": "pr1", "nombre": "Distribuidora Sur", "telefono": "3514231122", "email": "contacto@distrisur.com.ar", "rubro": "Alimentos"},
+    {"id": "pr2", "nombre": "Lacteos del Centro", "telefono": "3515559876", "email": "ventas@lacteoscentro.com.ar", "rubro": "Lacteos"},
+    {"id": "pr3", "nombre": "Bebidas Norte", "telefono": "3514445566", "email": "info@bebidasnorte.com.ar", "rubro": "Bebidas"},
 ]
 
 ventas = []
@@ -97,6 +103,39 @@ def eliminar_cliente(cid):
         return True
     return False
 
+# ─── Proveedores CRUD ───────────────────────────────────────────────
+
+def prov_por_id(pid):
+    for p in proveedores:
+        if p["id"] == pid:
+            return p
+    return None
+
+def crear_proveedor(nombre, telefono="", email="", rubro=""):
+    pr = {"id": id_unico(), "nombre": nombre, "telefono": telefono, "email": email, "rubro": rubro}
+    proveedores.append(pr)
+    return pr
+
+def actualizar_proveedor(pid, nombre=None, telefono=None, email=None, rubro=None):
+    p = prov_por_id(pid)
+    if p:
+        if nombre is not None:
+            p["nombre"] = nombre
+        if telefono is not None:
+            p["telefono"] = telefono
+        if email is not None:
+            p["email"] = email
+        if rubro is not None:
+            p["rubro"] = rubro
+    return p
+
+def eliminar_proveedor(pid):
+    idx = next((i for i, p in enumerate(proveedores) if p["id"] == pid), None)
+    if idx is not None:
+        proveedores.pop(idx)
+        return True
+    return False
+
 # ─── Ventas ─────────────────────────────────────────────────────────
 
 def crear_venta(items, cliente_id="", pago="efectivo"):
@@ -130,6 +169,61 @@ def stats():
     deb = sum(c["total"] - c["pagado"] for c in cuentas)
     bajo = [p for p in productos if p["stock"] <= p["minimo"]]
     return {"hoy": vh, "mes": vm, "ganancia": gan, "deben": deb, "stock_bajo": bajo}
+
+# ─── Helpers para gráficos / dashboard (0.28.3) ───────────────────────
+
+def ventas_por_dia(dias=7):
+    """Retorna lista dict {fecha, total} para los últimos `dias` días (incluye hoy)."""
+    hoy = date.today()
+    resultado = []
+    for offset in range(dias):
+        d = hoy - timedelta(days=dias - 1 - offset)
+        fecha_str = d.isoformat()
+        total = sum(v["total"] for v in ventas if v.get("fecha") == fecha_str)
+        resultado.append({"fecha": fecha_str, "total": total})
+    return resultado
+
+def stock_stats():
+    """Retorna dict {ok, bajo, agotado} según stock vs minimo."""
+    ok = sum(1 for p in productos if p["stock"] > p["minimo"])
+    bajo = sum(1 for p in productos if 0 < p["stock"] <= p["minimo"])
+    agotado = sum(1 for p in productos if p["stock"] == 0)
+    return {"ok": ok, "bajo": bajo, "agotado": agotado}
+
+def ventas_por_mes(meses=6):
+    """Retorna lista dict {mes, total} para los últimos `meses` meses (incluye actual). mes = 'YYYY-MM'."""
+    hoy = date.today()
+    meses_lista = []
+    base_idx = hoy.year * 12 + (hoy.month - 1)
+    for i in range(meses - 1, -1, -1):
+        idx = base_idx - i
+        yy = idx // 12
+        mm = idx % 12 + 1
+        meses_lista.append(f"{yy:04d}-{mm:02d}")
+    resultado = []
+    for mes_str in meses_lista:
+        total = sum(v["total"] for v in ventas if v.get("fecha", "").startswith(mes_str))
+        resultado.append({"mes": mes_str, "total": total})
+    return resultado
+
+def ganancia_por_mes(meses=6):
+    """Retorna lista dict {mes, ganancia} para gráficos de ganancia mensual."""
+    hoy = date.today()
+    base_idx = hoy.year * 12 + (hoy.month - 1)
+    meses_lista = []
+    for i in range(meses - 1, -1, -1):
+        idx = base_idx - i
+        yy = idx // 12
+        mm = idx % 12 + 1
+        meses_lista.append(f"{yy:04d}-{mm:02d}")
+    resultado = []
+    for mes_str in meses_lista:
+        gan = sum(
+            (it["precio"] - (prod_por_id(it["prod_id"]) or {}).get("costo", 0)) * it["cantidad"]
+            for v in ventas if v.get("fecha", "").startswith(mes_str) for it in v.get("items", [])
+        )
+        resultado.append({"mes": mes_str, "ganancia": gan})
+    return resultado
 
 
 # ventas de ejemplo

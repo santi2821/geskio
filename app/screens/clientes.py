@@ -22,18 +22,25 @@ class PantallaClientes(Screen):
                 ft.DataColumn(ft.Text("")),
             ],
             column_spacing=16,
+            expand=True,
         )
 
         self.campo_nombre = ft.TextField(label="Nombre", expand=True)
-        self.campo_telefono = ft.TextField(label="Telefono")
+        self.campo_telefono = ft.TextField(label="Telefono", expand=True)
+
+        # Wrapper horizontal scroll para DataTable
+        tabla_scroll = ft.Container(
+            content=ft.Row([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            expand=True,
+        )
 
         return ft.Column([
             ft.Text("Clientes", size=30, weight=ft.FontWeight.BOLD),
             self.campo_buscar,
-            ft.Column([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            tabla_scroll,
             ft.Divider(),
             ft.Row([self.campo_nombre, self.campo_telefono,
-                    ft.ElevatedButton("Agregar", on_click=self.guardar_nuevo)], spacing=8),
+                    ft.ElevatedButton("Agregar", on_click=self.guardar_nuevo)], spacing=8, scroll=ft.ScrollMode.AUTO),
         ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
     # ─── filtro ───────────────────────────────────────────────────────
@@ -101,25 +108,25 @@ class PantallaClientes(Screen):
             def guardar(e):
                 try:
                     actualizar_cliente(cid, campo_nombre.value.strip() or c["nombre"], campo_telefono.value.strip())
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.filtrar_datos()
                     self.mostrar_alerta("Cliente actualizado")
                 except Exception as ex:
                     print(f"Error guardar editar cliente: {ex}")
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text("Editar cliente"),
                 content=ft.Column([campo_nombre, campo_telefono], spacing=12, tight=True),
                 actions=[
                     ft.TextButton("Cancelar", on_click=lambda e: self.cerrar_dialogo(dialogo)),
                     ft.ElevatedButton("Guardar", on_click=guardar),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error editar_cliente: {ex}")
 
@@ -136,8 +143,7 @@ class PantallaClientes(Screen):
             def confirmar(e):
                 try:
                     eliminar_cliente(cid)
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.filtrar_datos()
                     self.mostrar_alerta(f"'{c['nombre']}' eliminado")
                 except Exception as ex:
@@ -149,6 +155,9 @@ class PantallaClientes(Screen):
             msg += "\nNo se puede deshacer."
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text("Eliminar cliente"),
                 content=ft.Text(msg),
                 actions=[
@@ -156,28 +165,16 @@ class PantallaClientes(Screen):
                     ft.ElevatedButton("Eliminar", on_click=confirmar,
                                       style=ft.ButtonStyle(bgcolor=ft.Colors.RED, color=ft.Colors.WHITE)),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error eliminar_cliente: {ex}")
 
-    # ─── helpers ───────────────────────────────────────────────────
+    # ─── helpers (heredados de Screen) ──────────────────────────────
 
     def cerrar_dialogo(self, dialogo):
-        try:
-            dialogo.open = False
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error cerrar dialogo: {ex}")
+        return super().cerrar_dialogo(dialogo)
 
     def mostrar_alerta(self, texto):
-        try:
-            sb = ft.SnackBar(ft.Text(texto), open=True, duration=4000)
-            if sb not in self.pagina.overlay:
-                self.pagina.overlay.append(sb)
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+        return super().mostrar_alerta(texto)

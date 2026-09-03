@@ -24,13 +24,19 @@ class PantallaFiado(Screen):
                 ft.DataColumn(ft.Text("")),
             ],
             column_spacing=12,
+            expand=True,
+        )
+
+        tabla_scroll = ft.Container(
+            content=ft.Row([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            expand=True,
         )
 
         return ft.Column([
             ft.Text("Cuenta Corriente", size=30, weight=ft.FontWeight.BOLD),
             self.filtro_pendientes,
             ft.Divider(height=4),
-            ft.Column([self.tabla_datos], scroll=ft.ScrollMode.AUTO, expand=True),
+            tabla_scroll,
             ft.ElevatedButton("Refrescar", on_click=lambda _: self.cargar_cuentas()),
         ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
@@ -87,20 +93,21 @@ class PantallaFiado(Screen):
                     m = float(campo_monto.value or 0)
                     if m > 0:
                         pagar_fiado(ccid, m)
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                     self.cargar_cuentas()
                 except Exception as ex:
                     print(f"Error confirmar pago: {ex}")
 
             def cancelar(e):
                 try:
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(dialogo)
                 except Exception as ex:
                     print(f"Error cancelar: {ex}")
 
             dialogo = ft.AlertDialog(
+                modal=True,
+                open=False,
+                shape=ft.RoundedRectangleBorder(radius=16),
                 title=ft.Text("Registrar pago"),
                 content=ft.Column([
                     ft.Text(f"Debe ${d:,} de ${c['total']:,}"),
@@ -110,10 +117,8 @@ class PantallaFiado(Screen):
                     ft.TextButton("Cancelar", on_click=cancelar),
                     ft.ElevatedButton("Pagar", on_click=confirmar),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(dialogo)
         except Exception as ex:
             print(f"Error abrir_pago: {ex}")
