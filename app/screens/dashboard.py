@@ -1,6 +1,18 @@
 import flet as ft
-from screen_base import Screen
 from datos import stats, productos, cuentas, cli_por_id
+from screen_base import Screen
+from theme import (
+    BORDER_WIDTH,
+    DIVIDER_HEIGHT,
+    FS_14,
+    FS_18,
+    ICON_MD,
+    SP_8,
+    SP_12,
+    app_colors,
+    role_color,
+)
+from widgets import AppHeader, AppStatCard
 
 
 class PantallaDashboard(Screen):
@@ -10,6 +22,9 @@ class PantallaDashboard(Screen):
     def actualizar(self):
         try:
             s = stats()
+            palette = app_colors.get()
+            danger = role_color(palette, "deben")
+            success = role_color(palette, "paid")
 
             self.texto_hoy.value = f"${s['hoy']:,.0f}"
             self.texto_mes.value = f"${s['mes']:,.0f}"
@@ -20,41 +35,107 @@ class PantallaDashboard(Screen):
             for p in productos:
                 if p["stock"] <= p["minimo"]:
                     alertas.append(
-                        ft.Text(f"⬇ {p['nombre']}: stock {p['stock']} (min {p['minimo']})", color=ft.Colors.RED))
+                        ft.Row(
+                            [
+                                ft.Icon(
+                                    ft.Icons.TRENDING_DOWN,
+                                    color=danger,
+                                    size=ICON_MD,
+                                ),
+                                ft.Text(
+                                    f"{p['nombre']}: stock {p['stock']} (min {p['minimo']})",
+                                    size=FS_14,
+                                    color=palette.text,
+                                ),
+                            ],
+                            spacing=SP_8,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        )
+                    )
             for c in cuentas:
                 pendiente = c["total"] - c["pagado"]
                 if pendiente > 0:
                     cli = cli_por_id(c["cliente_id"])
                     alertas.append(
-                        ft.Text(f"💰 {cli['nombre'] if cli else '?'} debe ${pendiente:,}"))
+                        ft.Row(
+                            [
+                                ft.Icon(
+                                    ft.Icons.PAID,
+                                    color=danger,
+                                    size=ICON_MD,
+                                ),
+                                ft.Text(
+                                    f"{cli['nombre'] if cli else '?'} debe ${pendiente:,}",
+                                    size=FS_14,
+                                    color=palette.text,
+                                ),
+                            ],
+                            spacing=SP_8,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        )
+                    )
             if not alertas:
-                alertas.append(ft.Text("Todo en orden ✅", color=ft.Colors.GREEN))
+                alertas.append(
+                    ft.Row(
+                        [
+                            ft.Icon(
+                                ft.Icons.CHECK_CIRCLE,
+                                color=success,
+                                size=ICON_MD,
+                            ),
+                            ft.Text(
+                                "Todo en orden",
+                                size=FS_14,
+                                color=palette.text,
+                            ),
+                        ],
+                        spacing=SP_8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    )
+                )
             self.lista_alertas.controls = alertas
         except Exception as ex:
             print(f"Error actualizar dashboard: {ex}")
         self.pagina.update()
 
     def build(self):
-        card_hoy      = ft.Container(content=ft.Column([ft.Text("Hoy",      size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_500), ft.Text("$0", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)],  spacing=4), padding=20, border_radius=12, bgcolor=ft.Colors.SURFACE, border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT), expand=True)
-        card_mes      = ft.Container(content=ft.Column([ft.Text("Mes",      size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_500), ft.Text("$0", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE)],   spacing=4), padding=20, border_radius=12, bgcolor=ft.Colors.SURFACE, border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT), expand=True)
-        card_ganancia = ft.Container(content=ft.Column([ft.Text("Ganancia", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_500), ft.Text("$0", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.AMBER)], spacing=4), padding=20, border_radius=12, bgcolor=ft.Colors.SURFACE, border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT), expand=True)
-        card_deben    = ft.Container(content=ft.Column([ft.Text("Deben",   size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_500), ft.Text("$0", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.RED)],    spacing=4), padding=20, border_radius=12, bgcolor=ft.Colors.SURFACE, border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT), expand=True)
+        palette = app_colors.get()
+        card_hoy = AppStatCard("Hoy", "$0", role="success")
+        card_mes = AppStatCard("Mes", "$0", role="info")
+        card_ganancia = AppStatCard("Ganancia", "$0", role="warning")
+        card_deben = AppStatCard("Deben", "$0", role="danger")
 
-        self.texto_hoy      = card_hoy.content.controls[1]
-        self.texto_mes      = card_mes.content.controls[1]
+        self.texto_hoy = card_hoy.content.controls[1]
+        self.texto_mes = card_mes.content.controls[1]
         self.texto_ganancia = card_ganancia.content.controls[1]
-        self.texto_deben    = card_deben.content.controls[1]
+        self.texto_deben = card_deben.content.controls[1]
 
-        self.lista_alertas = ft.Column(spacing=5)
+        self.lista_alertas = ft.Column(spacing=SP_8)
 
-        return ft.Column([
-            ft.Row([
-                ft.Text("Dashboard", size=30, weight=ft.FontWeight.BOLD),
-                ft.Container(expand=True),
-                ft.IconButton(ft.Icons.REFRESH, icon_size=20, tooltip="Refrescar", on_click=lambda _: self.actualizar()),
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Row([card_hoy, card_mes, card_ganancia, card_deben], spacing=12),
-            ft.Divider(height=20),
-            ft.Text("Alertas", size=18, weight=ft.FontWeight.BOLD),
-            self.lista_alertas,
-        ], spacing=12, scroll=ft.ScrollMode.AUTO, expand=True)
+        return ft.Column(
+            [
+                AppHeader(
+                    "Dashboard",
+                    on_refresh=lambda _: self.actualizar(),
+                ),
+                ft.Row(
+                    [card_hoy, card_mes, card_ganancia, card_deben],
+                    spacing=SP_12,
+                ),
+                ft.Divider(
+                    height=DIVIDER_HEIGHT,
+                    thickness=BORDER_WIDTH,
+                    color=palette.border,
+                ),
+                ft.Text(
+                    "Alertas",
+                    size=FS_18,
+                    weight=ft.FontWeight.BOLD,
+                    color=palette.text,
+                ),
+                self.lista_alertas,
+            ],
+            spacing=SP_12,
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+        )

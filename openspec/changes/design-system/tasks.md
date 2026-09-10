@@ -35,8 +35,8 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Dashboard (Slice 1)
 
-- [ ] 2.1 Migrate `app/screens/dashboard.py` to AppStatCard/AppHeader, Hoy=success/Mes=info/Ganancia=warning/Deben=danger, standard Divider, Material icons
-- [ ] 2.2 Grep zero literals in `app/screens/dashboard.py`; smoke rojo/verde light/dark + accent override
+- [x] 2.1 Migrate `app/screens/dashboard.py` to AppStatCard/AppHeader, Hoy=success/Mes=info/Ganancia=warning/Deben=danger, standard Divider, Material icons
+- [x] 2.2 Grep zero literals in `app/screens/dashboard.py`; smoke rojo/verde light/dark + accent override
 
 ## Phase 3: Caja + Stock (Slice 2)
 
