@@ -21,6 +21,7 @@
     /* theme.py accent_soft pre-blended equivalent: #fdecec */
     --on-accent-soft: #c81e1e;
     --on-accent: #ffffff;
+    --accent-text: #c81e1e;
     --success: #166534;
     --warning: #b45309;
     --danger: #dc2626;
@@ -54,6 +55,7 @@
     /* theme.py accent_soft pre-blended equivalent: #2c121b */
     --on-accent-soft: #fb7185;
     --on-accent: #ffffff;
+    --accent-text: #f43f5e;
     --success: #4ade80;
     --warning: #fbbf24;
     --danger: #dc2626;
@@ -339,7 +341,7 @@ img, svg { display: block; }
 .device-row .muted { color: var(--text-muted); }
 .device-row.debtor { align-items: center; }
 .debtor-name { font-weight: 600; }
-.debtor-amt { color: var(--accent); font-weight: 700; }
+.debtor-amt { color: var(--accent-text); font-weight: 700; }
 
 /* ============================================================
    MARQUEE
@@ -431,7 +433,7 @@ img, svg { display: block; }
 .mc-user { align-self: flex-end; background: var(--text); color: var(--bg); border-bottom-right-radius: 4px; }
 [data-theme="dark"] .mc-user { background: var(--text); color: #0e1014; }
 .mc-bot { align-self: flex-start; background: var(--bg-soft); color: var(--text); border-bottom-left-radius: 4px; }
-.mc-bot strong { color: var(--accent); }
+.mc-bot strong { color: var(--accent-text); }
 
 /* ============================================================
    NÚMEROS / DETALLES
@@ -530,7 +532,7 @@ img, svg { display: block; }
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent);
 }
-.form-note { margin-top: 14px; font-size: .9rem; font-weight: 500; text-align: center; min-height: 18px; color: var(--accent); }
+.form-note { margin-top: 14px; font-size: .9rem; font-weight: 500; text-align: center; min-height: 18px; color: var(--accent-text); }
 
 /* ============================================================
    FOOTER
@@ -551,7 +553,7 @@ img, svg { display: block; }
 .footer-tag { margin-top: 14px; font-size: .9rem; line-height: 1.6; color: color-mix(in srgb, currentColor 80%, transparent); }
 .footer-links { display: flex; flex-direction: column; gap: 12px; }
 .footer-links a { font-size: .92rem; color: color-mix(in srgb, currentColor 85%, transparent); transition: color .2s ease; }
-.footer-links a:hover { color: var(--accent); }
+.footer-links a:hover { color: var(--accent-text); }
 .footer-social { display: flex; gap: 10px; align-content: flex-start; }
 .social {
     width: 40px; height: 40px;

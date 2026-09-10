@@ -119,13 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!nombre) {
                 note.textContent = 'Decime tu nombre para saber a quién escribirle.';
-                note.style.color = 'var(--accent)';
+                note.style.color = 'var(--accent-text)';
                 form.nombre.focus();
                 return;
             }
             if (!emailOk) {
                 note.textContent = 'Ese email no parece válido.';
-                note.style.color = 'var(--accent)';
+                note.style.color = 'var(--accent-text)';
                 form.email.focus();
                 return;
             }
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setTimeout(() => {
                 note.textContent = '¡Gracias ' + nombre + '! Te escribimos pronto.';
-                note.style.color = '#059669';
+                note.style.color = 'var(--success)';
                 form.reset();
                 btn.textContent = original;
                 btn.disabled = false;

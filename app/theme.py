@@ -58,6 +58,11 @@ Resolved split (micro-fix): `danger` #dc2626 on dark surface #181c23 =
 backgrounds only; `danger_text` (#dc2626 light / #fb7185 dark) is
 used for 14px normal text (stock bajo, debe, late) and passes >= 4.5
 in both modes. Landing 1:1 holds incl. --danger-text (see styles.css).
+Remediation C-1 mirrors it: `accent` stays the button/ring ground
+(light #c81e1e / dark #e11d48) while `accent_text` carries normal-text
+usage (rojo light #c81e1e = 5.74 on #fff; rojo dark #f43f5e = 4.65 on
+#181c23, 4.84 on #15181e, 5.42 on #08090c); verde brand-mirrors
+(light #166534 / dark #4ade80). Landing 1:1 holds incl. --accent-text.
 """
 
 from __future__ import annotations
@@ -121,6 +126,7 @@ class PaletteTheme:
     warning: str
     danger: str
     danger_text: str
+    accent_text: str
     info: str
 
 
@@ -143,6 +149,7 @@ ROJO_LIGHT = PaletteTheme(
     warning="#b45309",
     danger="#dc2626",
     danger_text="#dc2626",
+    accent_text="#c81e1e",
     info="#2563eb",
 )
 
@@ -165,6 +172,7 @@ ROJO_DARK = PaletteTheme(
     warning="#fbbf24",
     danger="#dc2626",
     danger_text="#fb7185",
+    accent_text="#f43f5e",
     info="#60a5fa",
 )
 
@@ -186,6 +194,7 @@ VERDE_LIGHT = PaletteTheme(
     warning="#b45309",
     danger="#dc2626",
     danger_text="#dc2626",
+    accent_text="#166534",
     info="#2563eb",
 )
 
@@ -207,6 +216,7 @@ VERDE_DARK = PaletteTheme(
     warning="#fbbf24",
     danger="#dc2626",
     danger_text="#fb7185",
+    accent_text="#4ade80",
     info="#60a5fa",
 )
 
