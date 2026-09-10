@@ -50,24 +50,70 @@ from theme import (
 
 
 def sync_text(field: ft.TextField) -> ft.TextField:
-    """Mirror what the user typed back into ``field.value`` on every change.
+    """Mirror what the user typed back into ``field.value`` on change+blur.
 
     Flet 0.84 only streams TextField content to the server for fields with a
     subscribed change event. Dialog/form fields without one keep their
     construction value, so save buttons read stale text while showing a
     success message. Subscribing here keeps existing ``field.value`` readers
-    working unchanged under both sync models.
+    working unchanged under both sync models. Blur mirrors the same value
+    so the "change loses events, blur brings data" model still saves.
     """
 
     def _sync(e):
         try:
-            if e is not None and getattr(e, "data", None) is not None:
-                field.value = e.data
+            if e is None:
+                return
+            data = getattr(e, "data", None)
+            if data is not None:
+                field.value = data
+                return
+            try:
+                ctrl_val = getattr(getattr(e, "control", None), "value", None)
+                if ctrl_val is not None:
+                    field.value = ctrl_val
+            except Exception:
+                pass
         except Exception:
             pass
 
     try:
-        field.on_change = _sync
+        prev_change = getattr(field, "on_change", None)
+    except Exception:
+        prev_change = None
+    try:
+        prev_blur = getattr(field, "on_blur", None)
+    except Exception:
+        prev_blur = None
+
+    def _chained_change(e):
+        _sync(e)
+        try:
+            if callable(prev_change):
+                try:
+                    prev_change(e)
+                except TypeError:
+                    prev_change()
+        except Exception:
+            pass
+
+    def _chained_blur(e):
+        _sync(e)
+        try:
+            if callable(prev_blur):
+                try:
+                    prev_blur(e)
+                except TypeError:
+                    prev_blur()
+        except Exception:
+            pass
+
+    try:
+        field.on_change = _chained_change if callable(prev_change) else _sync
+    except Exception:
+        pass
+    try:
+        field.on_blur = _chained_blur if callable(prev_blur) else _sync
     except Exception:
         pass
     return field
@@ -733,10 +779,12 @@ def is_rail_for_size(width, height) -> bool:
 class Sidebar(ft.Container):
     """Shell sidebar: 240px expanded, 64px icon rail collapsed.
 
-    Expanded adds brand + GesKio, MENU label, pill-active items and a
-    mini user row. Idle items use text_muted on bg_soft; the active
-    item uses the verified on_accent_soft/accent_soft pair with a 2px
-    primary edge and pill shape.
+    Expanded: brand (accent square + GesKio + muted subtitle), MENÚ label,
+    40px items (icon 20 + label 14, gaps 4px, radius 8px). Active is a
+    single signal: accent_soft pill + on_accent_soft icon/label semibold
+    (no extra edge); hover is bg_soft. Divider separates sections;
+    user-card pinned bottom (avatar + Mi negocio, tap goes Ajustes).
+    Rail: centered icons 22, active pill, tooltips.
     """
 
     def __init__(
@@ -753,18 +801,31 @@ class Sidebar(ft.Container):
     def _nav_style(self, key: str) -> ft.ButtonStyle:
         palette = app_colors.get()
         active = key == self.active_key
+        icon_sz = 22 if self.collapsed else 20
         if active:
             return ft.ButtonStyle(
-                bgcolor=palette.accent_soft,
+                bgcolor={
+                    ft.ControlState.HOVERED: palette.accent_soft,
+                    ft.ControlState.DEFAULT: palette.accent_soft,
+                },
                 color=palette.on_accent_soft,
-                side=ft.BorderSide(FOCAL_BORDER_WIDTH, palette.primary),
-                shape=ft.RoundedRectangleBorder(radius=R_PILL),
+                icon_color=palette.on_accent_soft,
+                icon_size=icon_sz,
+                shape=ft.RoundedRectangleBorder(radius=SP_8),
                 padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+                text_style=ft.TextStyle(size=FS_14, weight=ft.FontWeight.W_600),
             )
         return ft.ButtonStyle(
+            bgcolor={
+                ft.ControlState.HOVERED: palette.bg_soft,
+                ft.ControlState.DEFAULT: "transparent",
+            },
             color=palette.text_muted,
-            shape=ft.RoundedRectangleBorder(radius=R_PILL),
+            icon_color=palette.text_muted,
+            icon_size=icon_sz,
+            shape=ft.RoundedRectangleBorder(radius=SP_8),
             padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+            text_style=ft.TextStyle(size=FS_14),
         )
 
     def _brand(self) -> ft.Control:
@@ -774,7 +835,7 @@ class Sidebar(ft.Container):
                 "G", size=FS_18, weight=ft.FontWeight.BOLD, color=palette.on_primary
             ),
             bgcolor=palette.primary,
-            border_radius=ft.BorderRadius.all(R_SM),
+            border_radius=ft.BorderRadius.all(SP_8),
             padding=SP_8,
             alignment=ft.Alignment.CENTER,
         )
@@ -783,40 +844,64 @@ class Sidebar(ft.Container):
         return ft.Row(
             [
                 mark,
-                ft.Text(
-                    "GesKio",
-                    size=FS_18,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
+                ft.Column(
+                    [
+                        ft.Text(
+                            "GesKio",
+                            size=FS_18,
+                            weight=ft.FontWeight.BOLD,
+                            color=palette.text,
+                        ),
+                        ft.Text(
+                            "Gestión",
+                            size=FS_12,
+                            color=palette.text_muted,
+                        ),
+                    ],
+                    spacing=SP_4,
+                    expand=True,
                 ),
             ],
             spacing=SP_8,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
+    def _avatar(self, size: int = 32) -> ft.Container:
+        palette = app_colors.get()
+        return ft.Container(
+            content=ft.Text(
+                "M",
+                size=FS_14,
+                weight=ft.FontWeight.BOLD,
+                color=palette.on_primary,
+            ),
+            bgcolor=palette.primary,
+            border_radius=ft.BorderRadius.all(SP_8),
+            width=size,
+            height=size,
+            alignment=ft.Alignment.CENTER,
+        )
+
     def _user_row(self) -> ft.Control:
         palette = app_colors.get()
         if self.collapsed:
-            return ft.Row(
-                [
-                    ft.Icon(
-                        ft.Icons.ACCOUNT_CIRCLE, color=palette.text_soft, size=ICON_MD
-                    )
-                ],
+            row = ft.Row(
+                [self._avatar()],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
-        return ft.Container(
+            try:
+                row.tooltip = "Mi negocio"
+            except Exception:
+                pass
+            return row
+        card = ft.Container(
             content=ft.Row(
                 [
-                    ft.Icon(
-                        ft.Icons.ACCOUNT_CIRCLE,
-                        color=palette.text_soft,
-                        size=ICON_MD,
-                    ),
+                    self._avatar(),
                     ft.Column(
                         [
                             ft.Text(
-                                "Admin",
+                                "Mi negocio",
                                 size=FS_14,
                                 weight=ft.FontWeight.BOLD,
                                 color=palette.text,
@@ -837,7 +922,13 @@ class Sidebar(ft.Container):
             border=ft.Border.all(BORDER_WIDTH, palette.border),
             border_radius=ft.BorderRadius.all(R_MD),
             padding=SP_8,
+            tooltip="Ajustes",
         )
+        try:
+            card.on_click = lambda _: self._handle_nav("ajustes")
+        except Exception:
+            pass
+        return card
 
     def _rebuild(self) -> None:
         palette = app_colors.get()
@@ -846,10 +937,13 @@ class Sidebar(ft.Container):
         self.padding = SP_8
         self.border = ft.Border.all(BORDER_WIDTH, palette.border)
         controls: list[ft.Control] = [self._brand()]
+        controls.append(
+            ft.Divider(height=SP_8, thickness=BORDER_WIDTH, color=palette.border)
+        )
         if not self.collapsed:
             controls.append(
                 ft.Text(
-                    "MENU",
+                    "MENÚ",
                     size=FS_12,
                     weight=ft.FontWeight.W_600,
                     color=palette.text_muted,
@@ -863,14 +957,23 @@ class Sidebar(ft.Container):
                 tooltip=label,
                 style=self._nav_style(key),
                 on_click=lambda _, k=key: self._handle_nav(k),
+                height=40,
             )
             self.buttons[key] = btn
             controls.append(btn)
+        controls.append(
+            ft.Divider(height=SP_8, thickness=BORDER_WIDTH, color=palette.border)
+        )
         controls.append(ft.Container(expand=True))
         controls.append(self._user_row())
         self.content = ft.Column(
             controls, spacing=SP_4, scroll=ft.ScrollMode.AUTO, expand=True
         )
+
+    def refresh_chrome(self) -> None:
+        """Re-resolve every chrome color from the live palette + update."""
+        self._rebuild()
+        self._safe_update()
 
     def _handle_nav(self, key: str) -> None:
         if callable(self.on_navigate):
@@ -1118,6 +1221,7 @@ class Shell(ft.Row):
         self._safe_update()
 
     def refresh_chrome(self) -> None:
+        """Re-resolve every chrome color from the live palette + update."""
         palette = app_colors.get()
         try:
             self.divider.color = palette.border
@@ -1128,9 +1232,10 @@ class Shell(ft.Row):
         except Exception:
             pass
         try:
-            self.sidebar.set_active(self.active_key)
+            self.sidebar.refresh_chrome()
         except Exception:
             pass
+        self._safe_update()
 
     def toggle_mode(self, _=None) -> None:
         app_colors.set_mode(
