@@ -68,7 +68,7 @@ class PantallaCaja(Screen):
         self.combo_producto = ft.Dropdown(
             label="Producto",
             expand=True,
-            on_change=self.on_producto_change,
+            on_select=self.on_producto_change,
         )
         self.campo_cantidad = ft.TextField(
             label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER
