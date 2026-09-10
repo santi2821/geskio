@@ -3,33 +3,46 @@ import flet as ft
 from screen_base import Screen
 from datos import cuentas, cli_por_id, pagar_fiado
 from theme import (
-    BORDER_WIDTH,
-    DIVIDER_HEIGHT,
-    FS_20,
-    FS_30,
     ICON_SM,
     SP_4,
+    SP_8,
     SP_10,
     SP_12,
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, feedback, sync_text
+from widgets import (
+    AppDialog,
+    AppTable,
+    PageHeader,
+    TablePager,
+    TableToolbar,
+    feedback,
+    paginate_rows,
+    sync_text,
+)
 
 
 class PantallaFiado(Screen):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Fiado")
+        self._query = ""
+        self._solo_pendientes = True
+        self._page = 1
 
     def actualizar(self):
         self.cargar_cuentas()
 
     def build(self):
-        palette = app_colors.get()
         self.filtro_pendientes = ft.Switch(
             label="Solo pendientes",
-            value=True,
-            on_change=lambda e: self.cargar_cuentas(),
+            value=self._solo_pendientes,
+            on_change=lambda _: self._on_filtro(),
+        )
+        toolbar = TableToolbar(
+            on_query=self._on_query,
+            chips=(self.filtro_pendientes,),
+            search_hint="Buscar cliente...",
         )
 
         self._columnas = [
@@ -45,25 +58,41 @@ class PantallaFiado(Screen):
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
+        self._pager_holder = ft.Column([], spacing=SP_8)
 
         return ft.Column(
             [
-                ft.Text(
-                    "Fiado", size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text
-                ),
-                self.filtro_pendientes,
-                ft.Divider(
-                    height=DIVIDER_HEIGHT, thickness=BORDER_WIDTH, color=palette.border
-                ),
+                PageHeader("Fiado", on_refresh=lambda _: self.cargar_cuentas()),
+                toolbar,
                 self._tabla_holder,
-                ft.ElevatedButton(
-                    "Refrescar", on_click=lambda _: self.cargar_cuentas()
-                ),
+                self._pager_holder,
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
+
+    # ─── toolbar + pager ────────────────────────────────────────────
+
+    def _on_query(self, query):
+        self._query = query or ""
+        self._page = 1
+        self.cargar_cuentas()
+
+    def _on_filtro(self):
+        try:
+            self._solo_pendientes = bool(self.filtro_pendientes.value)
+        except Exception:
+            self._solo_pendientes = True
+        self._page = 1
+        self.cargar_cuentas()
+
+    def _on_page(self, new_page):
+        try:
+            self._page = max(1, int(new_page or 1))
+        except (TypeError, ValueError):
+            self._page = 1
+        self.cargar_cuentas()
 
     def cargar_cuentas(self):
         try:
@@ -71,19 +100,26 @@ class PantallaFiado(Screen):
             pagado_color = role_color(palette, "paid")
             pendiente_color = role_color(palette, "due")
             vencido_color = role_color(palette, "danger_text")
-            solo_pendientes = self.filtro_pendientes.value
-            filas = []
+            solo_pendientes = bool(getattr(self, "_solo_pendientes", True))
+            q = (getattr(self, "_query", "") or "").lower()
+            entries = []
             for c in cuentas:
                 p = c["total"] - c["pagado"]
                 if solo_pendientes and p <= 0:
                     continue
                 cli = cli_por_id(c["cliente_id"])
                 nombre = cli["nombre"] if cli else "?"
+                if q and q not in nombre.lower():
+                    continue
                 dias = (
                     (date.today() - date.fromisoformat(c["created_at"])).days
                     if c.get("created_at")
                     else 0
                 )
+                entries.append((dias, c, nombre, p))
+            entries.sort(key=lambda item: item[0], reverse=True)
+            filas = []
+            for dias, c, nombre, p in entries:
                 ccid = c["id"]
 
                 if p <= 0:
@@ -136,8 +172,16 @@ class PantallaFiado(Screen):
                         ]
                     )
                 )
+            page = int(getattr(self, "_page", 1) or 1)
+            visibles, current, total = paginate_rows(filas, page)
+            self._page = current
             self._tabla_holder.controls = [
-                AppTable(self._columnas, filas, empty_message="Sin deudas pendientes")
+                AppTable(
+                    self._columnas, visibles, empty_message="Sin deudas pendientes"
+                )
+            ]
+            self._pager_holder.controls = [
+                TablePager(current, total, on_page=self._on_page)
             ]
         except Exception as ex:
             print(f"Error cargar_cuentas: {ex}")

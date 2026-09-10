@@ -9,10 +9,6 @@ from datos import (
     eliminar_cliente,
 )
 from theme import (
-    BORDER_WIDTH,
-    DIVIDER_HEIGHT,
-    FS_20,
-    FS_30,
     ICON_SM,
     SP_4,
     SP_8,
@@ -21,24 +17,31 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, confirm_delete, feedback, sync_text
+from widgets import (
+    AppDialog,
+    AppTable,
+    PageHeader,
+    Section,
+    TablePager,
+    TableToolbar,
+    confirm_delete,
+    feedback,
+    paginate_rows,
+    sync_text,
+)
 
 
 class PantallaClientes(Screen):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Clientes")
+        self._query = ""
+        self._solo_deuda = False
+        self._page = 1
 
     def actualizar(self):
         self.filtrar_datos()
 
     def build(self):
-        palette = app_colors.get()
-        self.campo_buscar = ft.TextField(
-            hint_text="Buscar cliente...",
-            expand=True,
-            on_change=lambda _: self.filtrar_datos(),
-        )
-
         self._columnas = [
             ft.DataColumn(ft.Text("Nombre")),
             ft.DataColumn(ft.Text("Telefono")),
@@ -51,47 +54,76 @@ class PantallaClientes(Screen):
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
+        self._pager_holder = ft.Column([], spacing=SP_8)
+        self._chip_deuda = ft.Switch(
+            label="Con deuda",
+            value=self._solo_deuda,
+            on_change=lambda _: self._on_filtro_deuda(),
+        )
+        toolbar = TableToolbar(
+            on_query=self._on_query,
+            chips=(self._chip_deuda,),
+            search_hint="Buscar cliente...",
+        )
 
         self.campo_nombre = ft.TextField(label="Nombre", expand=True)
         self.campo_telefono = ft.TextField(label="Telefono")
         for _campo in (self.campo_nombre, self.campo_telefono):
             sync_text(_campo)
 
+        form = ft.Row(
+            [
+                self.campo_nombre,
+                self.campo_telefono,
+                ft.ElevatedButton("Agregar", on_click=self.guardar_nuevo),
+            ],
+            spacing=SP_8,
+        )
+
         return ft.Column(
             [
-                ft.Text(
-                    "Clientes",
-                    size=FS_30,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                self.campo_buscar,
+                PageHeader("Clientes", on_refresh=lambda _: self.filtrar_datos()),
+                toolbar,
                 self._tabla_holder,
-                ft.Divider(
-                    height=DIVIDER_HEIGHT, thickness=BORDER_WIDTH, color=palette.border
-                ),
-                ft.Row(
-                    [
-                        self.campo_nombre,
-                        self.campo_telefono,
-                        ft.ElevatedButton("Agregar", on_click=self.guardar_nuevo),
-                    ],
-                    spacing=SP_8,
-                ),
+                self._pager_holder,
+                Section("Nuevo cliente", form),
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    # ─── filtro ───────────────────────────────────────────────────────
+    # ─── toolbar + pager ────────────────────────────────────────────
+
+    def _on_query(self, query):
+        self._query = query or ""
+        self._page = 1
+        self.filtrar_datos()
+
+    def _on_filtro_deuda(self):
+        try:
+            self._solo_deuda = bool(self._chip_deuda.value)
+        except Exception:
+            self._solo_deuda = False
+        self._page = 1
+        self.filtrar_datos()
+
+    def _on_page(self, new_page):
+        try:
+            self._page = max(1, int(new_page or 1))
+        except (TypeError, ValueError):
+            self._page = 1
+        self.filtrar_datos()
+
+    # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
     def filtrar_datos(self):
         try:
             palette = app_colors.get()
             deuda_color = role_color(palette, "danger_text")
-            q = (self.campo_buscar.value or "").lower()
-            filas = []
+            q = (getattr(self, "_query", "") or "").lower()
+            solo_deuda = bool(getattr(self, "_solo_deuda", False))
+            items = []
             for c in clientes:
                 if (
                     q
@@ -99,6 +131,17 @@ class PantallaClientes(Screen):
                     and q not in c.get("telefono", "")
                 ):
                     continue
+                debe = sum(
+                    x["total"] - x["pagado"]
+                    for x in cuentas
+                    if x["cliente_id"] == c["id"]
+                )
+                if solo_deuda and debe <= 0:
+                    continue
+                items.append(c)
+            items.sort(key=lambda c: c["nombre"].lower())
+            filas = []
+            for c in items:
                 compras = len([v for v in ventas if v.get("cliente_id") == c["id"]])
                 debe = sum(
                     x["total"] - x["pagado"]
@@ -149,8 +192,14 @@ class PantallaClientes(Screen):
                         ]
                     )
                 )
+            page = int(getattr(self, "_page", 1) or 1)
+            visibles, current, total = paginate_rows(filas, page)
+            self._page = current
             self._tabla_holder.controls = [
-                AppTable(self._columnas, filas, empty_message="Sin resultados")
+                AppTable(self._columnas, visibles, empty_message="Sin resultados")
+            ]
+            self._pager_holder.controls = [
+                TablePager(current, total, on_page=self._on_page)
             ]
         except Exception as ex:
             print(f"Error en filtrar_datos clientes: {ex}")

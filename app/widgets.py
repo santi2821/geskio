@@ -40,6 +40,7 @@ from theme import (
     SP_8,
     SP_12,
     SP_20,
+    SP_24,
     STAT_VALUE_FS,
     app_colors,
     role_color,
@@ -130,7 +131,9 @@ def FocalStatCard(
         content=ft.Column(
             [
                 ft.Row(header, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                ft.Text(value, size=FOCAL_VALUE_FS, weight=ft.FontWeight.BOLD, color=color),
+                ft.Text(
+                    value, size=FOCAL_VALUE_FS, weight=ft.FontWeight.BOLD, color=color
+                ),
             ],
             spacing=SP_4,
         ),
@@ -148,7 +151,9 @@ def Section(title: str, content: ft.Control) -> ft.Container:
     return ft.Container(
         content=ft.Column(
             [
-                ft.Text(title, size=FS_18, weight=ft.FontWeight.BOLD, color=palette.text),
+                ft.Text(
+                    title, size=FS_18, weight=ft.FontWeight.BOLD, color=palette.text
+                ),
                 content,
             ],
             spacing=SP_12,
@@ -302,13 +307,157 @@ def AppHeader(
     return PageHeader(title, actions=actions, on_refresh=on_refresh)
 
 
+TABLE_PAGE_SIZE = 10
+_TABLE_HEADING_H = SP_24 + SP_12
+_TABLE_ROW_MIN_H = SP_24 + SP_8
+_TABLE_ROW_MAX_H = SP_24 + SP_12
+
+
+def paginate_rows(rows, page, page_size=TABLE_PAGE_SIZE):
+    """View-side pagination tail (filter -> sort -> paginate).
+
+    Returns ``(slice, current, total)`` with ``current`` clamped to
+    ``1..total`` so prev on page 1 stays at 1 with no error.
+    """
+    try:
+        per = max(1, int(page_size or TABLE_PAGE_SIZE))
+    except (TypeError, ValueError):
+        per = TABLE_PAGE_SIZE
+    total = max(1, -(-len(rows or []) // per))
+    try:
+        current = int(page or 1)
+    except (TypeError, ValueError):
+        current = 1
+    current = max(1, min(current, total))
+    start = (current - 1) * per
+    return (list((rows or [])[start : start + per]), current, total)
+
+
+def TableToolbar(
+    on_query=None, chips=(), actions=(), search_hint="Buscar..."
+) -> ft.Row:
+    """SnowUI toolbar: search field + filter chips + actions (AD-3).
+
+    The search field keeps ``sync_text`` semantics and forwards the
+    query string to ``on_query``; filtering stays view-side.
+    """
+    palette = app_colors.get()
+    search = ft.TextField(
+        hint_text=search_hint,
+        expand=True,
+        prefix_icon=ft.Icons.SEARCH,
+        hint_style=ft.TextStyle(size=FS_14, color=palette.text_muted),
+        text_style=ft.TextStyle(size=FS_14, color=palette.text),
+    )
+    sync_text(search)
+    prev = search.on_change
+
+    def _notify(e):
+        try:
+            if callable(prev):
+                try:
+                    prev(e)  # type: ignore[call-arg]
+                except TypeError:
+                    prev()  # type: ignore[call-arg]
+        except Exception:
+            pass
+        query = ""
+        try:
+            if e is not None and getattr(e, "data", None) is not None:
+                query = e.data
+            else:
+                query = search.value
+        except Exception:
+            try:
+                query = search.value
+            except Exception:
+                query = ""
+        if callable(on_query):
+            try:
+                on_query(query or "")
+            except Exception:
+                pass
+
+    try:
+        search.on_change = _notify
+    except Exception:
+        pass
+    controls: list[ft.Control] = [search]
+    controls.extend(list(chips or ()))
+    controls.extend(list(actions or ()))
+    return ft.Row(
+        controls,
+        spacing=SP_8,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
+
+def TablePager(page, pages, on_page=None) -> ft.Row:
+    """Composed pager: prev/next plus an "n de m" indicator (AD-3).
+
+    There is no Flet-native pager in 0.84.0, so paging goes through
+    this composed row. Bounds: prev on page 1 stays at 1.
+    """
+    palette = app_colors.get()
+    try:
+        total = max(1, int(pages or 1))
+    except (TypeError, ValueError):
+        total = 1
+    try:
+        current = int(page or 1)
+    except (TypeError, ValueError):
+        current = 1
+    current = max(1, min(current, total))
+
+    def _go(new_page):
+        try:
+            bounded = max(1, min(int(new_page), total))
+        except (TypeError, ValueError):
+            bounded = current
+        if callable(on_page):
+            try:
+                on_page(bounded)
+            except Exception:
+                pass
+
+    prev_btn = ft.IconButton(
+        icon=ft.Icons.CHEVRON_LEFT,
+        tooltip="Anterior",
+        icon_color=palette.text_soft,
+        on_click=lambda _: _go(current - 1),
+        disabled=(current <= 1),
+    )
+    next_btn = ft.IconButton(
+        icon=ft.Icons.CHEVRON_RIGHT,
+        tooltip="Siguiente",
+        icon_color=palette.text_soft,
+        on_click=lambda _: _go(current + 1),
+        disabled=(current >= total),
+    )
+    label = ft.Text(f"{current} de {total}", size=FS_14, color=palette.text)
+    return ft.Row(
+        [prev_btn, label, next_btn],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=SP_8,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
+
 def AppTable(
     columns: list[ft.DataColumn],
     rows: list[ft.DataRow],
     column_spacing: int = SP_12,
     empty_message: str = "Sin datos",
     empty_icon=ft.Icons.INBOX,
+    page_size: int = TABLE_PAGE_SIZE,
 ) -> ft.Control:
+    """Denser SnowUI table with a fixed contractual page size of 10 (AD-3).
+
+    Density knobs resolve to spacing/border tokens; heading uses
+    text_soft on surface and rows use text on surface (AD-6).
+    ``page_size`` documents the view-side pipeline width: screens slice
+    rows view-side and MUST NOT override it. Empty-state row preserved.
+    """
     palette = app_colors.get()
     if not rows:
         return ft.Container(
@@ -332,6 +481,12 @@ def AppTable(
         border_radius=ft.BorderRadius.all(R_MD),
         divider_thickness=BORDER_WIDTH,
         horizontal_margin=SP_12,
+        heading_row_height=_TABLE_HEADING_H,
+        data_row_min_height=_TABLE_ROW_MIN_H,
+        data_row_max_height=_TABLE_ROW_MAX_H,
+        heading_row_color=palette.surface,
+        data_row_color=palette.surface,
+        horizontal_lines=ft.BorderSide(width=BORDER_WIDTH, color=palette.border),
         heading_text_style=ft.TextStyle(
             size=FS_12, weight=ft.FontWeight.BOLD, color=palette.text_soft
         ),
@@ -808,6 +963,10 @@ __all__ = [
     "AppHeader",
     "PageHeader",
     "AppTable",
+    "TableToolbar",
+    "TablePager",
+    "paginate_rows",
+    "TABLE_PAGE_SIZE",
     "AppDialog",
     "confirm_delete",
     "feedback",

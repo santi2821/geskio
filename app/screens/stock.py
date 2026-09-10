@@ -9,12 +9,7 @@ from datos import (
     margen,
 )
 from theme import (
-    BORDER_WIDTH,
-    DIVIDER_HEIGHT,
-    FS_14,
     FS_16,
-    FS_20,
-    FS_30,
     ICON_SM,
     SP_4,
     SP_8,
@@ -23,24 +18,31 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, confirm_delete, feedback, sync_text
+from widgets import (
+    AppDialog,
+    AppTable,
+    PageHeader,
+    Section,
+    TablePager,
+    TableToolbar,
+    confirm_delete,
+    feedback,
+    paginate_rows,
+    sync_text,
+)
 
 
 class PantallaStock(Screen):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Stock")
+        self._query = ""
+        self._solo_bajo = False
+        self._page = 1
 
     def actualizar(self):
         self.filtrar_datos()
 
     def build(self):
-        palette = app_colors.get()
-        self.campo_buscar = ft.TextField(
-            hint_text="Buscar producto...",
-            expand=True,
-            on_change=lambda _: self.filtrar_datos(),
-        )
-
         self._columnas = [
             ft.DataColumn(ft.Text("Producto")),
             ft.DataColumn(ft.Text("Costo")),
@@ -54,6 +56,17 @@ class PantallaStock(Screen):
             [AppTable(self._columnas, [], empty_message="Sin resultados")],
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+        )
+        self._pager_holder = ft.Column([], spacing=SP_8)
+        self._chip_bajo = ft.Switch(
+            label="Solo bajo stock",
+            value=self._solo_bajo,
+            on_change=lambda _: self._on_filtro_bajo(),
+        )
+        toolbar = TableToolbar(
+            on_query=self._on_query,
+            chips=(self._chip_bajo,),
+            search_hint="Buscar producto...",
         )
 
         self.campo_nombre = ft.TextField(label="Nombre")
@@ -78,52 +91,71 @@ class PantallaStock(Screen):
         ):
             sync_text(_campo)
 
+        form = ft.Row(
+            [
+                self.campo_nombre,
+                self.campo_costo,
+                self.campo_precio,
+                self.campo_stock,
+                self.campo_minimo,
+                ft.ElevatedButton("Guardar", on_click=self.guardar_nuevo),
+            ],
+            spacing=SP_8,
+        )
+
         return ft.Column(
             [
-                ft.Text(
-                    "Stock", size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text
-                ),
-                self.campo_buscar,
+                PageHeader("Stock", on_refresh=lambda _: self.filtrar_datos()),
+                toolbar,
                 self._tabla_holder,
-                ft.Divider(
-                    height=DIVIDER_HEIGHT,
-                    thickness=BORDER_WIDTH,
-                    color=palette.border,
-                ),
-                ft.Text(
-                    "Nuevo producto",
-                    size=FS_16,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                ft.Row(
-                    [
-                        self.campo_nombre,
-                        self.campo_costo,
-                        self.campo_precio,
-                        self.campo_stock,
-                        self.campo_minimo,
-                        ft.ElevatedButton("Guardar", on_click=self.guardar_nuevo),
-                    ],
-                    spacing=SP_8,
-                ),
+                self._pager_holder,
+                Section("Nuevo producto", form),
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    # ─── filtro ───────────────────────────────────────────────────────
+    # ─── toolbar + pager ────────────────────────────────────────────
+
+    def _on_query(self, query):
+        self._query = query or ""
+        self._page = 1
+        self.filtrar_datos()
+
+    def _on_filtro_bajo(self):
+        try:
+            self._solo_bajo = bool(self._chip_bajo.value)
+        except Exception:
+            self._solo_bajo = False
+        self._page = 1
+        self.filtrar_datos()
+
+    def _on_page(self, new_page):
+        try:
+            self._page = max(1, int(new_page or 1))
+        except (TypeError, ValueError):
+            self._page = 1
+        self.filtrar_datos()
+
+    # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
     def filtrar_datos(self):
         try:
             palette = app_colors.get()
             bajo_color = role_color(palette, "danger_text")
-            q = (self.campo_buscar.value or "").lower()
-            filas = []
+            q = (getattr(self, "_query", "") or "").lower()
+            solo_bajo = bool(getattr(self, "_solo_bajo", False))
+            items = []
             for p in productos:
                 if q and q not in p["nombre"].lower():
                     continue
+                if solo_bajo and not p["stock"] <= p["minimo"]:
+                    continue
+                items.append(p)
+            items.sort(key=lambda p: p["nombre"].lower())
+            filas = []
+            for p in items:
                 m = margen(p["costo"], p["precio"])
                 bajo = p["stock"] <= p["minimo"]
                 pid = p["id"]
@@ -180,8 +212,14 @@ class PantallaStock(Screen):
                         ]
                     )
                 )
+            page = int(getattr(self, "_page", 1) or 1)
+            visibles, current, total = paginate_rows(filas, page)
+            self._page = current
             self._tabla_holder.controls = [
-                AppTable(self._columnas, filas, empty_message="Sin resultados")
+                AppTable(self._columnas, visibles, empty_message="Sin resultados")
+            ]
+            self._pager_holder.controls = [
+                TablePager(current, total, on_page=self._on_page)
             ]
         except Exception as ex:
             print(f"Error en filtrar_datos: {ex}")

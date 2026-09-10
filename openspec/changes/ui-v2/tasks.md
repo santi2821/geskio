@@ -41,9 +41,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Slice-c Tables Toolbar + Density + Pager
 
-- [ ] 3.1 Add `TableToolbar`, `TablePager`, denser `AppTable` page_size=10 to `app/widgets.py`
-- [ ] 3.2 Migrate `app/screens/stock.py`, `app/screens/clientes.py`, `app/screens/fiado.py` to toolbar+pager view-side
-- [ ] 3.3 Gate slice-c V2-D5 + pager bounds + `app/datos.py` (read-only) diff cero
+- [x] 3.1 Add `TableToolbar`, `TablePager`, denser `AppTable` page_size=10 to `app/widgets.py`
+- [x] 3.2 Migrate `app/screens/stock.py`, `app/screens/clientes.py`, `app/screens/fiado.py` to toolbar+pager view-side
+- [x] 3.3 Gate slice-c V2-D5 + pager bounds + `app/datos.py` (read-only) diff cero
 
 ## Phase 4: Slice-d Caja + Chat + Closure
 
