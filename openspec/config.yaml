@@ -1,0 +1,46 @@
+schema: spec-driven
+project: geskio
+branch_in_scope: base-primer-commit
+branch_sha: 5d3a3c77d5b5a6fa9127e836c45f0d06941d217e
+storage: hybrid
+artifact_store_mode: both
+strict_tdd: false
+strict_tdd_reason: "No workspace-level test command covers every in-scope project (zero marker-backed projects; no pytest/config found on base-primer-commit)."
+
+context: |
+  Stack: Python 3.11 + Flet 0.84.0 (unpinned) for app/; vanilla HTML/CSS/JS for landing/.
+  Architecture: app/main.py nav-shell + Screen base class; datos.py in-memory store; 6 Flet screens.
+  Testing: none on this branch (no runner, no tests, no coverage, no lint/type/format config).
+  Style: Spanish UI strings; flat modules; no packaging (no pyproject/requirements).
+  Scope note: main@d60efd8 (premium, 37 tests) is out of scope for init.
+
+projects: []
+
+testing:
+  workspace_command: ""
+  coverage_command: ""
+  notes: "Zero supported project markers (no pyproject.toml, requirements.txt, package.json, pytest.ini). app/ and landing/ are unmarked code roots, not marker-backed projects."
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
