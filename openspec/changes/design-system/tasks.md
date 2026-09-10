@@ -52,6 +52,6 @@ Chain strategy: stacked-to-main
 
 ## Phase 5: Chat + Landing + Verify (Slice 4)
 
-- [ ] 5.1 Migrate `app/screens/chat.py` to ChatBubble user-END accent_soft / bot-START surface, Inter-if-available no bundle
-- [ ] 5.2 Align `landing/styles.css` vars 1:1 to PaletteTheme light/dark, CSS-var-only, preserve nav/drawer/toggle/reveal/marquee/form
-- [ ] 5.3 Verify parity diff, zero literals repo-wide, CRM-04 absent, each slice ≤800 lines
+- [x] 5.1 Migrate `app/screens/chat.py` to ChatBubble user-END accent_soft / bot-START surface, Inter-if-available no bundle
+- [x] 5.2 Align `landing/styles.css` vars 1:1 to PaletteTheme light/dark, CSS-var-only, preserve nav/drawer/toggle/reveal/marquee/form
+- [x] 5.3 Verify parity diff, zero literals repo-wide, CRM-04 absent, each slice ≤800 lines

@@ -3,11 +3,12 @@
    Paleta minimal + modo oscuro · tipografía editorial
    ============================================================ */
 
-/* ---------- Tokens ---------- */
+/* ---------- Tokens (1:1 with app/theme.py ROJO_LIGHT; surface = --bg-elevated) ---------- */
 :root {
     --bg: #ffffff;
     --bg-soft: #f6f7f9;
     --bg-elevated: #ffffff;
+    --surface: #ffffff;
     --text: #161b22;
     --text-soft: #52606d;
     --text-muted: #8993a3;
@@ -16,6 +17,16 @@
     --accent: #ef4444;
     --accent-hover: #dc2626;
     --accent-soft: rgba(239, 68, 68, 0.10);
+    /* theme.py accent_soft pre-blended equivalent: #fdecec */
+    --on-accent: #ffffff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #2563eb;
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-pill: 999px;
     --shadow-sm: 0 1px 2px rgba(16, 18, 22, .05);
     --shadow: 0 1px 3px rgba(16, 18, 22, .04), 0 10px 30px rgba(16, 18, 22, .06);
     --shadow-lg: 0 30px 70px -20px rgba(16, 18, 22, .22);
@@ -24,9 +35,11 @@
 }
 
 [data-theme="dark"] {
+    /* 1:1 with app/theme.py ROJO_DARK */
     --bg: #0e1014;
     --bg-soft: #15181e;
     --bg-elevated: #181c23;
+    --surface: #181c23;
     --text: #f3f5f8;
     --text-soft: #aab2bf;
     --text-muted: #6e7783;
@@ -35,6 +48,16 @@
     --accent: #f43f5e;
     --accent-hover: #fb7185;
     --accent-soft: rgba(244, 63, 94, 0.14);
+    /* theme.py accent_soft pre-blended equivalent: #2e161e */
+    --on-accent: #ffffff;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #fb7185;
+    --info: #60a5fa;
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-pill: 999px;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
     --shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 12px 34px rgba(0, 0, 0, .35);
     --shadow-lg: 0 30px 70px -20px rgba(0, 0, 0, .6);
