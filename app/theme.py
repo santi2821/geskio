@@ -91,6 +91,18 @@ BORDER_WIDTH = 1
 DIVIDER_HEIGHT = 12
 FEEDBACK_DURATION_MS = 4000
 
+# Slice-a shell/layout tokens (AD-5, additive only, zero new hex).
+# PaletteTheme fields stay frozen; new ROLES reuse verified AA pairs only (AD-6).
+SHELL_SIDEBAR_W = 240
+SHELL_RAIL_W = 64
+SHELL_TOPBAR_H = 56
+SHELL_BREAKPOINT_W = 1280
+SHELL_BREAKPOINT_H = 760
+FOCAL_BORDER_WIDTH = 2
+SHELL_CONTENT_PADDING = SP_24
+CALENDAR_GAP = SP_8
+CALENDAR_CELL_SPACING = SP_4
+
 ICON_SM = 18
 ICON_MD = 24
 ICON_LG = 36
@@ -104,6 +116,10 @@ FS_20 = 20
 FS_28 = 28
 FS_30 = 30
 FS_36 = 36
+
+# Focal/stat type steps reuse the proven scale (no new sizes).
+FOCAL_VALUE_FS = FS_36
+STAT_VALUE_FS = FS_28
 
 _HEX_RE = re.compile(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})")
 

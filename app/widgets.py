@@ -11,23 +11,35 @@ import flet as ft
 
 from theme import (
     BORDER_WIDTH,
+    CALENDAR_CELL_SPACING,
+    CALENDAR_GAP,
     DIVIDER_HEIGHT,
     FEEDBACK_DURATION_MS,
+    FOCAL_BORDER_WIDTH,
+    FOCAL_VALUE_FS,
     FS_12,
     FS_14,
     FS_20,
     FS_28,
     FS_30,
-    ICON_LG,
     ICON_MD,
+    ICON_SM,
+    ICON_LG,
     R_LG,
     R_MD,
     R_PILL,
     R_SM,
+    SHELL_BREAKPOINT_H,
+    SHELL_BREAKPOINT_W,
+    SHELL_CONTENT_PADDING,
+    SHELL_RAIL_W,
+    SHELL_SIDEBAR_W,
+    SHELL_TOPBAR_H,
     SP_4,
     SP_8,
     SP_12,
     SP_20,
+    STAT_VALUE_FS,
     app_colors,
     role_color,
 )
@@ -95,11 +107,12 @@ def AppStatCard(
     )
 
 
-def AppHeader(
+def PageHeader(
     title: str,
-    on_refresh=None,
     actions=(),
+    on_refresh=None,
 ) -> ft.Row:
+    """Canonical screen header (replaces AppHeader)."""
     palette = app_colors.get()
     controls: list[ft.Control] = [
         ft.Text(title, size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text)
@@ -120,6 +133,15 @@ def AppHeader(
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=SP_12,
     )
+
+
+def AppHeader(
+    title: str,
+    on_refresh=None,
+    actions=(),
+) -> ft.Row:
+    """Backwards-compat alias for unmigrated screens; delegates to PageHeader."""
+    return PageHeader(title, actions=actions, on_refresh=on_refresh)
 
 
 def AppTable(
@@ -272,10 +294,357 @@ def ChatBubble(text: str, is_user: bool) -> ft.Row:
     return ft.Row([bubble], alignment=alignment)
 
 
+def is_rail_for_size(width, height) -> bool:
+    """Collapse rule (AD-1): rail when width<=1280 OR height<=760."""
+    try:
+        w = float(width)
+        h = float(height)
+    except (TypeError, ValueError):
+        return True
+    return w <= SHELL_BREAKPOINT_W or h <= SHELL_BREAKPOINT_H
+
+
+class Sidebar(ft.Container):
+    """Shell sidebar: 240px expanded, 64px icon rail collapsed (AD-1).
+
+    Idle items use text_muted on bg_soft; the active item uses the
+    verified on_accent_soft/accent_soft pair with a 2px primary edge.
+    """
+
+    def __init__(
+        self, nav_items, active_key: str, on_navigate=None, collapsed: bool = False
+    ):
+        super().__init__()
+        self.nav_items = list(nav_items)
+        self.active_key = active_key
+        self.on_navigate = on_navigate
+        self.collapsed = collapsed
+        self.buttons: dict[str, ft.TextButton] = {}
+        self._rebuild()
+
+    def _nav_style(self, key: str) -> ft.ButtonStyle:
+        palette = app_colors.get()
+        active = key == self.active_key
+        if active:
+            return ft.ButtonStyle(
+                bgcolor=palette.accent_soft,
+                color=palette.on_accent_soft,
+                side=ft.BorderSide(FOCAL_BORDER_WIDTH, palette.primary),
+                padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+            )
+        return ft.ButtonStyle(
+            color=palette.text_muted,
+            padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+        )
+
+    def _rebuild(self) -> None:
+        palette = app_colors.get()
+        self.width = SHELL_RAIL_W if self.collapsed else SHELL_SIDEBAR_W
+        self.bgcolor = palette.bg_soft
+        self.padding = SP_8
+        self.border = ft.Border.all(BORDER_WIDTH, palette.border)
+        controls: list[ft.Control] = []
+        self.buttons = {}
+        for key, icon, label in self.nav_items:
+            btn = ft.TextButton(
+                "" if self.collapsed else label,
+                icon=icon,
+                tooltip=label,
+                style=self._nav_style(key),
+                on_click=lambda _, k=key: self._handle_nav(k),
+            )
+            self.buttons[key] = btn
+            controls.append(btn)
+        self.content = ft.Column(controls, spacing=SP_4, scroll=ft.ScrollMode.AUTO)
+
+    def _handle_nav(self, key: str) -> None:
+        if callable(self.on_navigate):
+            self.on_navigate(key)
+
+    def set_active(self, key: str) -> None:
+        self.active_key = key
+        for k, btn in self.buttons.items():
+            try:
+                btn.style = self._nav_style(k)
+            except Exception:
+                pass
+        self._safe_update()
+
+    def set_collapsed(self, collapsed: bool) -> None:
+        if collapsed == self.collapsed:
+            return
+        self.collapsed = collapsed
+        self._rebuild()
+        self._safe_update()
+
+    def _safe_update(self) -> None:
+        try:
+            self.update()
+        except Exception:
+            pass
+
+
+class Topbar(ft.Container):
+    """Shell topbar: 56px; title + mode toggle + brand Dropdown (AD-2).
+
+    No search box and no user menu (out of scope by design).
+    The brand Dropdown keeps v1 on_select semantics (V2-D5).
+    """
+
+    def __init__(
+        self,
+        title: str,
+        brand_value: str,
+        brand_options=(),
+        on_toggle_rail=None,
+        on_toggle_mode=None,
+        on_brand_change=None,
+        mode_is_dark: bool = False,
+    ):
+        super().__init__()
+        self.title_text = ft.Text(title, size=FS_20, weight=ft.FontWeight.BOLD)
+        self.menu_btn = ft.IconButton(
+            icon=ft.Icons.MENU,
+            tooltip="Contraer/expandir barra lateral",
+            on_click=on_toggle_rail,
+        )
+        self.mode_btn = ft.IconButton(
+            icon=ft.Icons.LIGHT_MODE if mode_is_dark else ft.Icons.DARK_MODE,
+            tooltip="Cambiar tema",
+            on_click=on_toggle_mode,
+        )
+        self.brand = ft.Dropdown(
+            options=[
+                ft.dropdown.Option(value, label) for value, label in brand_options
+            ],
+            value=brand_value,
+            on_select=on_brand_change,
+        )
+        self.height = SHELL_TOPBAR_H
+        self.padding = ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8)
+        self.content = ft.Row(
+            [
+                self.menu_btn,
+                self.title_text,
+                ft.Container(expand=True),
+                self.mode_btn,
+                self.brand,
+            ],
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=SP_12,
+        )
+        self.refresh(mode_is_dark, brand_value)
+
+    def set_title(self, title: str) -> None:
+        try:
+            self.title_text.value = title
+            self.title_text.update()
+        except Exception:
+            self.title_text.value = title
+
+    def refresh(self, mode_is_dark: bool, brand_value: str) -> None:
+        palette = app_colors.get()
+        try:
+            self.bgcolor = palette.surface
+            self.border = ft.Border(bottom=ft.BorderSide(BORDER_WIDTH, palette.border))
+            self.title_text.color = palette.text
+            self.menu_btn.icon_color = palette.text_soft
+            self.mode_btn.icon = (
+                ft.Icons.LIGHT_MODE if mode_is_dark else ft.Icons.DARK_MODE
+            )
+            self.mode_btn.icon_color = palette.text_soft
+            self.brand.value = brand_value
+        except Exception:
+            pass
+
+
+class Shell(ft.Row):
+    """Paperpillar shell: sidebar | topbar + content slot with adapter.
+
+    Collapse rule (AD-1): rail when ``page.window.width <= 1280`` OR
+    ``page.window.height <= 760``; expand only when both thresholds are
+    exceeded. The resize driver is ``page.window.on_event`` filtered on
+    ``WindowEventType.RESIZED`` (also honoring ``RESIZE`` while dragging)
+    reading ``page.window.width/height``.
+
+    Resize-event availability is OS-dependent (Flet docs); the topbar
+    manual toggle is mandatory and works even when the OS never delivers
+    resize events. The adapter renders any ``Screen`` control unchanged
+    in the content slot (``navigate(key)`` keeps ``Screen``/``invalidate``
+    contract, zero screen edits).
+    """
+
+    def __init__(
+        self,
+        page,
+        nav_items,
+        screens,
+        active_key: str = "dash",
+        brand_options=(),
+    ):
+        super().__init__(spacing=SP_4, expand=True)
+        self.pagina = page
+        self.nav_items = list(nav_items)
+        self.screens = dict(screens)
+        self.active_key = active_key
+        self.brand_options = tuple(brand_options)
+        self.labels = {key: label for key, _, label in self.nav_items}
+        self.collapsed = self._initial_collapsed()
+        palette = app_colors.get()
+        self.sidebar = Sidebar(
+            self.nav_items,
+            self.active_key,
+            on_navigate=self.navigate,
+            collapsed=self.collapsed,
+        )
+        self.topbar = Topbar(
+            self.labels.get(self.active_key, self.active_key),
+            app_colors.theme_name,
+            self.brand_options,
+            on_toggle_rail=self.toggle_rail,
+            on_toggle_mode=self.toggle_mode,
+            on_brand_change=self.change_brand,
+            mode_is_dark=(app_colors.mode == "dark"),
+        )
+        self.divider = ft.Divider(
+            height=DIVIDER_HEIGHT,
+            thickness=BORDER_WIDTH,
+            color=palette.border,
+        )
+        self.host = ft.Container(expand=True, padding=SP_4)
+        right = ft.Column(
+            [self.topbar, self.divider, self.host],
+            spacing=SP_4,
+            expand=True,
+        )
+        self.controls = [self.sidebar, right]
+        self._wire_resize()
+
+    def _read_window_size(self):
+        try:
+            return self.pagina.window.width, self.pagina.window.height
+        except Exception:
+            return None, None
+
+    def _initial_collapsed(self) -> bool:
+        width, height = self._read_window_size()
+        if width is None or height is None:
+            return True
+        return is_rail_for_size(width, height)
+
+    def _wire_resize(self) -> None:
+        try:
+            self.pagina.window.on_event = self._on_window_event
+        except Exception:
+            pass
+
+    def _on_window_event(self, event) -> None:
+        event_type = getattr(event, "type", None)
+        if event_type in (ft.WindowEventType.RESIZED, ft.WindowEventType.RESIZE):
+            self._apply_breakpoint()
+            return
+        try:
+            name = str(getattr(event_type, "value", event_type) or "").lower()
+        except Exception:
+            name = ""
+        if name in ("resized", "resize", "none", ""):
+            self._apply_breakpoint()
+
+    def _apply_breakpoint(self) -> None:
+        width, height = self._read_window_size()
+        if width is None or height is None:
+            return
+        collapsed = is_rail_for_size(width, height)
+        if collapsed != self.collapsed:
+            self.collapsed = collapsed
+            try:
+                self.sidebar.set_collapsed(collapsed)
+            except Exception:
+                pass
+            self._safe_update()
+
+    def toggle_rail(self, _=None) -> None:
+        self.collapsed = not self.collapsed
+        try:
+            self.sidebar.set_collapsed(self.collapsed)
+        except Exception:
+            pass
+        self._safe_update()
+
+    def navigate(self, key: str) -> None:
+        if key not in self.screens:
+            return
+        self.active_key = key
+        screen = self.screens[key]
+        try:
+            screen.visible = True
+        except Exception:
+            pass
+        self.host.content = screen
+        try:
+            screen.al_entrar()
+        except Exception:
+            pass
+        try:
+            self.sidebar.set_active(key)
+        except Exception:
+            pass
+        try:
+            self.topbar.set_title(self.labels.get(key, key))
+        except Exception:
+            pass
+        self._safe_update()
+
+    def refresh_chrome(self) -> None:
+        palette = app_colors.get()
+        try:
+            self.divider.color = palette.border
+        except Exception:
+            pass
+        try:
+            self.topbar.refresh(app_colors.mode == "dark", app_colors.theme_name)
+        except Exception:
+            pass
+        try:
+            self.sidebar.set_active(self.active_key)
+        except Exception:
+            pass
+
+    def toggle_mode(self, _=None) -> None:
+        app_colors.set_mode(
+            "light" if app_colors.mode == "dark" else "dark", self.pagina
+        )
+        self.apply_and_rebuild()
+
+    def change_brand(self, event) -> None:
+        try:
+            app_colors.set_theme(event.control.value, self.pagina)
+        except Exception:
+            return
+        self.apply_and_rebuild()
+
+    def apply_and_rebuild(self) -> None:
+        app_colors.apply_to_page(self.pagina)
+        for screen in self.screens.values():
+            try:
+                screen.invalidate()
+            except Exception:
+                pass
+        self.refresh_chrome()
+        self.navigate(self.active_key)
+
+    def _safe_update(self) -> None:
+        try:
+            self.pagina.update()
+        except Exception:
+            pass
+
+
 __all__ = [
     "AppCard",
     "AppStatCard",
     "AppHeader",
+    "PageHeader",
     "AppTable",
     "AppDialog",
     "confirm_delete",
@@ -283,5 +652,9 @@ __all__ = [
     "sync_text",
     "Badge",
     "ChatBubble",
+    "Sidebar",
+    "Topbar",
+    "Shell",
+    "is_rail_for_size",
     "DIVIDER_HEIGHT",
 ]
