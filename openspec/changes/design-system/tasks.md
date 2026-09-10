@@ -46,9 +46,9 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Clientes + Fiado (Slice 3)
 
-- [ ] 4.1 Migrate `app/screens/clientes.py` to AppTable (16→12) + confirm_delete, kill ad-hoc dialog
-- [ ] 4.2 Migrate `app/screens/fiado.py` title to Fiado, Divider 4→standard, paid/due/late roles, empty-state for Solo pendientes
-- [ ] 4.3 Grep zero literals in `app/screens/clientes.py` `app/screens/fiado.py`; smoke filters + rebuild
+- [x] 4.1 Migrate `app/screens/clientes.py` to AppTable (16→12) + confirm_delete, kill ad-hoc dialog
+- [x] 4.2 Migrate `app/screens/fiado.py` title to Fiado, Divider 4→standard, paid/due/late roles, empty-state for Solo pendientes
+- [x] 4.3 Grep zero literals in `app/screens/clientes.py` `app/screens/fiado.py`; smoke filters + rebuild
 
 ## Phase 5: Chat + Landing + Verify (Slice 4)
 
