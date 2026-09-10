@@ -47,6 +47,6 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Slice-d Caja + Chat + Closure
 
-- [ ] 4.1 Rework `app/screens/caja.py` into `Section` hierarchy, keep Cobrar flow + `AppDialog`
-- [ ] 4.2 Polish `app/screens/chat.py` dividers + empty-state + bubbles, keep responder
-- [ ] 4.3 Final gate: grep literals clean + `landing/` (read-only) diff cero + contrast table + `app/datos.py` (read-only) diff cero
+- [x] 4.1 Rework `app/screens/caja.py` into `Section` hierarchy, keep Cobrar flow + `AppDialog`
+- [x] 4.2 Polish `app/screens/chat.py` dividers + empty-state + bubbles, keep responder
+- [x] 4.3 Final gate: grep literals clean + `landing/` (read-only) diff cero + contrast table + `app/datos.py` (read-only) diff cero

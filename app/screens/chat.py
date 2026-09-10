@@ -5,15 +5,13 @@ from theme import (
     BORDER_WIDTH,
     DIVIDER_HEIGHT,
     FS_13,
-    FS_30,
+    FS_14,
     ICON_MD,
-    R_MD,
     SP_8,
     SP_10,
-    SP_12,
     app_colors,
 )
-from widgets import ChatBubble
+from widgets import ChatBubble, PageHeader, Section, sync_text
 
 
 class PantallaChat(Screen):
@@ -30,19 +28,24 @@ class PantallaChat(Screen):
             expand=True,
             on_submit=self.enviar_mensaje,
         )
+        sync_text(self.campo_mensaje)
+
+        self.estado_vacio = ft.Text(
+            "Todavía no hay mensajes. Preguntame algo para empezar.",
+            size=FS_14,
+            color=palette.text_muted,
+        )
+        self._sincronizar_vacio()
 
         self.agregar_mensaje(
             "Preguntame sobre tu negocio. Ej: cuanto vendi hoy?, que margen tengo?"
         )
 
+        conversacion = Section("Conversación", self.contenedor_mensajes)
+
         return ft.Column(
             [
-                ft.Text(
-                    "Chat IA",
-                    size=FS_30,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
+                PageHeader("Chat IA"),
                 ft.Text(
                     "Responde con tus datos reales",
                     size=FS_13,
@@ -53,14 +56,7 @@ class PantallaChat(Screen):
                     thickness=BORDER_WIDTH,
                     color=palette.border,
                 ),
-                ft.Container(
-                    content=self.contenedor_mensajes,
-                    expand=True,
-                    border_radius=ft.BorderRadius.all(R_MD),
-                    bgcolor=palette.surface,
-                    border=ft.border.all(BORDER_WIDTH, palette.border),
-                    padding=SP_12,
-                ),
+                conversacion,
                 ft.Row(
                     [
                         self.campo_mensaje,
@@ -80,12 +76,30 @@ class PantallaChat(Screen):
             expand=True,
         )
 
+    def _sincronizar_vacio(self):
+        try:
+            vacio = len(self.contenedor_mensajes.controls) == 0
+            if vacio and self.estado_vacio not in self.contenedor_mensajes.controls:
+                self.contenedor_mensajes.controls = [self.estado_vacio]
+            elif not vacio and len(self.contenedor_mensajes.controls) > 1:
+                self.contenedor_mensajes.controls = [
+                    c
+                    for c in self.contenedor_mensajes.controls
+                    if c is not self.estado_vacio
+                ]
+        except Exception:
+            pass
+
     def agregar_mensaje(self, text, is_user=False):
         try:
             nuevo = ChatBubble(text, is_user)
-            self.contenedor_mensajes.controls = list(
-                self.contenedor_mensajes.controls
-            ) + [nuevo]
+            controles = [
+                c
+                for c in list(self.contenedor_mensajes.controls)
+                if c is not getattr(self, "estado_vacio", None)
+            ] + [nuevo]
+            self.contenedor_mensajes.controls = controles
+            self._sincronizar_vacio()
         except Exception as ex:
             print(f"Error agregar_mensaje: {ex}")
 

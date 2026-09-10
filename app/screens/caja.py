@@ -3,13 +3,11 @@ from screen_base import Screen
 from datos import productos, clientes, crear_venta, prod_por_id
 from theme import (
     BORDER_WIDTH,
-    DIVIDER_HEIGHT,
     FS_12,
     FS_13,
     FS_14,
     FS_16,
     FS_20,
-    FS_30,
     FS_36,
     ICON_SM,
     R_SM,
@@ -19,7 +17,7 @@ from theme import (
     SP_12,
     app_colors,
 )
-from widgets import AppCard, feedback, sync_text
+from widgets import PageHeader, Section, feedback, sync_text
 
 
 class PantallaCaja(Screen):
@@ -81,11 +79,8 @@ class PantallaCaja(Screen):
         )
         self.texto_items = ft.Text("0 items", size=FS_13, color=palette.text_muted)
 
-        return ft.Column(
+        venta_form = ft.Column(
             [
-                ft.Text(
-                    "Caja", size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text
-                ),
                 ft.Row([self.combo_cliente, self.combo_pago], spacing=SP_12),
                 ft.Row(
                     [
@@ -97,56 +92,67 @@ class PantallaCaja(Screen):
                     ],
                     spacing=SP_12,
                 ),
-                ft.Divider(
-                    height=DIVIDER_HEIGHT,
-                    thickness=BORDER_WIDTH,
-                    color=palette.border,
+            ],
+            spacing=SP_8,
+        )
+        venta_section = Section("Venta", venta_form)
+
+        carrito_header = ft.Row(
+            [
+                ft.Text(
+                    "Carrito",
+                    size=FS_16,
+                    weight=ft.FontWeight.BOLD,
+                    color=palette.text,
                 ),
-                ft.Row(
-                    [
-                        ft.Text(
-                            "Carrito",
-                            size=FS_16,
-                            weight=ft.FontWeight.BOLD,
-                            color=palette.text,
-                        ),
-                        self.texto_items,
-                        ft.Container(expand=True),
-                        ft.TextButton(
-                            "Vaciar",
-                            icon=ft.Icons.DELETE_SWEEP,
-                            on_click=self.vaciar_carrito,
-                        ),
-                    ]
+                self.texto_items,
+                ft.Container(expand=True),
+                ft.TextButton(
+                    "Vaciar",
+                    icon=ft.Icons.DELETE_SWEEP,
+                    on_click=self.vaciar_carrito,
                 ),
-                AppCard(self.lista_carrito, padding=SP_8),
-                ft.Divider(
-                    height=DIVIDER_HEIGHT,
-                    thickness=BORDER_WIDTH,
-                    color=palette.border,
+            ]
+        )
+        carrito_body = ft.Column(
+            [carrito_header, self.lista_carrito],
+            spacing=SP_8,
+        )
+        carrito_section = Section("Carrito", carrito_body)
+
+        total_row = ft.Row(
+            [
+                ft.Text(
+                    "TOTAL",
+                    size=FS_20,
+                    weight=ft.FontWeight.BOLD,
+                    color=palette.text,
                 ),
-                ft.Row(
-                    [
-                        ft.Text(
-                            "TOTAL",
-                            size=FS_20,
-                            weight=ft.FontWeight.BOLD,
-                            color=palette.text,
-                        ),
-                        self.texto_total,
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                ),
-                ft.FilledButton(
-                    "Cobrar",
-                    on_click=self.cobrar_carrito,
-                    style=ft.ButtonStyle(
-                        bgcolor=palette.primary,
-                        color=palette.on_primary,
-                        shape=ft.RoundedRectangleBorder(radius=R_SM),
-                        padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
-                    ),
-                ),
+                self.texto_total,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
+        cobrar_btn = ft.FilledButton(
+            "Cobrar",
+            on_click=self.cobrar_carrito,
+            style=ft.ButtonStyle(
+                bgcolor=palette.primary,
+                color=palette.on_primary,
+                shape=ft.RoundedRectangleBorder(radius=R_SM),
+                padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+            ),
+        )
+        total_section = Section(
+            "Total",
+            ft.Column([total_row, cobrar_btn], spacing=SP_8),
+        )
+
+        return ft.Column(
+            [
+                PageHeader("Caja", on_refresh=lambda _: self.actualizar()),
+                venta_section,
+                carrito_section,
+                total_section,
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,

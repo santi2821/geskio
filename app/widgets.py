@@ -275,7 +275,7 @@ def PageHeader(
     actions=(),
     on_refresh=None,
 ) -> ft.Row:
-    """Canonical screen header (replaces AppHeader)."""
+    """Canonical screen header."""
     palette = app_colors.get()
     controls: list[ft.Control] = [
         ft.Text(title, size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text)
@@ -296,15 +296,6 @@ def PageHeader(
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=SP_12,
     )
-
-
-def AppHeader(
-    title: str,
-    on_refresh=None,
-    actions=(),
-) -> ft.Row:
-    """Backwards-compat alias for unmigrated screens; delegates to PageHeader."""
-    return PageHeader(title, actions=actions, on_refresh=on_refresh)
 
 
 TABLE_PAGE_SIZE = 10
@@ -960,7 +951,6 @@ __all__ = [
     "Section",
     "StatGrid",
     "Calendar",
-    "AppHeader",
     "PageHeader",
     "AppTable",
     "TableToolbar",
