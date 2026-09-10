@@ -230,7 +230,7 @@ def ChatBubble(text: str, is_user: bool) -> ft.Row:
     palette = app_colors.get()
     if is_user:
         bubble = ft.Container(
-            content=ft.Text(text, size=FS_14, color=palette.text),
+            content=ft.Text(text, size=FS_14, color=palette.on_accent_soft),
             bgcolor=palette.accent_soft,
             border_radius=ft.BorderRadius.all(R_LG),
             padding=SP_12,

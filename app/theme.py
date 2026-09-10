@@ -49,6 +49,8 @@ text >= 4.5, large/UI >= 3.0; next verify must assert these):
   verde #166534 on #e7f5ec: 6.34 (was 2.93); nav also bold + 2px border (B-6)
 - light due warning #b45309 on #fff: 5.02 (was 3.19), plus icon + bold (B-5)
 - light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2c121b: 15.90 (B-4)
+- on_accent_soft on accent_soft: light rojo #c81e1e/#fdecec 5.02, verde #166534/#e7f5ec 6.34; dark rojo #fb7185/#2c121b 6.45, verde #4ade80/#0e1f19 9.81 (micro-fix contrast-3; nav + user bubble)
+- Landing 1:1 holds incl. --on-accent-soft (light #c81e1e / dark #fb7185 for pill-warn + card-icon); verde on_accent_soft is app-only (landing mirrors rojo only).
 - landing focus ring/input halo solid accent: light #c81e1e on #fff 5.74,
   dark #e11d48 on #0e1014 4.05 (both >= 3.0, B-7).
 Resolved split (micro-fix): `danger` #dc2626 on dark surface #181c23 =
@@ -114,6 +116,7 @@ class PaletteTheme:
     on_primary: str
     accent_hover: str
     accent_soft: str
+    on_accent_soft: str
     success: str
     warning: str
     danger: str
@@ -135,6 +138,7 @@ ROJO_LIGHT = PaletteTheme(
     accent_hover="#b91c1c",
     # Pre-blended approx of landing rgba(200,30,30,.10) over bg.
     accent_soft="#fdecec",
+    on_accent_soft="#c81e1e",
     success="#166534",
     warning="#b45309",
     danger="#dc2626",
@@ -156,6 +160,7 @@ ROJO_DARK = PaletteTheme(
     accent_hover="#f43f5e",
     # Pre-blended approx of landing rgba(225,29,72,.14) over bg.
     accent_soft="#2c121b",
+    on_accent_soft="#fb7185",
     success="#4ade80",
     warning="#fbbf24",
     danger="#dc2626",
@@ -176,6 +181,7 @@ VERDE_LIGHT = PaletteTheme(
     on_primary="#ffffff",
     accent_hover="#14532d",
     accent_soft="#e7f5ec",
+    on_accent_soft="#166534",
     success="#166534",
     warning="#b45309",
     danger="#dc2626",
@@ -196,6 +202,7 @@ VERDE_DARK = PaletteTheme(
     on_primary="#ffffff",
     accent_hover="#16a34a",
     accent_soft="#0e1f19",
+    on_accent_soft="#4ade80",
     success="#4ade80",
     warning="#fbbf24",
     danger="#dc2626",
@@ -228,7 +235,7 @@ def to_flet_theme(palette: PaletteTheme) -> ft.Theme:
             primary=palette.primary,
             on_primary=palette.on_primary,
             primary_container=palette.accent_soft,
-            on_primary_container=palette.primary,
+            on_primary_container=palette.on_accent_soft,
             secondary=palette.info,
             on_secondary=palette.on_primary,
             error=palette.danger,
