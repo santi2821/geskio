@@ -22,6 +22,7 @@
     --on-accent-soft: #c81e1e;
     --on-accent: #ffffff;
     --accent-text: #c81e1e;
+    --footer-hover: #f43f5e;
     --success: #166534;
     --warning: #b45309;
     --danger: #dc2626;
@@ -56,6 +57,7 @@
     --on-accent-soft: #fb7185;
     --on-accent: #ffffff;
     --accent-text: #f43f5e;
+    --footer-hover: #f43f5e;
     --success: #4ade80;
     --warning: #fbbf24;
     --danger: #dc2626;
@@ -553,7 +555,7 @@ img, svg { display: block; }
 .footer-tag { margin-top: 14px; font-size: .9rem; line-height: 1.6; color: color-mix(in srgb, currentColor 80%, transparent); }
 .footer-links { display: flex; flex-direction: column; gap: 12px; }
 .footer-links a { font-size: .92rem; color: color-mix(in srgb, currentColor 85%, transparent); transition: color .2s ease; }
-.footer-links a:hover { color: var(--accent-text); }
+.footer-links a:hover { color: var(--footer-hover); }
 .footer-social { display: flex; gap: 10px; align-content: flex-start; }
 .social {
     width: 40px; height: 40px;

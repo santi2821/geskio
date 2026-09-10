@@ -63,6 +63,7 @@ Remediation C-1 mirrors it: `accent` stays the button/ring ground
 usage (rojo light #c81e1e = 5.74 on #fff; rojo dark #f43f5e = 4.65 on
 #181c23, 4.84 on #15181e, 5.42 on #08090c); verde brand-mirrors
 (light #166534 / dark #4ade80). Landing 1:1 holds incl. --accent-text.
+Footer is dark in both modes (light #161b22 / dark #08090c) so `footer_hover` is #f43f5e in both modes (4.71 / 5.42); accent_text light #c81e1e on footer 3.02 FAIL.
 """
 
 from __future__ import annotations
@@ -127,6 +128,7 @@ class PaletteTheme:
     danger: str
     danger_text: str
     accent_text: str
+    footer_hover: str
     info: str
 
 
@@ -150,6 +152,7 @@ ROJO_LIGHT = PaletteTheme(
     danger="#dc2626",
     danger_text="#dc2626",
     accent_text="#c81e1e",
+    footer_hover="#f43f5e",
     info="#2563eb",
 )
 
@@ -173,6 +176,7 @@ ROJO_DARK = PaletteTheme(
     danger="#dc2626",
     danger_text="#fb7185",
     accent_text="#f43f5e",
+    footer_hover="#f43f5e",
     info="#60a5fa",
 )
 
@@ -195,6 +199,7 @@ VERDE_LIGHT = PaletteTheme(
     danger="#dc2626",
     danger_text="#dc2626",
     accent_text="#166534",
+    footer_hover="#f43f5e",
     info="#2563eb",
 )
 
@@ -217,6 +222,7 @@ VERDE_DARK = PaletteTheme(
     danger="#dc2626",
     danger_text="#fb7185",
     accent_text="#4ade80",
+    footer_hover="#f43f5e",
     info="#60a5fa",
 )
 
