@@ -7,6 +7,8 @@ from theme import (
     DIVIDER_HEIGHT,
     FS_20,
     FS_30,
+    ICON_SM,
+    SP_4,
     SP_10,
     SP_12,
     app_colors,
@@ -86,10 +88,13 @@ class PantallaFiado(Screen):
 
                 if p <= 0:
                     estado_color = pagado_color
+                    estado_icon = ft.Icons.CHECK
                 elif dias > 30:
                     estado_color = vencido_color
+                    estado_icon = ft.Icons.WARNING
                 else:
                     estado_color = pendiente_color
+                    estado_icon = ft.Icons.SCHEDULE
 
                 filas.append(
                     ft.DataRow(
@@ -98,10 +103,21 @@ class PantallaFiado(Screen):
                             ft.DataCell(ft.Text(f"${c['total']:,}")),
                             ft.DataCell(ft.Text(f"${c['pagado']:,}")),
                             ft.DataCell(
-                                ft.Text(
-                                    f"${p:,}",
-                                    color=estado_color,
-                                    weight=ft.FontWeight.BOLD,
+                                ft.Row(
+                                    [
+                                        ft.Icon(
+                                            estado_icon,
+                                            color=estado_color,
+                                            size=ICON_SM,
+                                        ),
+                                        ft.Text(
+                                            f"${p:,}",
+                                            color=estado_color,
+                                            weight=ft.FontWeight.BOLD,
+                                        ),
+                                    ],
+                                    spacing=SP_4,
+                                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                 )
                             ),
                             ft.DataCell(ft.Text(f"{dias}d")),
@@ -111,7 +127,11 @@ class PantallaFiado(Screen):
                                     on_click=lambda _, x=ccid: self.abrir_pago(x),
                                 )
                                 if p > 0
-                                else ft.Text("✔", color=pagado_color)
+                                else ft.Icon(
+                                    ft.Icons.CHECK,
+                                    color=pagado_color,
+                                    size=ICON_SM,
+                                )
                             ),
                         ]
                     )
@@ -125,7 +145,6 @@ class PantallaFiado(Screen):
 
     def abrir_pago(self, ccid):
         try:
-            palette = app_colors.get()
             c = next((x for x in cuentas if x["id"] == ccid), None)
             if not c:
                 return

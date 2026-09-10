@@ -56,3 +56,4 @@ Chain strategy: stacked-to-main
 - [x] 5.2 Align `landing/styles.css` vars 1:1 to PaletteTheme light/dark, CSS-var-only, preserve nav/drawer/toggle/reveal/marquee/form
 - [x] 5.3 Verify parity diff, zero literals repo-wide, CRM-04 absent, each slice ≤800 lines
 - [x] 5.4 Fix WARNING-1: route 4 ad-hoc ft.AlertDialog (stock editar/ajustar, clientes editar, fiado pago) through AppDialog kit (surface + R_MD), texts/behavior preserved
+- [x] 5.5 Harden a11y BLOCKERs B-1..B-7 (tokens: muted/primary/warning light+dark, danger dark deep; ChatBubble text-on-soft; fiado icon+bold+CHECK; nav 2px border; landing :focus-visible + input halo) + 3 dead assigns; ratios recalculated in theme.py parity table; verify: py_compile + ratio asserts + grep zero literals + landing parity

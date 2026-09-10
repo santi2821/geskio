@@ -173,7 +173,6 @@ class PantallaClientes(Screen):
 
     def editar_cliente(self, cid):
         try:
-            palette = app_colors.get()
             c = next((x for x in clientes if x["id"] == cid), None)
             if not c:
                 return
@@ -197,9 +196,7 @@ class PantallaClientes(Screen):
 
             dialogo = AppDialog(
                 "Editar cliente",
-                ft.Column(
-                    [campo_nombre, campo_telefono], spacing=SP_12, tight=True
-                ),
+                ft.Column([campo_nombre, campo_telefono], spacing=SP_12, tight=True),
                 actions=[
                     ft.TextButton(
                         "Cancelar", on_click=lambda e: self.cerrar_dialogo(dialogo)

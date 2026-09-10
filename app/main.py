@@ -54,7 +54,7 @@ def main(page: ft.Page):
         return ft.ButtonStyle(
             bgcolor=palette.accent_soft if active else None,
             color=palette.primary if active else palette.text_soft,
-            side=ft.BorderSide(BORDER_WIDTH, palette.primary) if active else None,
+            side=ft.BorderSide(BORDER_WIDTH * 2, palette.primary) if active else None,
             padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
         )
 

@@ -13,11 +13,41 @@ Flet 0.84.0 verified in this env: ``ft.Theme(color_scheme=...)``,
 resolves ``client_storage`` (forward-compat) then ``page.session.store``
 with an in-memory fallback, and feedback goes through ``page.overlay``.
 
-Hover derivation: the light hover darkens the primary (#ef4444 ->
-#dc2626) for contrast on light surfaces; the dark hover lightens it
-(#f43f5e -> #fb7185) for contrast on dark surfaces. The verde alternate
-mirrors this: light darkens (#16a34a -> #15803d), dark lightens
-(#15803d -> #16a34a).
+Hover derivation: the light hover darkens the primary (#c81e1e ->
+#b91c1c) for contrast on light surfaces; the dark hover lightens it
+(#e11d48 -> #f43f5e) for contrast on dark surfaces. The verde alternate
+mirrors this: light darkens (#166534 -> #14532d), dark keeps a deep
+base (#15803d) whose hover lightens (#16a34a) for icons on dark.
+
+Hardening slice (B-1..B-7, geskio): recalibrated to WCAG 2.2 AA.
+Decision B-2: deepen the LIGHT primaries inside the brand family
+(rojo #ef4444 -> #c81e1e, verde #16a34a -> #166534) and keep white
+on-primary, instead of darkening on-primary to near-black. Rationale:
+white-on-red CTA preserves brand; a dark on-primary would break the
+shared on_primary used by the danger button. Dark rojo primary is
+deepened (#f43f5e -> #e11d48) so white-on-primary passes; nav and
+chat bubbles use text-on-accent_soft (15+:1) so primary vibrancy loss
+does not affect chrome legibility. Danger dark is a deep ground
+(#fb7185 -> #dc2626) so white-on-danger passes 4.83 (B-3).
+
+Recalculated key pairs (sRGB relative luminance, WCAG 1.4.3 normal
+text >= 4.5, large/UI >= 3.0; next verify must assert these):
+- light muted #606b7a on bg-soft #f6f7f9: 5.05 / on surface #fff: 5.41
+- dark muted #7f8894 on bg-soft #15181e: 4.95 / on surface #181c23: 4.76
+- light rojo white on #c81e1e: 5.74 (was 3.76); verde white on #166534: 7.13 (was 3.30)
+- dark rojo white on #e11d48: 4.70 (was 3.67); verde dark white on #15803d: 5.02 (kept)
+- dark white on danger #dc2626: 4.83 (was 2.69)
+- light nav rojo #c81e1e on accent_soft #fdecec: 5.02 (was 3.29);
+  verde #166534 on #e7f5ec: 6.34 (was 2.93); nav also bold + 2px border (B-6)
+- light due warning #b45309 on #fff: 5.02 (was 3.19), plus icon + bold (B-5)
+- light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2e161e: 15.39 (B-4)
+- landing focus ring/input halo solid accent: light #c81e1e on #fff 5.74,
+  dark #e11d48 on #0e1014 4.05 (both >= 3.0, B-7).
+Known tradeoff (deferred, not a key pair): danger-as-TEXT in dark for
+small 14px states (low-stock/debe/late) drops to ~3.5-3.6 on dark
+surface (passes 3:1 UI/large, fails 4.5 normal). A full split
+(danger text vs danger_container bg) is backlog; buttons (the blocker)
+pass. Landing 1:1 holds for every changed value (see styles.css).
 """
 
 from __future__ import annotations
@@ -88,16 +118,16 @@ ROJO_LIGHT = PaletteTheme(
     surface="#ffffff",
     text="#161b22",
     text_soft="#52606d",
-    text_muted="#8993a3",
+    text_muted="#606b7a",
     border="#e7e9ed",
     border_strong="#d5d9e0",
-    primary="#ef4444",
+    primary="#c81e1e",
     on_primary="#ffffff",
-    accent_hover="#dc2626",
-    # Pre-blended approx of landing rgba(239,68,68,.10) over bg.
+    accent_hover="#b91c1c",
+    # Pre-blended approx of landing rgba(200,30,30,.10) over bg.
     accent_soft="#fdecec",
     success="#16a34a",
-    warning="#d97706",
+    warning="#b45309",
     danger="#dc2626",
     info="#2563eb",
 )
@@ -108,7 +138,7 @@ ROJO_DARK = PaletteTheme(
     surface="#181c23",
     text="#f3f5f8",
     text_soft="#aab2bf",
-    text_muted="#6e7783",
+    text_muted="#7f8894",
     border="#232831",
     border_strong="#2f3540",
     primary="#f43f5e",
@@ -118,7 +148,7 @@ ROJO_DARK = PaletteTheme(
     accent_soft="#2e161e",
     success="#4ade80",
     warning="#fbbf24",
-    danger="#fb7185",
+    danger="#dc2626",
     info="#60a5fa",
 )
 
@@ -128,15 +158,15 @@ VERDE_LIGHT = PaletteTheme(
     surface="#ffffff",
     text="#161b22",
     text_soft="#52606d",
-    text_muted="#8993a3",
+    text_muted="#606b7a",
     border="#e7e9ed",
     border_strong="#d5d9e0",
-    primary="#16a34a",
+    primary="#166534",
     on_primary="#ffffff",
-    accent_hover="#15803d",
+    accent_hover="#14532d",
     accent_soft="#e7f5ec",
     success="#16a34a",
-    warning="#d97706",
+    warning="#b45309",
     danger="#dc2626",
     info="#2563eb",
 )
@@ -147,7 +177,7 @@ VERDE_DARK = PaletteTheme(
     surface="#181c23",
     text="#f3f5f8",
     text_soft="#aab2bf",
-    text_muted="#6e7783",
+    text_muted="#7f8894",
     border="#232831",
     border_strong="#2f3540",
     primary="#15803d",
@@ -156,7 +186,7 @@ VERDE_DARK = PaletteTheme(
     accent_soft="#0e1f19",
     success="#4ade80",
     warning="#fbbf24",
-    danger="#fb7185",
+    danger="#dc2626",
     info="#60a5fa",
 )
 

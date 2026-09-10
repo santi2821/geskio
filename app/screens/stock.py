@@ -211,7 +211,6 @@ class PantallaStock(Screen):
 
     def editar_producto(self, pid):
         try:
-            palette = app_colors.get()
             p = next((x for x in productos if x["id"] == pid), None)
             if not p:
                 return
