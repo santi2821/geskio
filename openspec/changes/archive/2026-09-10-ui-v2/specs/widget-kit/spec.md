@@ -1,10 +1,6 @@
-# Widget Kit Specification (geskio)
+# Delta for widget-kit
 
-## Purpose
-
-Shared Flet component kit (`app/widgets.py`) built exclusively on `design-tokens`, replacing the dialog/SnackBar/table/card code duplicated across the 6 screens. Fixed defaults (per proposal) so the kit enforces consistency by construction.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Shared Components with Fixed Defaults
 
@@ -29,45 +25,7 @@ The kit MUST provide: `AppCard`, `PageHeader(title, actions=(), on_refresh=None)
 - WHEN user feedback is needed
 - THEN the screen calls `feedback(text)` and receives a SnackBar with the kit's fixed duration and token styling (no per-screen `page.overlay` setups)
 
-### Requirement: Kit Depends Only on Tokens
-
-Kit widgets MUST use `theme.py` tokens exclusively. The kit MUST NOT contain color/padding/radius literals.
-
-#### Scenario: Kit grep stays clean
-
-- GIVEN a grep for style literals in `app/widgets.py`
-- WHEN run
-- THEN zero literals are found; every value resolves to a token import
-
-### Requirement: Screen Adoption
-
-The 6 screens MUST consume the kit for card, header, table, dialog, feedback, and bubble patterns. Screens MUST NOT build ad-hoc equivalents of kit components.
-
-#### Scenario: Migration replaces duplication
-
-- GIVEN a screen that previously hand-built its card/dialog/SnackBar
-- WHEN the migration slice lands
-- THEN the ad-hoc code is deleted and the kit call is the only usage path (no dead copies kept)
-
-### Requirement: Table Empty State
-
-`AppTable` MUST render an empty-state row (message + icon) when the data source is empty.
-
-#### Scenario: Empty table renders message
-
-- GIVEN a screen whose dataset is empty (e.g. fiado with `Solo pendientes` and no pending rows)
-- WHEN `AppTable` builds
-- THEN it shows the empty-state row instead of a bare header table
-
-### Requirement: Chat Bubble Contract
-
-The kit MUST provide two bubble variants: user (accent/soft role, `Row` aligned END) and bot (neutral surface role, aligned START), with fixed padding and radius from tokens.
-
-#### Scenario: Bubble sides and roles
-
-- GIVEN a message list in `chat`
-- WHEN user and bot messages render
-- THEN user bubbles align END with the user role and bot bubbles align START with the bot role, both with identical token-driven padding/radius
+## ADDED Requirements
 
 ### Requirement: Shell Kit Components
 
