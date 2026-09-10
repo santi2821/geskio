@@ -28,7 +28,10 @@ shared on_primary used by the danger button. Dark rojo primary is
 deepened (#f43f5e -> #e11d48) so white-on-primary passes; nav and
 chat bubbles use text-on-accent_soft (15+:1) so primary vibrancy loss
 does not affect chrome legibility. Danger dark is a deep ground
-(#fb7185 -> #dc2626) so white-on-danger passes 4.83 (B-3).
+(#fb7185 -> #dc2626) so white-on-danger passes 4.83 (B-3). Success LIGHT
+is deepened (#16a34a -> #166534) so paid 14px passes 7.13; accepted
+collision success==verde primary in VERDE_LIGHT mirrors ADR-1/M-12
+(green stays semantic).
 Danger-as-text is split: `danger` stays the button/background ground
 (#dc2626 both modes) while `danger_text` carries normal-text usage
 (light #dc2626 = 4.83 on #fff; dark #fb7185 = 6.35 on #181c23).
@@ -39,12 +42,13 @@ text >= 4.5, large/UI >= 3.0; next verify must assert these):
 - dark muted #7f8894 on bg-soft #15181e: 4.95 / on surface #181c23: 4.76
 - light rojo white on #c81e1e: 5.74 (was 3.76); verde white on #166534: 7.13 (was 3.30)
 - dark rojo white on #e11d48: 4.70 (was 3.67); verde dark white on #15803d: 5.02 (kept)
+- light paid success #166534 on #fff: 7.13 (was 3.30); dark success #4ade80 on #181c23: 9.80 (kept >=4.5)
 - dark white on danger #dc2626: 4.83 (was 2.69)
 - danger_text light #dc2626 on #fff: 4.83; dark #fb7185 on #181c23: 6.35
 - light nav rojo #c81e1e on accent_soft #fdecec: 5.02 (was 3.29);
   verde #166534 on #e7f5ec: 6.34 (was 2.93); nav also bold + 2px border (B-6)
 - light due warning #b45309 on #fff: 5.02 (was 3.19), plus icon + bold (B-5)
-- light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2e161e: 15.39 (B-4)
+- light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2c121b: 15.90 (B-4)
 - landing focus ring/input halo solid accent: light #c81e1e on #fff 5.74,
   dark #e11d48 on #0e1014 4.05 (both >= 3.0, B-7).
 Resolved split (micro-fix): `danger` #dc2626 on dark surface #181c23 =
@@ -131,7 +135,7 @@ ROJO_LIGHT = PaletteTheme(
     accent_hover="#b91c1c",
     # Pre-blended approx of landing rgba(200,30,30,.10) over bg.
     accent_soft="#fdecec",
-    success="#16a34a",
+    success="#166534",
     warning="#b45309",
     danger="#dc2626",
     danger_text="#dc2626",
@@ -147,11 +151,11 @@ ROJO_DARK = PaletteTheme(
     text_muted="#7f8894",
     border="#232831",
     border_strong="#2f3540",
-    primary="#f43f5e",
+    primary="#e11d48",
     on_primary="#ffffff",
-    accent_hover="#fb7185",
-    # Pre-blended approx of landing rgba(244,63,94,.14) over bg.
-    accent_soft="#2e161e",
+    accent_hover="#f43f5e",
+    # Pre-blended approx of landing rgba(225,29,72,.14) over bg.
+    accent_soft="#2c121b",
     success="#4ade80",
     warning="#fbbf24",
     danger="#dc2626",
@@ -172,7 +176,7 @@ VERDE_LIGHT = PaletteTheme(
     on_primary="#ffffff",
     accent_hover="#14532d",
     accent_soft="#e7f5ec",
-    success="#16a34a",
+    success="#166534",
     warning="#b45309",
     danger="#dc2626",
     danger_text="#dc2626",

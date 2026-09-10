@@ -20,7 +20,7 @@
     --accent-soft: rgba(200, 30, 30, 0.10);
     /* theme.py accent_soft pre-blended equivalent: #fdecec */
     --on-accent: #ffffff;
-    --success: #16a34a;
+    --success: #166534;
     --warning: #b45309;
     --danger: #dc2626;
     --danger-text: #dc2626;
@@ -47,10 +47,10 @@
     --text-muted: #7f8894;
     --border: #232831;
     --border-strong: #2f3540;
-    --accent: #f43f5e;
-    --accent-hover: #fb7185;
-    --accent-soft: rgba(244, 63, 94, 0.14);
-    /* theme.py accent_soft pre-blended equivalent: #2e161e */
+    --accent: #e11d48;
+    --accent-hover: #f43f5e;
+    --accent-soft: rgba(225, 29, 72, 0.14);
+    /* theme.py accent_soft pre-blended equivalent: #2c121b */
     --on-accent: #ffffff;
     --success: #4ade80;
     --warning: #fbbf24;
