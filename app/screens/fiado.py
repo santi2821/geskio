@@ -14,7 +14,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, feedback
+from widgets import AppDialog, AppTable, feedback, sync_text
 
 
 class PantallaFiado(Screen):
@@ -152,6 +152,7 @@ class PantallaFiado(Screen):
             campo_monto = ft.TextField(
                 label="Monto $", value=str(d), keyboard_type=ft.KeyboardType.NUMBER
             )
+            sync_text(campo_monto)
 
             def confirmar(e):
                 try:

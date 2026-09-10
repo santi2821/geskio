@@ -21,7 +21,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, confirm_delete, feedback
+from widgets import AppDialog, AppTable, confirm_delete, feedback, sync_text
 
 
 class PantallaClientes(Screen):
@@ -54,6 +54,8 @@ class PantallaClientes(Screen):
 
         self.campo_nombre = ft.TextField(label="Nombre", expand=True)
         self.campo_telefono = ft.TextField(label="Telefono")
+        for _campo in (self.campo_nombre, self.campo_telefono):
+            sync_text(_campo)
 
         return ft.Column(
             [
@@ -179,6 +181,8 @@ class PantallaClientes(Screen):
 
             campo_nombre = ft.TextField(label="Nombre", value=c["nombre"])
             campo_telefono = ft.TextField(label="Telefono", value=c.get("telefono", ""))
+            for _campo in (campo_nombre, campo_telefono):
+                sync_text(_campo)
 
             def guardar(e):
                 try:

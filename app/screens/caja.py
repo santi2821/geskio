@@ -19,7 +19,7 @@ from theme import (
     SP_12,
     app_colors,
 )
-from widgets import AppCard, feedback
+from widgets import AppCard, feedback, sync_text
 
 
 class PantallaCaja(Screen):
@@ -73,6 +73,7 @@ class PantallaCaja(Screen):
         self.campo_cantidad = ft.TextField(
             label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER
         )
+        sync_text(self.campo_cantidad)
 
         self.lista_carrito = ft.Column(spacing=SP_4)
         self.texto_total = ft.Text(

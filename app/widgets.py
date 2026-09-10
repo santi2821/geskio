@@ -33,6 +33,30 @@ from theme import (
 )
 
 
+def sync_text(field: ft.TextField) -> ft.TextField:
+    """Mirror what the user typed back into ``field.value`` on every change.
+
+    Flet 0.84 only streams TextField content to the server for fields with a
+    subscribed change event. Dialog/form fields without one keep their
+    construction value, so save buttons read stale text while showing a
+    success message. Subscribing here keeps existing ``field.value`` readers
+    working unchanged under both sync models.
+    """
+
+    def _sync(e):
+        try:
+            if e is not None and getattr(e, "data", None) is not None:
+                field.value = e.data
+        except Exception:
+            pass
+
+    try:
+        field.on_change = _sync
+    except Exception:
+        pass
+    return field
+
+
 def AppCard(
     content: ft.Control, padding: int = SP_20, radius: int = R_MD
 ) -> ft.Container:
@@ -256,6 +280,7 @@ __all__ = [
     "AppDialog",
     "confirm_delete",
     "feedback",
+    "sync_text",
     "Badge",
     "ChatBubble",
     "DIVIDER_HEIGHT",

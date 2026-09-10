@@ -23,7 +23,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppDialog, AppTable, confirm_delete, feedback
+from widgets import AppDialog, AppTable, confirm_delete, feedback, sync_text
 
 
 class PantallaStock(Screen):
@@ -69,6 +69,14 @@ class PantallaStock(Screen):
         self.campo_minimo = ft.TextField(
             label="Minimo", value="5", keyboard_type=ft.KeyboardType.NUMBER
         )
+        for _campo in (
+            self.campo_nombre,
+            self.campo_costo,
+            self.campo_precio,
+            self.campo_stock,
+            self.campo_minimo,
+        ):
+            sync_text(_campo)
 
         return ft.Column(
             [
@@ -236,6 +244,14 @@ class PantallaStock(Screen):
                 value=str(p["minimo"]),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
+            for _campo in (
+                campo_nombre,
+                campo_costo,
+                campo_precio,
+                campo_stock,
+                campo_minimo,
+            ):
+                sync_text(_campo)
 
             def guardar(e):
                 try:
@@ -299,6 +315,7 @@ class PantallaStock(Screen):
             campo = ft.TextField(
                 label="Cantidad", value="1", keyboard_type=ft.KeyboardType.NUMBER
             )
+            sync_text(campo)
 
             def aplicar(cantidad):
                 try:
