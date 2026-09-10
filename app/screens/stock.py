@@ -110,7 +110,7 @@ class PantallaStock(Screen):
     def filtrar_datos(self):
         try:
             palette = app_colors.get()
-            bajo_color = role_color(palette, "danger")
+            bajo_color = role_color(palette, "danger_text")
             q = (self.campo_buscar.value or "").lower()
             filas = []
             for p in productos:

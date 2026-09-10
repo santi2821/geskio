@@ -87,7 +87,7 @@ class PantallaClientes(Screen):
     def filtrar_datos(self):
         try:
             palette = app_colors.get()
-            deuda_color = role_color(palette, "danger")
+            deuda_color = role_color(palette, "danger_text")
             q = (self.campo_buscar.value or "").lower()
             filas = []
             for c in clientes:

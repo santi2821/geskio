@@ -29,6 +29,9 @@ deepened (#f43f5e -> #e11d48) so white-on-primary passes; nav and
 chat bubbles use text-on-accent_soft (15+:1) so primary vibrancy loss
 does not affect chrome legibility. Danger dark is a deep ground
 (#fb7185 -> #dc2626) so white-on-danger passes 4.83 (B-3).
+Danger-as-text is split: `danger` stays the button/background ground
+(#dc2626 both modes) while `danger_text` carries normal-text usage
+(light #dc2626 = 4.83 on #fff; dark #fb7185 = 6.35 on #181c23).
 
 Recalculated key pairs (sRGB relative luminance, WCAG 1.4.3 normal
 text >= 4.5, large/UI >= 3.0; next verify must assert these):
@@ -37,17 +40,18 @@ text >= 4.5, large/UI >= 3.0; next verify must assert these):
 - light rojo white on #c81e1e: 5.74 (was 3.76); verde white on #166534: 7.13 (was 3.30)
 - dark rojo white on #e11d48: 4.70 (was 3.67); verde dark white on #15803d: 5.02 (kept)
 - dark white on danger #dc2626: 4.83 (was 2.69)
+- danger_text light #dc2626 on #fff: 4.83; dark #fb7185 on #181c23: 6.35
 - light nav rojo #c81e1e on accent_soft #fdecec: 5.02 (was 3.29);
   verde #166534 on #e7f5ec: 6.34 (was 2.93); nav also bold + 2px border (B-6)
 - light due warning #b45309 on #fff: 5.02 (was 3.19), plus icon + bold (B-5)
 - light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2e161e: 15.39 (B-4)
 - landing focus ring/input halo solid accent: light #c81e1e on #fff 5.74,
   dark #e11d48 on #0e1014 4.05 (both >= 3.0, B-7).
-Known tradeoff (deferred, not a key pair): danger-as-TEXT in dark for
-small 14px states (low-stock/debe/late) drops to ~3.5-3.6 on dark
-surface (passes 3:1 UI/large, fails 4.5 normal). A full split
-(danger text vs danger_container bg) is backlog; buttons (the blocker)
-pass. Landing 1:1 holds for every changed value (see styles.css).
+Resolved split (micro-fix): `danger` #dc2626 on dark surface #181c23 =
+3.54 (passes 3:1 UI/large, fails 4.5 normal) is kept for button
+backgrounds only; `danger_text` (#dc2626 light / #fb7185 dark) is
+used for 14px normal text (stock bajo, debe, late) and passes >= 4.5
+in both modes. Landing 1:1 holds incl. --danger-text (see styles.css).
 """
 
 from __future__ import annotations
@@ -109,6 +113,7 @@ class PaletteTheme:
     success: str
     warning: str
     danger: str
+    danger_text: str
     info: str
 
 
@@ -129,6 +134,7 @@ ROJO_LIGHT = PaletteTheme(
     success="#16a34a",
     warning="#b45309",
     danger="#dc2626",
+    danger_text="#dc2626",
     info="#2563eb",
 )
 
@@ -149,6 +155,7 @@ ROJO_DARK = PaletteTheme(
     success="#4ade80",
     warning="#fbbf24",
     danger="#dc2626",
+    danger_text="#fb7185",
     info="#60a5fa",
 )
 
@@ -168,6 +175,7 @@ VERDE_LIGHT = PaletteTheme(
     success="#16a34a",
     warning="#b45309",
     danger="#dc2626",
+    danger_text="#dc2626",
     info="#2563eb",
 )
 
@@ -187,6 +195,7 @@ VERDE_DARK = PaletteTheme(
     success="#4ade80",
     warning="#fbbf24",
     danger="#dc2626",
+    danger_text="#fb7185",
     info="#60a5fa",
 )
 
@@ -197,7 +206,7 @@ _ROLE_ALIASES = {
     "ganancia": "warning",
     "due": "warning",
     "deben": "danger",
-    "late": "danger",
+    "late": "danger_text",
 }
 
 

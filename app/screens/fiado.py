@@ -70,7 +70,7 @@ class PantallaFiado(Screen):
             palette = app_colors.get()
             pagado_color = role_color(palette, "paid")
             pendiente_color = role_color(palette, "due")
-            vencido_color = role_color(palette, "late")
+            vencido_color = role_color(palette, "danger_text")
             solo_pendientes = self.filtro_pendientes.value
             filas = []
             for c in cuentas:
