@@ -24,6 +24,8 @@ class PantallaCaja(Screen):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Caja")
         self.items_carrito = []
+        self._ultimo_cid = ""
+        self._ultimo_pago = "efectivo"
 
     def actualizar(self):
         self.items_carrito.clear()
@@ -48,13 +50,20 @@ class PantallaCaja(Screen):
 
     def build(self):
         palette = app_colors.get()
+        self._ultimo_cid = ""
+        self._ultimo_pago = "efectivo"
+        self._ultimo_pid = ""
         self.combo_cliente = ft.Dropdown(
-            label="Cliente", hint_text="Mostrador", expand=True
+            label="Cliente",
+            hint_text="Mostrador",
+            expand=True,
+            on_select=self.on_cliente_change,
         )
         self.combo_pago = ft.Dropdown(
             label="Pago",
             value="efectivo",
             expand=True,
+            on_select=self.on_pago_change,
             options=[
                 ft.dropdown.Option("efectivo"),
                 ft.dropdown.Option("transferencia"),
@@ -168,6 +177,25 @@ class PantallaCaja(Screen):
         except Exception as ex:
             print(f"Error on_producto_change: {ex}")
 
+    def on_cliente_change(self, e):
+        try:
+            cid = getattr(e, "data", None) or getattr(
+                getattr(e, "control", None), "value", ""
+            )
+            self._ultimo_cid = cid or ""
+        except Exception as ex:
+            print(f"Error on_cliente_change: {ex}")
+
+    def on_pago_change(self, e):
+        try:
+            pago = getattr(e, "data", None) or getattr(
+                getattr(e, "control", None), "value", ""
+            )
+            if pago:
+                self._ultimo_pago = pago
+        except Exception as ex:
+            print(f"Error on_pago_change: {ex}")
+
     # ─── carrito ────────────────────────────────────────────────────
 
     def actualizar_carrito(self):
@@ -214,7 +242,7 @@ class PantallaCaja(Screen):
                                 ),
                             ]
                         ),
-                        padding=ft.padding.symmetric(vertical=SP_4, horizontal=SP_4),
+                        padding=ft.Padding.symmetric(vertical=SP_4, horizontal=SP_4),
                         border=ft.Border(
                             bottom=ft.BorderSide(BORDER_WIDTH, palette.border)
                         ),
@@ -294,8 +322,8 @@ class PantallaCaja(Screen):
             if not self.items_carrito:
                 self.mostrar_alerta("Carrito vacio")
                 return
-            pago = self.combo_pago.value or "efectivo"
-            cid = self.combo_cliente.value or ""
+            pago = self._ultimo_pago or self.combo_pago.value or "efectivo"
+            cid = self._ultimo_cid or self.combo_cliente.value or ""
 
             # verificar stock de nuevo
             for item in self.items_carrito:
