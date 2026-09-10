@@ -1,6 +1,25 @@
 import flet as ft
 from screen_base import Screen
 from datos import productos, clientes, crear_venta, prod_por_id
+from theme import (
+    BORDER_WIDTH,
+    DIVIDER_HEIGHT,
+    FS_12,
+    FS_13,
+    FS_14,
+    FS_16,
+    FS_20,
+    FS_30,
+    FS_36,
+    ICON_SM,
+    R_SM,
+    SP_4,
+    SP_8,
+    SP_10,
+    SP_12,
+    app_colors,
+)
+from widgets import AppCard, feedback
 
 
 class PantallaCaja(Screen):
@@ -15,53 +34,123 @@ class PantallaCaja(Screen):
 
     def cargar_opciones(self):
         try:
-            self.combo_cliente.options = [ft.dropdown.Option("", "— Mostrador —")] + \
-                [ft.dropdown.Option(c["id"], c["nombre"]) for c in clientes]
+            self.combo_cliente.options = [ft.dropdown.Option("", "— Mostrador —")] + [
+                ft.dropdown.Option(c["id"], c["nombre"]) for c in clientes
+            ]
             self.combo_producto.options = [
-                ft.dropdown.Option(p["id"], f"{p['nombre']} (${p['precio']:,} — stock: {p['stock']})")
-                for p in productos if p["stock"] > 0
+                ft.dropdown.Option(
+                    p["id"], f"{p['nombre']} (${p['precio']:,} — stock: {p['stock']})"
+                )
+                for p in productos
+                if p["stock"] > 0
             ]
             self.pagina.update()
         except Exception as ex:
             print(f"Error cargar_opciones: {ex}")
 
     def build(self):
-        self.combo_cliente = ft.Dropdown(label="Cliente", hint_text="Mostrador", expand=True)
-        self.combo_pago = ft.Dropdown(label="Pago", value="efectivo", expand=True, options=[
-            ft.dropdown.Option("efectivo"), ft.dropdown.Option("transferencia"),
-            ft.dropdown.Option("debito"), ft.dropdown.Option("credito"),
-            ft.dropdown.Option("fiado", "Fiado"),
-        ])
+        palette = app_colors.get()
+        self.combo_cliente = ft.Dropdown(
+            label="Cliente", hint_text="Mostrador", expand=True
+        )
+        self.combo_pago = ft.Dropdown(
+            label="Pago",
+            value="efectivo",
+            expand=True,
+            options=[
+                ft.dropdown.Option("efectivo"),
+                ft.dropdown.Option("transferencia"),
+                ft.dropdown.Option("debito"),
+                ft.dropdown.Option("credito"),
+                ft.dropdown.Option("fiado", "Fiado"),
+            ],
+        )
         self.combo_producto = ft.Dropdown(
-            label="Producto", expand=True,
+            label="Producto",
+            expand=True,
             on_change=self.on_producto_change,
         )
-        self.campo_cantidad = ft.TextField(label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER)
+        self.campo_cantidad = ft.TextField(
+            label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER
+        )
 
-        self.lista_carrito = ft.Column(spacing=4)
-        self.texto_total = ft.Text("$0", size=36, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN)
-        self.texto_items = ft.Text("0 items", size=13, color=ft.Colors.GREY_500)
+        self.lista_carrito = ft.Column(spacing=SP_4)
+        self.texto_total = ft.Text(
+            "$0", size=FS_36, weight=ft.FontWeight.BOLD, color=palette.success
+        )
+        self.texto_items = ft.Text("0 items", size=FS_13, color=palette.text_muted)
 
-        return ft.Column([
-            ft.Text("Caja", size=30, weight=ft.FontWeight.BOLD),
-            ft.Row([self.combo_cliente, self.combo_pago], spacing=12),
-            ft.Row([self.combo_producto, self.campo_cantidad,
-                    ft.ElevatedButton("Agregar", icon=ft.Icons.ADD, on_click=self.agregar_item)], spacing=12),
-            ft.Divider(),
-            ft.Row([
-                ft.Text("Carrito", weight=ft.FontWeight.BOLD),
-                self.texto_items,
-                ft.Container(expand=True),
-                ft.TextButton("Vaciar", icon=ft.Icons.DELETE_SWEEP, on_click=self.vaciar_carrito),
-            ]),
-            ft.Container(content=self.lista_carrito, expand=True, border_radius=8,
-                         bgcolor=ft.Colors.SURFACE, padding=8),
-            ft.Divider(),
-            ft.Row([ft.Text("TOTAL", size=20, weight=ft.FontWeight.BOLD), self.texto_total],
-                   alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.ElevatedButton("Cobrar", on_click=self.cobrar_carrito,
-                              style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN, color=ft.Colors.WHITE)),
-        ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+        return ft.Column(
+            [
+                ft.Text(
+                    "Caja", size=FS_30, weight=ft.FontWeight.BOLD, color=palette.text
+                ),
+                ft.Row([self.combo_cliente, self.combo_pago], spacing=SP_12),
+                ft.Row(
+                    [
+                        self.combo_producto,
+                        self.campo_cantidad,
+                        ft.ElevatedButton(
+                            "Agregar", icon=ft.Icons.ADD, on_click=self.agregar_item
+                        ),
+                    ],
+                    spacing=SP_12,
+                ),
+                ft.Divider(
+                    height=DIVIDER_HEIGHT,
+                    thickness=BORDER_WIDTH,
+                    color=palette.border,
+                ),
+                ft.Row(
+                    [
+                        ft.Text(
+                            "Carrito",
+                            size=FS_16,
+                            weight=ft.FontWeight.BOLD,
+                            color=palette.text,
+                        ),
+                        self.texto_items,
+                        ft.Container(expand=True),
+                        ft.TextButton(
+                            "Vaciar",
+                            icon=ft.Icons.DELETE_SWEEP,
+                            on_click=self.vaciar_carrito,
+                        ),
+                    ]
+                ),
+                AppCard(self.lista_carrito, padding=SP_8),
+                ft.Divider(
+                    height=DIVIDER_HEIGHT,
+                    thickness=BORDER_WIDTH,
+                    color=palette.border,
+                ),
+                ft.Row(
+                    [
+                        ft.Text(
+                            "TOTAL",
+                            size=FS_20,
+                            weight=ft.FontWeight.BOLD,
+                            color=palette.text,
+                        ),
+                        self.texto_total,
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.FilledButton(
+                    "Cobrar",
+                    on_click=self.cobrar_carrito,
+                    style=ft.ButtonStyle(
+                        bgcolor=palette.primary,
+                        color=palette.on_primary,
+                        shape=ft.RoundedRectangleBorder(radius=R_SM),
+                        padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+                    ),
+                ),
+            ],
+            spacing=SP_10,
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+        )
 
     def on_producto_change(self, e):
         """Track selected product ID when user selects from dropdown."""
@@ -76,25 +165,54 @@ class PantallaCaja(Screen):
 
     def actualizar_carrito(self):
         try:
+            palette = app_colors.get()
             t = 0
             controles = []
             for i, item in enumerate(self.items_carrito):
                 st = item["precio"] * item["cantidad"]
                 t += st
                 idx = i
-                controles.append(ft.Container(
-                    content=ft.Row([
-                        ft.Column([
-                            ft.Text(item["nombre"], weight=ft.FontWeight.BOLD, size=14),
-                            ft.Text(f"${item['precio']:,} x {item['cantidad']}", size=12, color=ft.Colors.GREY_500),
-                        ], spacing=0, expand=True),
-                        ft.Text(f"${st:,}", size=16, weight=ft.FontWeight.BOLD),
-                        ft.IconButton(ft.Icons.CLOSE, icon_size=18, icon_color=ft.Colors.ERROR,
-                                      on_click=lambda _, n=idx: self.quitar_item(n)),
-                    ]),
-                    padding=ft.padding.symmetric(vertical=4, horizontal=4),
-                    border=ft.Border(bottom=ft.BorderSide(0.5, ft.Colors.OUTLINE_VARIANT)),
-                ))
+                controles.append(
+                    ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Column(
+                                    [
+                                        ft.Text(
+                                            item["nombre"],
+                                            weight=ft.FontWeight.BOLD,
+                                            size=FS_14,
+                                            color=palette.text,
+                                        ),
+                                        ft.Text(
+                                            f"${item['precio']:,} x {item['cantidad']}",
+                                            size=FS_12,
+                                            color=palette.text_muted,
+                                        ),
+                                    ],
+                                    spacing=SP_4,
+                                    expand=True,
+                                ),
+                                ft.Text(
+                                    f"${st:,}",
+                                    size=FS_16,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=palette.text,
+                                ),
+                                ft.IconButton(
+                                    ft.Icons.CLOSE,
+                                    icon_size=ICON_SM,
+                                    icon_color=palette.danger,
+                                    on_click=lambda _, n=idx: self.quitar_item(n),
+                                ),
+                            ]
+                        ),
+                        padding=ft.padding.symmetric(vertical=SP_4, horizontal=SP_4),
+                        border=ft.Border(
+                            bottom=ft.BorderSide(BORDER_WIDTH, palette.border)
+                        ),
+                    )
+                )
             self.lista_carrito.controls = controles
             self.texto_total.value = f"${t:,}"
             self.texto_items.value = f"{len(self.items_carrito)} items"
@@ -120,7 +238,7 @@ class PantallaCaja(Screen):
         try:
             pid = self.combo_producto.value
             # Fallback: use tracked value if direct dropdown value is empty
-            if not pid and hasattr(self, '_ultimo_pid'):
+            if not pid and hasattr(self, "_ultimo_pid"):
                 pid = self._ultimo_pid
 
             if not pid:
@@ -149,7 +267,14 @@ class PantallaCaja(Screen):
             if ex:
                 ex["cantidad"] += qty
             else:
-                self.items_carrito.append({"prod_id": pid, "nombre": prod["nombre"], "cantidad": qty, "precio": prod["precio"]})
+                self.items_carrito.append(
+                    {
+                        "prod_id": pid,
+                        "nombre": prod["nombre"],
+                        "cantidad": qty,
+                        "precio": prod["precio"],
+                    }
+                )
 
             self.campo_cantidad.value = "1"
             self.actualizar_carrito()
@@ -169,7 +294,9 @@ class PantallaCaja(Screen):
             for item in self.items_carrito:
                 p = prod_por_id(item["prod_id"])
                 if p and p["stock"] < item["cantidad"]:
-                    self.mostrar_alerta(f"Stock insuficiente de {item['nombre']}: quedan {p['stock']}")
+                    self.mostrar_alerta(
+                        f"Stock insuficiente de {item['nombre']}: quedan {p['stock']}"
+                    )
                     return
 
             total = sum(i["precio"] * i["cantidad"] for i in self.items_carrito)
@@ -186,9 +313,6 @@ class PantallaCaja(Screen):
 
     def mostrar_alerta(self, texto):
         try:
-            sb = ft.SnackBar(ft.Text(texto), open=True, duration=4000)
-            if sb not in self.pagina.overlay:
-                self.pagina.overlay.append(sb)
-            self.pagina.update()
+            feedback(self.pagina, texto)
         except Exception as ex:
             print(f"Error mostrar_alerta: {ex}")

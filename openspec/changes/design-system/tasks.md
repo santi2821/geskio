@@ -40,9 +40,9 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: Caja + Stock (Slice 2)
 
-- [ ] 3.1 Migrate `app/screens/caja.py` CTA to primary red, cart radius 8→12, feedback() for totals
-- [ ] 3.2 Migrate `app/screens/stock.py` to AppTable SP_12 + empty-state and confirm_delete(danger)
-- [ ] 3.3 Grep zero literals in `app/screens/caja.py` `app/screens/stock.py`; smoke both themes
+- [x] 3.1 Migrate `app/screens/caja.py` CTA to primary red, cart radius 8→12, feedback() for totals
+- [x] 3.2 Migrate `app/screens/stock.py` to AppTable SP_12 + empty-state and confirm_delete(danger)
+- [x] 3.3 Grep zero literals in `app/screens/caja.py` `app/screens/stock.py`; smoke both themes
 
 ## Phase 4: Clientes + Fiado (Slice 3)
 
