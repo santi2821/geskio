@@ -19,6 +19,7 @@ from theme import (
     FOCAL_VALUE_FS,
     FS_12,
     FS_14,
+    FS_18,
     FS_20,
     FS_28,
     FS_30,
@@ -105,6 +106,163 @@ def AppStatCard(
             spacing=SP_4,
         )
     )
+
+
+def FocalStatCard(
+    label: str,
+    value: str,
+    role: str = "accent_text",
+    icon=None,
+) -> ft.Container:
+    """Von Restorff focal stat: FS_36 role color plus 2px primary border.
+
+    Spans the full row width. Only the focal card uses the 2px primary
+    edge; secondary cards stay on AppStatCard (FS_28, 1px border).
+    """
+    palette = app_colors.get()
+    color = role_color(palette, role)
+    header: list[ft.Control] = [
+        ft.Text(label, size=FS_12, weight=ft.FontWeight.W_500, color=palette.text_muted)
+    ]
+    if icon is not None:
+        header.append(ft.Icon(icon, color=color, size=ICON_MD))
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(header, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Text(value, size=FOCAL_VALUE_FS, weight=ft.FontWeight.BOLD, color=color),
+            ],
+            spacing=SP_4,
+        ),
+        padding=SP_20,
+        bgcolor=palette.surface,
+        border=ft.Border.all(FOCAL_BORDER_WIDTH, palette.primary),
+        border_radius=ft.BorderRadius.all(R_MD),
+        width=float("inf"),
+    )
+
+
+def Section(title: str, content: ft.Control) -> ft.Container:
+    """Card with heading; heading uses text on surface."""
+    palette = app_colors.get()
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Text(title, size=FS_18, weight=ft.FontWeight.BOLD, color=palette.text),
+                content,
+            ],
+            spacing=SP_12,
+        ),
+        padding=SP_20,
+        bgcolor=palette.surface,
+        border=ft.Border.all(BORDER_WIDTH, palette.border),
+        border_radius=ft.BorderRadius.all(R_MD),
+    )
+
+
+def StatGrid(focal: ft.Control, stats: list[ft.Control]) -> ft.Column:
+    """Focal hierarchy: focal spans width, trio renders in a ResponsiveRow.
+
+    Only the focal card carries the 2px primary border; secondary cards
+    are FS_28 role-colored with no screen-level overrides.
+    """
+    items = list(stats)
+    for item in items:
+        try:
+            item.col = {"xs": 12, "sm": 6, "md": 4}
+        except Exception:
+            pass
+    grid = ft.ResponsiveRow(items, spacing=SP_12, run_spacing=SP_12)
+    return ft.Column([focal, grid], spacing=SP_12)
+
+
+class Calendar(ft.Container):
+    """View-only calendar over a ventas series with a SegmentedButton.
+
+    Toggle (day/week/month) is the only interaction; there is no
+    creation, edit, or click-through. Content comes from
+    ``get_series(view)`` grouped view-side by the screen. The today cell
+    uses the accent_soft pair and totals use text on surface (AD-6).
+    """
+
+    VIEWS = ("day", "week", "month")
+
+    def __init__(self, get_series, today=None, view="week"):
+        super().__init__()
+        self.get_series = get_series
+        self.today = today
+        self.view = view if view in self.VIEWS else "week"
+        palette = app_colors.get()
+        self.seg = ft.SegmentedButton(
+            segments=[
+                ft.Segment(value="day", label=ft.Text("D\u00eda")),
+                ft.Segment(value="week", label=ft.Text("Semana")),
+                ft.Segment(value="month", label=ft.Text("Mes")),
+            ],
+            selected=[self.view],
+            on_change=self._on_change,
+        )
+        self.body = ft.Container(content=self._safe_series(self.view))
+        self.padding = SP_20
+        self.bgcolor = palette.surface
+        self.border = ft.Border.all(BORDER_WIDTH, palette.border)
+        self.border_radius = ft.BorderRadius.all(R_MD)
+        self.content = ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Text(
+                            "Ventas",
+                            size=FS_18,
+                            weight=ft.FontWeight.BOLD,
+                            color=palette.text,
+                        ),
+                        self.seg,
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                self.body,
+            ],
+            spacing=SP_12,
+        )
+
+    def _safe_series(self, view: str) -> ft.Control:
+        try:
+            return self.get_series(view)
+        except Exception:
+            palette = app_colors.get()
+            return ft.Text("Sin datos", size=FS_14, color=palette.text_soft)
+
+    def _on_change(self, e) -> None:
+        try:
+            selected = (
+                e.control.selected
+                if e is not None and hasattr(e, "control")
+                else self.seg.selected
+            )
+            new_view = selected[0] if selected else self.view
+        except Exception:
+            new_view = self.view
+        if new_view not in self.VIEWS:
+            return
+        self.view = new_view
+        try:
+            self.seg.selected = [new_view]
+        except Exception:
+            pass
+        self.body.content = self._safe_series(new_view)
+        self._safe_update()
+
+    def refresh(self) -> None:
+        self.body.content = self._safe_series(self.view)
+        self._safe_update()
+
+    def _safe_update(self) -> None:
+        try:
+            self.update()
+        except Exception:
+            pass
 
 
 def PageHeader(
@@ -643,6 +801,10 @@ class Shell(ft.Row):
 __all__ = [
     "AppCard",
     "AppStatCard",
+    "FocalStatCard",
+    "Section",
+    "StatGrid",
+    "Calendar",
     "AppHeader",
     "PageHeader",
     "AppTable",

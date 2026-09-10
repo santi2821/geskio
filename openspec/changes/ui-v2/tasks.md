@@ -35,9 +35,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Slice-b Dashboard Focal + Calendar
 
-- [ ] 2.1 Add `Section`, `StatGrid`, `Calendar` view-only to `app/widgets.py`
-- [ ] 2.2 Recompose `app/screens/dashboard.py` Hoy FS36 border + trio FS28 + view-side series
-- [ ] 2.3 Gate slice-b V2-D5 + contrast re-proof + `app/datos.py` (read-only) diff cero
+- [x] 2.1 Add `Section`, `StatGrid`, `Calendar` view-only to `app/widgets.py`
+- [x] 2.2 Recompose `app/screens/dashboard.py` Hoy FS36 border + trio FS28 + view-side series
+- [x] 2.3 Gate slice-b V2-D5 + contrast re-proof + `app/datos.py` (read-only) diff cero
 
 ## Phase 3: Slice-c Tables Toolbar + Density + Pager
 
