@@ -7,6 +7,8 @@ defaults instead of hand-building cards, tables, dialogs, or SnackBars.
 
 from __future__ import annotations
 
+from datetime import date as _date
+
 import flet as ft
 
 from theme import (
@@ -91,21 +93,141 @@ def AppStatCard(
     role: str = "info",
     icon=None,
 ) -> ft.Container:
+    """Equal stat card: tinted icon-chip + muted label + text value.
+
+    Value uses text on surface (>=15:1) so all four cards pass 4.5:1;
+    the role color lives only on the chip icon (UI >=3:1).
+    """
     palette = app_colors.get()
     color = role_color(palette, role)
-    header: list[ft.Control] = [
-        ft.Text(label, size=FS_12, weight=ft.FontWeight.W_500, color=palette.text_muted)
-    ]
-    if icon is not None:
-        header.append(ft.Icon(icon, color=color, size=ICON_MD))
+    chip = ft.Container(
+        content=ft.Icon(icon or ft.Icons.INSIGHTS, color=color, size=ICON_SM),
+        bgcolor=palette.accent_soft,
+        border=ft.Border.all(BORDER_WIDTH, palette.border),
+        border_radius=ft.BorderRadius.all(R_SM),
+        padding=SP_8,
+    )
     return AppCard(
-        ft.Column(
+        ft.Row(
             [
-                ft.Row(header, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                ft.Text(value, size=FS_28, weight=ft.FontWeight.BOLD, color=color),
+                chip,
+                ft.Column(
+                    [
+                        ft.Text(
+                            label,
+                            size=FS_12,
+                            weight=ft.FontWeight.W_500,
+                            color=palette.text_muted,
+                        ),
+                        ft.Text(
+                            value,
+                            size=FS_28,
+                            weight=ft.FontWeight.BOLD,
+                            color=palette.text,
+                        ),
+                    ],
+                    spacing=SP_4,
+                    expand=True,
+                ),
             ],
-            spacing=SP_4,
+            spacing=SP_12,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
+    )
+
+
+def fecha_actual_es(hoy=None) -> str:
+    """Spanish topbar date like 'jueves, 10 de septiembre' (no locale)."""
+    dias = [
+        "lunes",
+        "martes",
+        "miércoles",
+        "jueves",
+        "viernes",
+        "sábado",
+        "domingo",
+    ]
+    meses = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    ]
+    d = hoy or _date.today()
+    return f"{dias[d.weekday()]}, {d.day} de {meses[d.month - 1]}"
+
+
+_BAR_MAX_H = 120
+_BAR_MIN_H = 8
+_BAR_W = 28
+
+
+def SalesBars(series, today_iso=None) -> ft.Control:
+    """Custom 7-day bars: proportional heights, rounded tips, today primary.
+
+    ``ft.BarChart`` does not exist in Flet 0.84.0 (verified headless via
+    ``dir(ft)``), so bars are Containers. Letters L M X J V S D come from
+    the ISO date weekday; all captions use text/muted on surface (>=4.5).
+    """
+    palette = app_colors.get()
+    try:
+        peak = max((t or 0) for _, t in (series or []))
+    except Exception:
+        peak = 0
+    cols: list[ft.Control] = []
+    for iso, total in series or []:
+        try:
+            wd = _date.fromisoformat(str(iso)).weekday()
+        except Exception:
+            wd = 0
+        letra = "LMXJVSD"[wd]
+        is_today = str(iso) == str(today_iso)
+        h = (
+            _BAR_MIN_H
+            if not peak
+            else max(_BAR_MIN_H, round((total or 0) / peak * _BAR_MAX_H))
+        )
+        bar = ft.Container(
+            width=_BAR_W,
+            height=h,
+            bgcolor=palette.primary if is_today else palette.border_strong,
+            border_radius=ft.BorderRadius.all(R_SM),
+            tooltip=f"${(total or 0):,.0f}",
+        )
+        cols.append(
+            ft.Column(
+                [
+                    ft.Container(
+                        content=bar,
+                        height=_BAR_MAX_H,
+                        alignment=ft.Alignment.BOTTOM_CENTER,
+                    ),
+                    ft.Text(
+                        letra,
+                        size=FS_12,
+                        weight=ft.FontWeight.BOLD if is_today else None,
+                        color=palette.text if is_today else palette.text_muted,
+                    ),
+                ],
+                spacing=SP_4,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+        )
+    if not cols:
+        return ft.Text("Sin datos", size=FS_14, color=palette.text_soft)
+    return ft.Row(
+        cols,
+        alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+        vertical_alignment=ft.CrossAxisAlignment.END,
+        spacing=SP_8,
     )
 
 
@@ -599,7 +721,7 @@ def ChatBubble(text: str, is_user: bool) -> ft.Row:
 
 
 def is_rail_for_size(width, height) -> bool:
-    """Collapse rule (AD-1): rail when width<=1280 OR height<=760."""
+    """Collapse rule: rail when width<=1024 OR height<=600 (1100x700 expanded)."""
     try:
         w = float(width)
         h = float(height)
@@ -609,10 +731,12 @@ def is_rail_for_size(width, height) -> bool:
 
 
 class Sidebar(ft.Container):
-    """Shell sidebar: 240px expanded, 64px icon rail collapsed (AD-1).
+    """Shell sidebar: 240px expanded, 64px icon rail collapsed.
 
-    Idle items use text_muted on bg_soft; the active item uses the
-    verified on_accent_soft/accent_soft pair with a 2px primary edge.
+    Expanded adds brand + GesKio, MENU label, pill-active items and a
+    mini user row. Idle items use text_muted on bg_soft; the active
+    item uses the verified on_accent_soft/accent_soft pair with a 2px
+    primary edge and pill shape.
     """
 
     def __init__(
@@ -634,11 +758,85 @@ class Sidebar(ft.Container):
                 bgcolor=palette.accent_soft,
                 color=palette.on_accent_soft,
                 side=ft.BorderSide(FOCAL_BORDER_WIDTH, palette.primary),
+                shape=ft.RoundedRectangleBorder(radius=R_PILL),
                 padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
             )
         return ft.ButtonStyle(
             color=palette.text_muted,
+            shape=ft.RoundedRectangleBorder(radius=R_PILL),
             padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+        )
+
+    def _brand(self) -> ft.Control:
+        palette = app_colors.get()
+        mark = ft.Container(
+            content=ft.Text(
+                "G", size=FS_18, weight=ft.FontWeight.BOLD, color=palette.on_primary
+            ),
+            bgcolor=palette.primary,
+            border_radius=ft.BorderRadius.all(R_SM),
+            padding=SP_8,
+            alignment=ft.Alignment.CENTER,
+        )
+        if self.collapsed:
+            return ft.Row([mark], alignment=ft.MainAxisAlignment.CENTER)
+        return ft.Row(
+            [
+                mark,
+                ft.Text(
+                    "GesKio",
+                    size=FS_18,
+                    weight=ft.FontWeight.BOLD,
+                    color=palette.text,
+                ),
+            ],
+            spacing=SP_8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+    def _user_row(self) -> ft.Control:
+        palette = app_colors.get()
+        if self.collapsed:
+            return ft.Row(
+                [
+                    ft.Icon(
+                        ft.Icons.ACCOUNT_CIRCLE, color=palette.text_soft, size=ICON_MD
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+            )
+        return ft.Container(
+            content=ft.Row(
+                [
+                    ft.Icon(
+                        ft.Icons.ACCOUNT_CIRCLE,
+                        color=palette.text_soft,
+                        size=ICON_MD,
+                    ),
+                    ft.Column(
+                        [
+                            ft.Text(
+                                "Admin",
+                                size=FS_14,
+                                weight=ft.FontWeight.BOLD,
+                                color=palette.text,
+                            ),
+                            ft.Text(
+                                "admin@geskio",
+                                size=FS_12,
+                                color=palette.text_muted,
+                            ),
+                        ],
+                        spacing=SP_4,
+                        expand=True,
+                    ),
+                ],
+                spacing=SP_8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            border=ft.Border.all(BORDER_WIDTH, palette.border),
+            border_radius=ft.BorderRadius.all(R_MD),
+            padding=SP_8,
         )
 
     def _rebuild(self) -> None:
@@ -647,7 +845,16 @@ class Sidebar(ft.Container):
         self.bgcolor = palette.bg_soft
         self.padding = SP_8
         self.border = ft.Border.all(BORDER_WIDTH, palette.border)
-        controls: list[ft.Control] = []
+        controls: list[ft.Control] = [self._brand()]
+        if not self.collapsed:
+            controls.append(
+                ft.Text(
+                    "MENU",
+                    size=FS_12,
+                    weight=ft.FontWeight.W_600,
+                    color=palette.text_muted,
+                )
+            )
         self.buttons = {}
         for key, icon, label in self.nav_items:
             btn = ft.TextButton(
@@ -659,7 +866,11 @@ class Sidebar(ft.Container):
             )
             self.buttons[key] = btn
             controls.append(btn)
-        self.content = ft.Column(controls, spacing=SP_4, scroll=ft.ScrollMode.AUTO)
+        controls.append(ft.Container(expand=True))
+        controls.append(self._user_row())
+        self.content = ft.Column(
+            controls, spacing=SP_4, scroll=ft.ScrollMode.AUTO, expand=True
+        )
 
     def _handle_nav(self, key: str) -> None:
         if callable(self.on_navigate):
@@ -689,7 +900,7 @@ class Sidebar(ft.Container):
 
 
 class Topbar(ft.Container):
-    """Shell topbar: 56px; title + mode toggle + brand Dropdown (AD-2).
+    """Shell topbar: 56px; hamburger + title + Spanish date + theme controls.
 
     No search box and no user menu (out of scope by design).
     The brand Dropdown keeps v1 on_select semantics (V2-D5).
@@ -707,6 +918,7 @@ class Topbar(ft.Container):
     ):
         super().__init__()
         self.title_text = ft.Text(title, size=FS_20, weight=ft.FontWeight.BOLD)
+        self.date_text = ft.Text(fecha_actual_es(), size=FS_14)
         self.menu_btn = ft.IconButton(
             icon=ft.Icons.MENU,
             tooltip="Contraer/expandir barra lateral",
@@ -730,6 +942,7 @@ class Topbar(ft.Container):
             [
                 self.menu_btn,
                 self.title_text,
+                self.date_text,
                 ft.Container(expand=True),
                 self.mode_btn,
                 self.brand,
@@ -752,6 +965,11 @@ class Topbar(ft.Container):
             self.bgcolor = palette.surface
             self.border = ft.Border(bottom=ft.BorderSide(BORDER_WIDTH, palette.border))
             self.title_text.color = palette.text
+            self.date_text.color = palette.text_muted
+            try:
+                self.date_text.value = fecha_actual_es()
+            except Exception:
+                pass
             self.menu_btn.icon_color = palette.text_soft
             self.mode_btn.icon = (
                 ft.Icons.LIGHT_MODE if mode_is_dark else ft.Icons.DARK_MODE
@@ -765,9 +983,9 @@ class Topbar(ft.Container):
 class Shell(ft.Row):
     """Paperpillar shell: sidebar | topbar + content slot with adapter.
 
-    Collapse rule (AD-1): rail when ``page.window.width <= 1280`` OR
-    ``page.window.height <= 760``; expand only when both thresholds are
-    exceeded. The resize driver is ``page.window.on_event`` filtered on
+    Collapse rule: rail when ``page.window.width <= 1024`` OR
+    ``page.window.height <= 600``; expand only when both thresholds are
+    exceeded (1100x700 boots expanded). The resize driver is
     ``WindowEventType.RESIZED`` (also honoring ``RESIZE`` while dragging)
     reading ``page.window.width/height``.
 
@@ -967,5 +1185,7 @@ __all__ = [
     "Topbar",
     "Shell",
     "is_rail_for_size",
+    "fecha_actual_es",
+    "SalesBars",
     "DIVIDER_HEIGHT",
 ]

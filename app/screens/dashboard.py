@@ -18,10 +18,9 @@ from theme import (
 from widgets import (
     AppStatCard,
     Calendar,
-    FocalStatCard,
     PageHeader,
+    SalesBars,
     Section,
-    StatGrid,
 )
 
 
@@ -77,9 +76,7 @@ class PantallaDashboard(Screen):
         today_iso = date.today().isoformat()
         entries = ventas_del_dia(ventas, today_iso)
         if not entries:
-            return ft.Text(
-                "Sin ventas hoy", size=FS_14, color=palette.text_soft
-            )
+            return ft.Text("Sin ventas hoy", size=FS_14, color=palette.text_soft)
         rows: list[ft.Control] = []
         for v in entries:
             cli = cli_por_id(v.get("cliente_id", ""))
@@ -102,23 +99,8 @@ class PantallaDashboard(Screen):
         return ft.Column(rows, spacing=SP_8)
 
     def _contenido_semana(self) -> ft.Control:
-        palette = app_colors.get()
         series = totales_ultimos_7_dias(ventas, date.today())
-        rows: list[ft.Control] = []
-        for iso, total in series:
-            rows.append(
-                ft.Row(
-                    [
-                        ft.Text(iso, size=FS_12, color=palette.text_muted),
-                        ft.Text(
-                            f"${total:,.0f}", size=FS_14, color=palette.text
-                        ),
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                )
-            )
-        return ft.Column(rows, spacing=SP_4)
+        return SalesBars(series, today_iso=date.today().isoformat())
 
     def _contenido_mes(self) -> ft.Control:
         palette = app_colors.get()
@@ -134,12 +116,8 @@ class PantallaDashboard(Screen):
             iso = f"{today.year:04d}-{today.month:02d}-{day:02d}"
             total = totals.get(day, 0)
             is_today = iso == today_iso
-            day_color = (
-                palette.on_accent_soft if is_today else palette.text_muted
-            )
-            total_color = (
-                palette.on_accent_soft if is_today else palette.text
-            )
+            day_color = palette.on_accent_soft if is_today else palette.text_muted
+            total_color = palette.on_accent_soft if is_today else palette.text
             total_text = f"${total:,.0f}" if total else "-"
             cells.append(
                 ft.Container(
@@ -248,25 +226,53 @@ class PantallaDashboard(Screen):
             print(f"Error actualizar dashboard: {ex}")
         self.pagina.update()
 
-    def build(self):
-        focal = FocalStatCard("Hoy", "$0", role="accent_text")
-        card_mes = AppStatCard("Mes", "$0", role="info")
-        card_ganancia = AppStatCard("Ganancia", "$0", role="warning")
-        card_deben = AppStatCard("Deben", "$0", role="danger")
+    @staticmethod
+    def _value_of(card: ft.Container) -> ft.Text:
+        return card.content.controls[1].controls[1]
 
-        self.texto_hoy = focal.content.controls[1]
-        self.texto_mes = card_mes.content.controls[1]
-        self.texto_ganancia = card_ganancia.content.controls[1]
-        self.texto_deben = card_deben.content.controls[1]
+    def build(self):
+        card_hoy = AppStatCard("Hoy", "$0", role="accent_text", icon=ft.Icons.TODAY)
+        card_mes = AppStatCard("Mes", "$0", role="info", icon=ft.Icons.CALENDAR_MONTH)
+        card_gan = AppStatCard(
+            "Ganancia", "$0", role="warning", icon=ft.Icons.TRENDING_UP
+        )
+        card_deben = AppStatCard(
+            "Deben", "$0", role="danger", icon=ft.Icons.RECEIPT_LONG
+        )
+        for card in (card_hoy, card_mes, card_gan, card_deben):
+            try:
+                card.col = {"xs": 12, "sm": 6, "md": 3}
+            except Exception:
+                pass
+
+        self.texto_hoy = self._value_of(card_hoy)
+        self.texto_mes = self._value_of(card_mes)
+        self.texto_ganancia = self._value_of(card_gan)
+        self.texto_deben = self._value_of(card_deben)
 
         self.lista_alertas = ft.Column(spacing=SP_8)
         alert_section = Section("Alertas", self.lista_alertas)
+        try:
+            alert_section.col = {"xs": 12, "md": 4}
+        except Exception:
+            pass
         self.calendar = Calendar(
             get_series=self._serie_calendario,
             today=date.today().isoformat(),
             view=self.cal_view,
         )
-        stats_block = StatGrid(focal, [card_mes, card_ganancia, card_deben])
+        try:
+            self.calendar.col = {"xs": 12, "md": 8}
+        except Exception:
+            pass
+        stats_row = ft.ResponsiveRow(
+            [card_hoy, card_mes, card_gan, card_deben],
+            spacing=SP_12,
+            run_spacing=SP_12,
+        )
+        content_row = ft.ResponsiveRow(
+            [self.calendar, alert_section], spacing=SP_12, run_spacing=SP_12
+        )
 
         return ft.Column(
             [
@@ -274,9 +280,8 @@ class PantallaDashboard(Screen):
                     "Dashboard",
                     on_refresh=lambda _: self.actualizar(),
                 ),
-                stats_block,
-                self.calendar,
-                alert_section,
+                stats_row,
+                content_row,
             ],
             spacing=SP_12,
             scroll=ft.ScrollMode.AUTO,

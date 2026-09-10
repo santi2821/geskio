@@ -93,11 +93,12 @@ FEEDBACK_DURATION_MS = 4000
 
 # Slice-a shell/layout tokens (AD-5, additive only, zero new hex).
 # PaletteTheme fields stay frozen; new ROLES reuse verified AA pairs only (AD-6).
+# Breakpoints lowered so 1100x700 boots expanded; rail remains for narrow.
 SHELL_SIDEBAR_W = 240
 SHELL_RAIL_W = 64
 SHELL_TOPBAR_H = 56
-SHELL_BREAKPOINT_W = 1280
-SHELL_BREAKPOINT_H = 760
+SHELL_BREAKPOINT_W = 1024
+SHELL_BREAKPOINT_H = 600
 FOCAL_BORDER_WIDTH = 2
 SHELL_CONTENT_PADDING = SP_24
 CALENDAR_GAP = SP_8
