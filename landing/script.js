@@ -14,18 +14,34 @@ document.addEventListener('DOMContentLoaded', () => {
     onScroll();
 
 
-    /* ---------- Menú mobile ---------- */
+    /* ---------- Menú mobile (drawer + scrim) ---------- */
     const navToggle = document.getElementById('navToggle');
     const navLinks = document.getElementById('navLinks');
+    const navScrim = document.getElementById('navScrim');
+
+    const setDrawer = (open) => {
+        navToggle.classList.toggle('active', open);
+        navLinks.classList.toggle('open', open);
+        navToggle.setAttribute('aria-expanded', String(open));
+        navToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+        if (navScrim) {
+            navScrim.classList.toggle('open', open);
+            navScrim.hidden = !open;
+        }
+        document.body.classList.toggle('nav-open', open);
+    };
 
     navToggle.addEventListener('click', () => {
-        navToggle.classList.toggle('active');
-        navLinks.classList.toggle('open');
+        setDrawer(!navLinks.classList.contains('open'));
     });
-    navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-        navToggle.classList.remove('active');
-        navLinks.classList.remove('open');
-    }));
+    if (navScrim) navScrim.addEventListener('click', () => setDrawer(false));
+    navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setDrawer(false)));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+            setDrawer(false);
+            navToggle.focus();
+        }
+    });
 
 
     /* ---------- Toggle tema (dark mode) ---------- */
@@ -102,6 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', () => {
             clearTimeout(marqueeTimer);
             marqueeTimer = setTimeout(adjustMarquee, 200);
+        });
+    }
+
+
+    /* ---------- Marquee: botón pausa/reanudar visible ---------- */
+    const marqueeToggle = document.getElementById('marqueeToggle');
+    const marquee = document.getElementById('marquee');
+    if (marqueeToggle && marquee) {
+        marqueeToggle.addEventListener('click', () => {
+            const paused = marquee.classList.toggle('paused');
+            marqueeToggle.setAttribute('aria-pressed', String(paused));
+            marqueeToggle.setAttribute('aria-label', paused ? 'Reanudar marquesina' : 'Pausar marquesina');
+            marqueeToggle.textContent = paused ? '▶ Reanudar' : '⏸ Pausar';
         });
     }
 

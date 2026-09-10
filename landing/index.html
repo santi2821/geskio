@@ -36,11 +36,12 @@
                 <span class="logo-text">GesKio</span>
             </a>
 
-            <nav class="nav-links" id="navLinks">
+            <nav class="nav-links" id="navLinks" aria-label="Navegación principal">
                 <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
                 <a href="#numeros" class="nav-link">Detalles</a>
                 <a href="#testimonios" class="nav-link">Testimonios</a>
                 <a href="#contacto" class="nav-link">Contacto</a>
+                <a href="#contacto" class="btn btn-primary drawer-cta">Probar GesKio</a>
             </nav>
 
             <div class="nav-actions">
@@ -49,12 +50,13 @@
                     <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <a href="#contacto" class="btn btn-primary btn-sm">Probar GesKio</a>
-                <button class="nav-toggle" id="navToggle" aria-label="Menú">
+                <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
                     <span></span><span></span><span></span>
                 </button>
             </div>
         </div>
     </header>
+    <button class="scrim" id="navScrim" aria-label="Cerrar menú" hidden></button>
 
     <!-- HERO -->
     <section class="hero" id="top">
@@ -74,7 +76,7 @@
                     <a href="#contacto" class="btn btn-primary btn-lg">Probar gratis</a>
                     <a href="#funcionalidades" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
                 </div>
-                <p class="hero-foot reveal">Sin instalaciones · Funciona en el navegador · En español</p>
+                <p class="hero-foot reveal">App de escritorio · Pantalla 1100×700 · En español</p>
             </div>
 
             <!-- MOCKUP con datos reales del sistema -->
@@ -116,8 +118,9 @@
     </section>
 
     <!-- MARQUEE -->
-    <div class="marquee" aria-hidden="true">
-        <div class="marquee-track">
+    <div class="marquee-wrap">
+        <div class="marquee" id="marquee" aria-hidden="true">
+            <div class="marquee-track">
             <span>Caja en segundos</span><span class="sep">✦</span>
             <span>Stock siempre bajo control</span><span class="sep">✦</span>
             <span>Fiado sin libretas</span><span class="sep">✦</span>
@@ -131,6 +134,8 @@
             <span>Ganancias claras</span><span class="sep">✦</span>
             <span>Un asistente con IA</span><span class="sep">✦</span>
         </div>
+        </div>
+        <button class="marquee-toggle" id="marqueeToggle" type="button" aria-pressed="false" aria-label="Pausar marquesina">⏸ Pausar</button>
     </div>
 
     <!-- FUNCIONALIDADES (Bento) -->
@@ -305,11 +310,11 @@
                 <div class="contact-methods">
                     <div class="cm">
                         <span class="cm-label">Email</span>
-                        <span class="cm-value">hola@geskio.com</span>
+                        <a class="cm-value" href="mailto:hola@geskio.com">hola@geskio.com</a>
                     </div>
                     <div class="cm">
                         <span class="cm-label">Teléfono</span>
-                        <span class="cm-value">+54 351 123 4567</span>
+                        <a class="cm-value" href="tel:+543511234567">+54 351 123 4567</a>
                     </div>
                 </div>
             </div>
@@ -355,18 +360,6 @@
                 <a href="#testimonios">Testimonios</a>
                 <a href="#contacto">Contacto</a>
             </nav>
-
-            <div class="footer-social">
-                <a href="#" class="social" aria-label="Instagram">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                </a>
-                <a href="#" class="social" aria-label="Facebook">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                </a>
-                <a href="#" class="social" aria-label="WhatsApp">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                </a>
-            </div>
         </div>
         <div class="footer-bottom">
             <div class="container">
