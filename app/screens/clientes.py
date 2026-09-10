@@ -21,7 +21,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppTable, confirm_delete, feedback
+from widgets import AppDialog, AppTable, confirm_delete, feedback
 
 
 class PantallaClientes(Screen):
@@ -195,14 +195,9 @@ class PantallaClientes(Screen):
                 except Exception as ex:
                     print(f"Error guardar editar cliente: {ex}")
 
-            dialogo = ft.AlertDialog(
-                title=ft.Text(
-                    "Editar cliente",
-                    size=FS_20,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                content=ft.Column(
+            dialogo = AppDialog(
+                "Editar cliente",
+                ft.Column(
                     [campo_nombre, campo_telefono], spacing=SP_12, tight=True
                 ),
                 actions=[

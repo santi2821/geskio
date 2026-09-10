@@ -23,7 +23,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppTable, confirm_delete, feedback
+from widgets import AppDialog, AppTable, confirm_delete, feedback
 
 
 class PantallaStock(Screen):
@@ -257,14 +257,9 @@ class PantallaStock(Screen):
                 except Exception as ex:
                     print(f"Error al guardar: {ex}")
 
-            dialogo = ft.AlertDialog(
-                title=ft.Text(
-                    "Editar producto",
-                    size=FS_20,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                content=ft.Column(
+            dialogo = AppDialog(
+                "Editar producto",
+                ft.Column(
                     [
                         campo_nombre,
                         ft.Row([campo_costo, campo_precio], spacing=SP_8),
@@ -333,14 +328,9 @@ class PantallaStock(Screen):
                 except Exception as ex:
                     print(f"Error confirmar: {ex}")
 
-            dialogo = ft.AlertDialog(
-                title=ft.Text(
-                    f"Ajustar stock — {p['nombre']}",
-                    size=FS_20,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                content=ft.Column(
+            dialogo = AppDialog(
+                f"Ajustar stock — {p['nombre']}",
+                ft.Column(
                     [
                         texto_actual,
                         ft.Row(

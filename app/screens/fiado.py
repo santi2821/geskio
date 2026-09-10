@@ -12,7 +12,7 @@ from theme import (
     app_colors,
     role_color,
 )
-from widgets import AppTable, feedback
+from widgets import AppDialog, AppTable, feedback
 
 
 class PantallaFiado(Screen):
@@ -153,14 +153,9 @@ class PantallaFiado(Screen):
                 except Exception as ex:
                     print(f"Error cancelar: {ex}")
 
-            dialogo = ft.AlertDialog(
-                title=ft.Text(
-                    "Registrar pago",
-                    size=FS_20,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
-                content=ft.Column(
+            dialogo = AppDialog(
+                "Registrar pago",
+                ft.Column(
                     [
                         ft.Text(f"Debe ${d:,} de ${c['total']:,}"),
                         campo_monto,
