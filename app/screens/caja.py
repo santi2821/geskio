@@ -257,9 +257,11 @@ class PantallaCaja(Screen):
 
     def quitar_item(self, i):
         try:
-            self.items_carrito.pop(i)
-            self.actualizar_carrito()
-        except Exception as ex:
+            idx = int(i)
+            if 0 <= idx < len(self.items_carrito):
+                self.items_carrito.pop(idx)
+                self.actualizar_carrito()
+        except (TypeError, ValueError) as ex:
             print(f"Error quitar_item: {ex}")
 
     def vaciar_carrito(self, e=None):

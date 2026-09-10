@@ -1140,7 +1140,14 @@ class Shell(ft.Row):
 
     def change_brand(self, event) -> None:
         try:
-            app_colors.set_theme(event.control.value, self.pagina)
+            value = getattr(event, "data", None) or getattr(
+                getattr(event, "control", None), "value", ""
+            )
+            if value:
+                self._ultimo_brand = value
+            else:
+                value = getattr(self, "_ultimo_brand", "") or ""
+            app_colors.set_theme(value or app_colors.theme_name, self.pagina)
         except Exception:
             return
         self.apply_and_rebuild()

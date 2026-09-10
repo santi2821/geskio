@@ -7,6 +7,7 @@ OS-dependent, so the topbar manual toggle is mandatory and always works.
 """
 
 import flet as ft
+from screens.ajustes import PantallaAjustes
 from screens.caja import PantallaCaja
 from screens.chat import PantallaChat
 from screens.clientes import PantallaClientes
@@ -34,6 +35,7 @@ def main(page: ft.Page):
         ("clientes", ft.Icons.PEOPLE, "Clientes"),
         ("fiado", ft.Icons.RECEIPT_LONG, "Fiado"),
         ("chat", ft.Icons.SMART_TOY, "Chat IA"),
+        ("ajustes", ft.Icons.SETTINGS, "Ajustes"),
     ]
     screens = {
         "dash": PantallaDashboard(page),
@@ -42,6 +44,7 @@ def main(page: ft.Page):
         "clientes": PantallaClientes(page),
         "fiado": PantallaFiado(page),
         "chat": PantallaChat(page),
+        "ajustes": PantallaAjustes(page),
     }
 
     shell = Shell(
@@ -52,6 +55,7 @@ def main(page: ft.Page):
         brand_options=BRAND_OPTIONS,
     )
     page.add(shell)
+    screens["ajustes"].on_appearance = shell.apply_and_rebuild
     shell.navigate("dash")
 
 
