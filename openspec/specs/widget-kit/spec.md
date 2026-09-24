@@ -11,6 +11,16 @@ Shared Flet component kit (`app/widgets.py`) built exclusively on `design-tokens
 The kit MUST provide: `AppCard`, `PageHeader(title, actions=(), on_refresh=None)` (replaces `AppHeader`), `AppTable` (fixed `column_spacing=12`, `page_size=10`, empty-state row), `AppDialog` incl. `confirm_delete` (destructive = error/red role), `feedback(text)` (SnackBar with fixed duration), status badges/chips, and chat bubbles (user vs bot, no tail). All defaults MUST be fixed in the kit, not passed per screen.
 (Previously: header was `AppHeader(title, on_refresh)` and `AppTable` had no page-size default.)
 
+### Requirement: Rounded Form Controls and Visible Focus
+
+The widget kit MUST expose shared GesKio text-field and dropdown constructors. They MUST use the 10px field radius, neutral outline, and a 2px primary focus border. Screens MUST use these constructors so form styling stays consistent. Primary, outlined, and text buttons MUST use the shared 8px control radius unless a control has a named, documented exception.
+
+#### Scenario: Form control consistency
+
+- GIVEN text fields and dropdowns across Caja, Stock, Clientes, Fiado, Chat and Ajustes
+- WHEN their shared constructors are inspected
+- THEN all use the same field radius, neutral outline and visible primary focus border
+
 #### Scenario: Table normalization via kit
 
 - GIVEN `stock` uses `column_spacing=12` and `clientes` uses `16` (exploration drift)

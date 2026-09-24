@@ -1,0 +1,190 @@
+/* GesKio — componentes: botones, cards, forms, chips, faq, mocks */
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--accent); color: var(--on-accent);
+  font-weight: 600; font-size: .95rem; padding: 12px 24px;
+  border-radius: var(--radius-sm); text-decoration: none;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background .2s, transform .2s, box-shadow .2s;
+}
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--glow); }
+.btn-linea { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.btn-linea:hover { background: var(--bg-soft); border-color: var(--accent); color: var(--accent-text); box-shadow: none; }
+.btn-todo { width: 100%; }
+.btn-lg { font-size: 1rem; padding: 14px 30px; }
+
+/* ---------- Cards ---------- */
+.card {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 26px; background: var(--surface);
+  transition: transform .25s var(--ease), border-color .25s, box-shadow .25s;
+}
+.card:hover { transform: translateY(-4px); border-color: var(--border-strong); box-shadow: var(--shadow); }
+.card-ico {
+  width: 42px; height: 42px; display: grid; place-items: center;
+  border-radius: var(--radius-md); background: var(--accent-soft);
+  color: var(--accent-text); margin-bottom: 16px;
+}
+.card h3 { font-size: 1.08rem; margin-bottom: 8px; }
+.card p { font-size: .93rem; color: var(--text-soft); }
+
+.card-grilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+/* ---------- Chips / badges ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 600; color: var(--text-soft);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  padding: 5px 12px; background: var(--surface);
+}
+.chip-activa { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.punto-estado { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+.punto-estado.alto { background: var(--warning); }
+.punto-estado.critico { background: var(--danger); }
+
+/* ---------- Formularios ---------- */
+form label { display: block; font-size: .85rem; font-weight: 600; margin: 16px 0 6px; }
+form label:first-of-type { margin-top: 0; }
+form input, form textarea {
+  width: 100%; padding: 12px 14px; font: inherit; font-size: .95rem;
+  color: var(--text); background: var(--bg);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  transition: border-color .2s, box-shadow .2s;
+}
+form input:focus, form textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+form input::placeholder, form textarea::placeholder { color: var(--text-muted); }
+form textarea { resize: vertical; margin-bottom: 18px; }
+.aviso { margin-top: 12px; font-size: .9rem; color: var(--success); min-height: 1.4em; }
+.aviso.error { color: var(--danger-text); }
+.form-privacidad { margin-top: 14px; font-size: .8rem; color: var(--text-muted); text-align: center; }
+
+/* ---------- FAQ ---------- */
+.faq { display: grid; gap: 12px; max-width: 720px; margin: 0 auto; }
+.faq-item { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); overflow: hidden; }
+.faq-pregunta {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 18px 20px; background: transparent; border: 0;
+  font-weight: 600; font-size: .97rem; text-align: left; cursor: pointer;
+}
+.faq-pregunta:hover { color: var(--accent-text); }
+.faq-icono { flex: none; width: 20px; height: 20px; position: relative; color: var(--text-muted); transition: transform .3s var(--ease), color .2s; }
+.faq-icono::before, .faq-icono::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 12px; height: 2px; border-radius: 2px; background: currentColor;
+}
+.faq-icono::after { transform: rotate(90deg); }
+.faq-item.abierto .faq-icono { transform: rotate(180deg); color: var(--accent-text); }
+.faq-item.abierto .faq-icono::after { transform: rotate(0); }
+.faq-respuesta { max-height: 0; overflow: hidden; transition: max-height .35s var(--ease); }
+.faq-respuesta p { padding: 0 20px 18px; font-size: .92rem; color: var(--text-soft); }
+
+/* ---------- Mock de la app (dibujado con CSS) ---------- */
+.mock {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
+  background: var(--bg-elevated); overflow: hidden; box-shadow: var(--shadow-lg);
+}
+.mock-bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg-soft);
+}
+.mock-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
+.mock-bar span:nth-child(1) { background: var(--accent); opacity: .55; }
+.mock-cuerpo { display: flex; min-height: 280px; }
+.mock-lado {
+  display: flex; flex-direction: column; gap: 4px; padding: 14px;
+  border-right: 1px solid var(--border); background: var(--bg-soft);
+  font-size: .78rem; color: var(--text-soft); min-width: 118px;
+}
+.mock-lado span { padding: 6px 10px; border-radius: 8px; }
+.mock-lado span.activa { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.mock-panel { flex: 1; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.mock-tit { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); font-weight: 600; }
+.mock-num { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mock-sub { font-size: .78rem; color: var(--text-soft); }
+
+/* filas tipo lista dentro del mock */
+.mock-fila {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: .8rem; color: var(--text-soft);
+}
+.mock-fila strong { color: var(--text); font-weight: 600; }
+
+/* gráfico de barras del mock */
+.mock-chart { display: flex; align-items: flex-end; gap: 6px; height: 74px; padding: 6px 4px 0; }
+.mock-chart i {
+  flex: 1; border-radius: 5px 5px 2px 2px;
+  background: var(--accent-soft); min-height: 6px;
+}
+.mock-chart i.alta { background: var(--accent); }
+
+/* dos tarjetas numeradas juntas dentro del mock (dashboard) */
+.mock-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* barra de stock */
+.mock-barra { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; }
+.mock-barra i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+
+/* burbuja de chat */
+.mock-chat { display: grid; gap: 8px; }
+.burbuja { max-width: 82%; padding: 9px 13px; border-radius: 14px; font-size: .8rem; line-height: 1.45; }
+.burbuja-user { justify-self: end; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 4px; }
+.burbuja-bot { justify-self: start; background: var(--bg-soft); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text-soft); }
+.burbuja-bot strong { color: var(--text); }
+
+/* toast de venta nueva dentro del mock */
+.mock-toast {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; font-size: .78rem; color: var(--text-soft);
+  background: var(--bg-soft);
+}
+.mock-toast strong { color: var(--text); }
+
+/* aviso de stock bajo */
+.mock-alerta {
+  display: flex; gap: 10px; align-items: center;
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--bg));
+  border-radius: var(--radius-sm); padding: 10px 12px; font-size: .78rem; color: var(--text-soft);
+}
+.mock-alerta strong { color: var(--text); }
+
+/* ---------- Banda CTA (compartida por las 3 páginas) ---------- */
+.cta { position: relative; overflow: hidden; }
+.cta-caja {
+  position: relative; text-align: center; padding: 64px 32px;
+  border-radius: var(--radius-xl); overflow: hidden;
+  background: var(--grad-accent); color: var(--on-accent);
+  box-shadow: var(--shadow-lg);
+}
+.cta-caja h2 { color: inherit; margin-bottom: 10px; }
+.cta-caja p { margin-bottom: 28px; }
+.cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-blanco { background: #fff; color: #991b1b; }
+.btn-blanco:hover { background: #fef2f2; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+.btn-fantasma { background: transparent; border-color: rgba(255,255,255,.5); color: #fff; }
+.btn-fantasma:hover { background: rgba(255,255,255,.12); box-shadow: none; }
+.cta-caja::before, .cta-caja::after {
+  content: ""; position: absolute; border-radius: 50%;
+  background: rgba(255, 255, 255, .14); pointer-events: none;
+}
+.cta-caja::before { width: 300px; height: 300px; top: -160px; right: -80px; }
+.cta-caja::after { width: 220px; height: 220px; bottom: -130px; left: -60px; }
+
+/* ---------- Responsive componentes ---------- */
+@media (max-width: 960px) {
+  .card-grilla { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .card-grilla { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .mock-lado { display: none; }
+  .mock-duo { grid-template-columns: 1fr; }
+}

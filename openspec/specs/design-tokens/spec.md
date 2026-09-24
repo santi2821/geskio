@@ -56,7 +56,7 @@ The system MUST provide `app_colors` supporting at least 2 complete themes (ligh
 
 ### Requirement: Frozen Spacing and Radii Scale (D3)
 
-The system MUST freeze the spacing scale (4px grid; steps 4/8/10/12/20/24 from exploration) and radii scale (10/12/18/pill from landing CSS vars) upfront. Screens and widgets MUST use only scale values.
+The system MUST freeze the spacing scale (4px grid; steps 4/8/10/12/16/20/24) and graduated radius scale (8/10/16/pill). Small controls use 8px, fields/cards/dialogs use 10px, and larger panels use 16px. Calendar cells may remain tighter where density requires it. Screens and widgets MUST use only scale values.
 
 #### Scenario: Off-scale value rejected in review
 

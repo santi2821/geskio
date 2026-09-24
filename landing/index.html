@@ -1,373 +1,314 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GesKio — El sistema que tu kiosco estaba pidiendo</title>
-    <meta name="description" content="GesKio junta tu caja, tu stock, tus clientes y el fiado en un solo lugar. Pensado para el día a día del kiosco, el almacén y la despensa.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='3' width='12' height='12' rx='2.5' fill='%23161b22'/><rect x='17' y='3' width='12' height='12' rx='2.5' fill='%23161b22' opacity='.4'/><rect x='3' y='17' width='12' height='12' rx='2.5' fill='%23161b22' opacity='.4'/><rect x='17' y='17' width='12' height='12' rx='2.5' fill='%23ef4444'/></svg>">
-    <link rel="stylesheet" href="styles.css">
-    <script>
-      (function () {
-        document.documentElement.classList.add('js');
-        var saved = localStorage.getItem('geskio-theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && prefersDark)) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      })();
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GesKio — La cuenta clara de tu negocio</title>
+  <meta name="description" content="GesKio reúne caja, stock, clientes y fiado en una demo de escritorio para comercios de barrio.">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="GesKio — La cuenta clara de tu negocio">
+  <meta property="og:description" content="Caja, stock, clientes y fiado en una demo de escritorio para comercios de barrio.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/tokens.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/pages/home.css">
+  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    // leo el tema guardado o el del sistema, antes de pintar
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('geskio-theme'); } catch (e) {}
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (saved === 'dark' || (!saved && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
+  <a href="#contenido" class="salto">Saltar al contenido</a>
 
-    <!-- NAVBAR -->
-    <header class="nav" id="nav">
-        <div class="container nav-inner">
-            <a href="#top" class="logo">
-                <svg class="logo-mark" width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
-                    <rect x="3" y="3" width="12" height="12" rx="2.5" fill="currentColor"/>
-                    <rect x="17" y="3" width="12" height="12" rx="2.5" fill="currentColor" opacity="0.4"/>
-                    <rect x="3" y="17" width="12" height="12" rx="2.5" fill="currentColor" opacity="0.4"/>
-                    <rect x="17" y="17" width="12" height="12" rx="2.5" class="logo-mark-accent"/>
-                </svg>
-                <span class="logo-text">GesKio</span>
-            </a>
-
-            <nav class="nav-links" id="navLinks" aria-label="Navegación principal">
-                <a href="#funcionalidades" class="nav-link">Funcionalidades</a>
-                <a href="#numeros" class="nav-link">Detalles</a>
-                <a href="#testimonios" class="nav-link">Testimonios</a>
-                <a href="#contacto" class="nav-link">Contacto</a>
-                <a href="#contacto" class="btn btn-primary drawer-cta">Probar GesKio</a>
-            </nav>
-
-            <div class="nav-actions">
-                <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-                    <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
-                    <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                </button>
-                <a href="#contacto" class="btn btn-primary btn-sm">Probar GesKio</a>
-                <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
-                    <span></span><span></span><span></span>
-                </button>
-            </div>
-        </div>
-    </header>
-    <button class="scrim" id="navScrim" aria-label="Cerrar menú" hidden></button>
-
-    <!-- HERO -->
-    <section class="hero" id="top">
-        <div class="container hero-grid">
-            <div class="hero-copy">
-                <p class="eyebrow reveal">Sistema de gestión para comercios barriales</p>
-                <h1 class="hero-title reveal">
-                    Menos vueltas,<br>
-                    más <span class="accent-word">ventas<svg class="scribble" viewBox="0 0 220 18" preserveAspectRatio="none" aria-hidden="true"><path d="M3 13 C 40 4, 80 4, 110 9 S 180 15, 217 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span>.
-                </h1>
-                <p class="hero-lead reveal">
-                    GesKio junta tu caja, tu stock, tus clientes y el fiado en un solo lugar.
-                    Pensado para el día a día del kiosco, el almacén y la despensa —
-                    sin planillas, sin cuadernos, sin perderse.
-                </p>
-                <div class="hero-cta reveal">
-                    <a href="#contacto" class="btn btn-primary btn-lg">Probar gratis</a>
-                    <a href="#funcionalidades" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
-                </div>
-                <p class="hero-foot reveal">App de escritorio · Pantalla 1100×700 · En español</p>
-            </div>
-
-            <!-- MOCKUP con datos reales del sistema -->
-            <div class="hero-visual reveal">
-                <div class="device">
-                    <div class="device-bar">
-                        <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
-                        <span class="device-tab">Dashboard</span>
-                    </div>
-                    <div class="device-body">
-                        <div class="device-stats">
-                            <div class="ds-tile"><span class="ds-label">Hoy</span><span class="ds-value">$5.900</span></div>
-                            <div class="ds-tile"><span class="ds-label">Mes</span><span class="ds-value">$187.300</span></div>
-                            <div class="ds-tile hl"><span class="ds-label">Ganancia</span><span class="ds-value">$54.200</span></div>
-                            <div class="ds-tile"><span class="ds-label">Deben</span><span class="ds-value">$3.600</span></div>
-                        </div>
-
-                        <div class="device-block">
-                            <div class="device-block-head">
-                                <span>Stock bajo</span>
-                                <span class="pill-warn">3</span>
-                            </div>
-                            <div class="device-row"><span>Leche 1L</span><span class="muted">0 u</span></div>
-                            <div class="device-row"><span>Aceite Girasol 1.5L</span><span class="muted">3 u</span></div>
-                            <div class="device-row"><span>Azúcar 1kg</span><span class="muted">8 u</span></div>
-                        </div>
-
-                        <div class="device-block">
-                            <div class="device-block-head"><span>Fiado pendiente</span></div>
-                            <div class="device-row debtor">
-                                <span class="debtor-name">Juan Pérez</span>
-                                <span class="debtor-amt">$3.600</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- MARQUEE -->
-    <div class="marquee-wrap">
-        <div class="marquee" id="marquee" aria-hidden="true">
-            <div class="marquee-track">
-            <span>Caja en segundos</span><span class="sep">✦</span>
-            <span>Stock siempre bajo control</span><span class="sep">✦</span>
-            <span>Fiado sin libretas</span><span class="sep">✦</span>
-            <span>Clientes de memoria</span><span class="sep">✦</span>
-            <span>Ganancias claras</span><span class="sep">✦</span>
-            <span>Un asistente con IA</span><span class="sep">✦</span>
-            <span>Caja en segundos</span><span class="sep">✦</span>
-            <span>Stock siempre bajo control</span><span class="sep">✦</span>
-            <span>Fiado sin libretas</span><span class="sep">✦</span>
-            <span>Clientes de memoria</span><span class="sep">✦</span>
-            <span>Ganancias claras</span><span class="sep">✦</span>
-            <span>Un asistente con IA</span><span class="sep">✦</span>
-        </div>
-        </div>
-        <button class="marquee-toggle" id="marqueeToggle" type="button" aria-pressed="false" aria-label="Pausar marquesina">⏸ Pausar</button>
+  <header class="nav">
+    <div class="wrap nav-fila">
+      <a href="index.html" class="logo">
+        <svg class="logo-ico" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="12" height="12" rx="2.5" fill="currentColor"/><rect x="17" y="3" width="12" height="12" rx="2.5" fill="currentColor" opacity=".4"/><rect x="3" y="17" width="12" height="12" rx="2.5" fill="currentColor" opacity=".4"/><rect x="17" y="17" width="12" height="12" rx="2.5" fill="#ef4444"/></svg>
+        GesKio
+      </a>
+      <nav class="links" id="links" aria-label="Navegación principal">
+        <a href="pages/funciones.html">Funciones</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#faq">Preguntas</a>
+        <a href="pages/contacto.html">Contacto</a>
+      </nav>
+      <div class="nav-lado">
+        <button class="tema" id="temaBtn" aria-label="Cambiar entre modo claro y oscuro">
+          <svg class="sol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="luna" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <a href="pages/contacto.html" class="btn">Probar</a>
+        <button class="menu" id="menuBtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="links">Menú</button>
+      </div>
     </div>
+  </header>
 
-    <!-- FUNCIONALIDADES (Bento) -->
-    <section class="section" id="funcionalidades">
-        <div class="container">
-            <div class="section-head reveal">
-                <p class="eyebrow">Funcionalidades</p>
-                <h2 class="section-title">Todo lo que pasa en tu comercio,<br>en una sola pantalla.</h2>
-            </div>
-
-            <div class="bento">
-                <!-- Dashboard (grande) -->
-                <article class="card card-lg reveal">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        </div>
-                        <h3>Dashboard</h3>
-                    </div>
-                    <p class="card-desc">Lo que vendiste hoy, lo que ganaste este mes y quién te debe — sin abrir Excel. Todo de un vistazo, con alertas que avisan antes de que el problema llegue.</p>
-                    <div class="mini-chips">
-                        <span class="chip">Ventas del día</span>
-                        <span class="chip">Ganancia real</span>
-                        <span class="chip">Alertas de stock</span>
-                    </div>
-                </article>
-
-                <!-- Caja -->
-                <article class="card reveal" data-delay="60">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                        </div>
-                        <h3>Caja</h3>
-                    </div>
-                    <p class="card-desc">Armá el carrito, cobrá y listo. Efectivo, transferencia, tarjeta o fiado — todo cuenta y descuenta del stock al toque.</p>
-                </article>
-
-                <!-- Stock -->
-                <article class="card reveal" data-delay="120">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                        </div>
-                        <h3>Stock</h3>
-                    </div>
-                    <p class="card-desc">Cada producto con su costo, su precio y su margen. Te avisamos cuando algo está por agotarse.</p>
-                </article>
-
-                <!-- Clientes -->
-                <article class="card reveal" data-delay="60">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
-                        </div>
-                        <h3>Clientes</h3>
-                    </div>
-                    <p class="card-desc">Quién compra, cuántas veces y cuánto debe. Tu clientela, de memoria y a un click.</p>
-                </article>
-
-                <!-- Fiado -->
-                <article class="card reveal" data-delay="120">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"/><polyline points="9 7 12 4 15 7"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
-                        </div>
-                        <h3>Fiado</h3>
-                    </div>
-                    <p class="card-desc">Fin con las libretas. Anotá, cobrá parcial y sabé hace cuántos días te deben.</p>
-                </article>
-
-                <!-- Chat IA (grande) -->
-                <article class="card card-lg reveal">
-                    <div class="card-top">
-                        <div class="card-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        </div>
-                        <h3>Chat IA</h3>
-                    </div>
-                    <p class="card-desc">Preguntale al sistema en tu idioma. "¿Cuánto vendí hoy?", "¿qué margen tengo?" — y respondé al toque con tus datos reales.</p>
-                    <div class="mini-chat">
-                        <div class="mc-row mc-user">¿quién me debe plata?</div>
-                        <div class="mc-row mc-bot">Juan Pérez te debe <strong>$3.600</strong></div>
-                    </div>
-                </article>
-            </div>
+  <main id="contenido">
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-nube hero-nube-a"></div>
+      <div class="hero-nube hero-nube-b"></div>
+      <div class="wrap hero-grilla">
+        <div>
+          <span class="hero-tag reveal"><span class="punto-estado" aria-hidden="true"></span> Demo gratuita con datos de ejemplo</span>
+          <h1 class="reveal" style="--d:.05s">La cuenta <span class="marca">clara</span> de tu negocio</h1>
+          <p class="bajada reveal" style="--d:.1s">Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. Cargás tus productos una vez y después solo te queda cobrar.</p>
+          <div class="hero-btns reveal" style="--d:.15s">
+            <a href="pages/contacto.html" class="btn btn-lg">Quiero probarlo</a>
+            <a href="#funciones" class="btn btn-linea btn-lg">Ver las funciones</a>
+          </div>
+          <p class="hero-chico reveal" style="--d:.2s">
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sin internet</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Sin nube: los datos no se envían</span>
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> En español</span>
+          </p>
         </div>
+
+        <div class="hero-mock reveal" style="--d:.25s" role="img" aria-label="Vista de la app GesKio: panel del día con la caja, un gráfico de la semana y avisos de stock bajo">
+          <div class="mock">
+            <div class="mock-bar" aria-hidden="true"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span></div>
+            <div class="mock-cuerpo">
+              <div class="mock-lado" aria-hidden="true">
+                <span class="activa">Dashboard</span><span>Caja</span><span>Stock</span><span>Clientes</span><span>Fiado</span><span>Chat</span>
+              </div>
+              <div class="mock-panel">
+                <div>
+                  <p class="mock-tit">Caja de hoy</p>
+                  <p class="mock-num" id="mockNum">$5.900</p>
+                  <p class="mock-sub">Sin contar el fiado.</p>
+                </div>
+                <div class="mock-chart" id="mockChart" aria-hidden="true">
+                  <i style="height:34%"></i><i style="height:52%"></i><i style="height:41%"></i><i style="height:63%"></i><i style="height:47%"></i><i style="height:58%"></i><i class="alta" data-h="70" style="height:70%"></i>
+                </div>
+                <div class="mock-toast" id="mockToast">
+                  <span class="punto-estado" aria-hidden="true"></span>
+                  <strong>Venta:</strong> <span id="mockToastTexto">Coca-Cola 500ml — $900</span>
+                </div>
+                <div class="mock-alerta" aria-hidden="true">
+                  <span class="punto-estado critico"></span>
+                  <span><strong>Pan lactal: quedan 3</strong> — tu mínimo es 5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- NÚMEROS / DETALLES -->
-    <section class="section section-soft" id="numeros">
-        <div class="container">
-            <div class="numbers-grid">
-                <div class="numbers-copy reveal">
-                    <p class="eyebrow">Por qué GesKio</p>
-                    <h2 class="section-title">No es otro Excel.<br>Es el Excel que se cansó de que le falten cosas.</h2>
-                    <p class="section-lead">Cada módulo habla con el otro. Cobrás en caja y el stock baja. Vendés fiado y la deuda aparece en el cliente. Todo encaja, nada se pierde.</p>
-                </div>
-                <div class="numbers-list reveal" data-delay="120">
-                    <div class="num-item">
-                        <span class="num">6</span>
-                        <span class="num-label">módulos que trabajan juntos, sin dobles cargas</span>
-                    </div>
-                    <div class="num-item">
-                        <span class="num">0</span>
-                        <span class="num-label">planillas que mantener a mano</span>
-                    </div>
-                    <div class="num-item">
-                        <span class="num">100<span class="num-suffix">%</span></span>
-                        <span class="num-label">en español, pensado para el comercio de acá</span>
-                    </div>
-                </div>
-            </div>
+    <!-- ============ FUNCIONES ============ -->
+    <section class="seccion funciones" id="funciones" data-spy>
+      <div class="wrap">
+        <div class="cab">
+          <span class="eyebrow reveal">Funciones</span>
+          <h2 class="reveal" style="--d:.05s">Todo lo que uso en el mostrador</h2>
+          <p class="bajada reveal" style="--d:.1s">Caja, stock, clientes y fiado son el día a día. El panel y el chat son para mirar lo que ya pasó. Cada una está explicada en la página de funciones.</p>
         </div>
+        <div class="card-grilla">
+          <article class="card reveal">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg></span>
+            <h3>Caja</h3>
+            <p>Armás el carrito y cobrás en efectivo, por transferencia o en fiado.</p>
+            <a class="card-link" href="pages/funciones.html#caja">Ver Caja <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="card reveal" style="--d:.06s">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1.73-2l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+            <h3>Stock</h3>
+            <p>Cada producto con su costo, su precio y su margen, y un mínimo que definís vos.</p>
+            <a class="card-link" href="pages/funciones.html#stock">Ver Stock <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="card reveal" style="--d:.12s">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <h3>Clientes</h3>
+            <p>Quién compró y cuánto debe, sin que tengas que acordarte de nada.</p>
+            <a class="card-link" href="pages/funciones.html#clientes">Ver Clientes <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="card reveal" style="--d:.06s">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+            <h3>Fiado</h3>
+            <p>La cuenta queda hecha al cobrar: monto, fecha y quién. Después se cobra por partes.</p>
+            <a class="card-link" href="pages/funciones.html#fiado">Ver Fiado <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="card reveal" style="--d:.12s">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+            <h3>Dashboard</h3>
+            <p>Lo que entró hoy, la semana y el mes, con avisos de stock bajo y deudas.</p>
+            <a class="card-link" href="pages/funciones.html#dashboard">Ver Dashboard <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="card reveal" style="--d:.18s">
+            <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <h3>Chat</h3>
+            <p>Prototipo local por palabras clave: responde algunas consultas de ventas, stock y deudas, con límites conocidos.</p>
+            <a class="card-link" href="pages/funciones.html#chat">Ver el Chat <span aria-hidden="true">→</span></a>
+          </article>
+        </div>
+      </div>
     </section>
 
-    <!-- TESTIMONIOS -->
-    <section class="section" id="testimonios">
-        <div class="container">
-            <div class="section-head reveal">
-                <p class="eyebrow">Testimonios</p>
-                <h2 class="section-title">Comerciantes que ya lo viven.</h2>
-            </div>
-
-            <div class="testimonios">
-                <figure class="testimonial-big reveal">
-                    <blockquote>
-                        "GesKio se metió en la rutina del local y ya no lo puedo sacar. El cierre de caja que me llevaba una hora ahora son cinco minutos — y sé exactamente cuánto gané."
-                    </blockquote>
-                    <figcaption>
-                        <div class="avatar">MR</div>
-                        <div>
-                            <div class="author-name">María Rodríguez</div>
-                            <div class="author-role">Almacén La Esquina</div>
-                        </div>
-                    </figcaption>
-                </figure>
-
-                <figure class="testimonial-sm reveal" data-delay="80">
-                    <blockquote>"El módulo de fiado me salvó. Antes anotaba en un cuaderno y se me perdía. Ahora sé quién me debe y desde cuándo."</blockquote>
-                    <figcaption>
-                        <div class="avatar sm">JL</div>
-                        <div>
-                            <div class="author-name">Jorge Lima</div>
-                            <div class="author-role">Despensa Doña Jose</div>
-                        </div>
-                    </figcaption>
-                </figure>
-
-                <figure class="testimonial-sm reveal" data-delay="140">
-                    <blockquote>"Las alertas de stock son geniales. Nunca más me quedé sin un producto clave un día de mucha venta."</blockquote>
-                    <figcaption>
-                        <div class="avatar sm">CG</div>
-                        <div>
-                            <div class="author-name">Carla Gómez</div>
-                            <div class="author-role">Kiosco Centro</div>
-                        </div>
-                    </figcaption>
-                </figure>
-            </div>
+    <!-- ============ CÓMO FUNCIONA ============ -->
+    <section class="seccion seccion-soft" id="como-funciona" data-spy>
+      <div class="wrap">
+        <div class="cab">
+          <h2 class="reveal">Si sabés cobrar, sabés usar GesKio</h2>
+          <p class="bajada reveal" style="--d:.05s">Tres pasos y nada más. El primero lo hacés una vez; los otros dos son los de siempre.</p>
         </div>
+        <div class="pasos-grilla">
+          <div class="pasos-linea" aria-hidden="true"></div>
+          <div class="paso reveal">
+            <span class="paso-num">1</span>
+            <h3>Cargás tus productos una vez</h3>
+            <p>Costo, precio de venta y un mínimo de reposición. Arrancá con los 20 que más venden; el resto lo sumás cuando pasa por el mostrador.</p>
+          </div>
+          <div class="paso reveal" style="--d:.1s">
+            <span class="paso-num">2</span>
+            <h3>Cobrás como siempre</h3>
+            <p>Desde Caja, con el medio de pago que use el cliente. Al cobrar, el stock baja y el fiado queda anotado con su cliente, su fecha y su monto.</p>
+          </div>
+          <div class="paso reveal" style="--d:.2s">
+            <span class="paso-num">3</span>
+            <h3>Cerrás el día con un vistazo</h3>
+            <p>A la noche mirás qué entró, qué está por faltar y quién te debe. Todo en la misma pantalla, sin planillas que sumar a mano.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- CONTACTO -->
-    <section class="section section-cta" id="contacto">
-        <div class="container cta-grid">
-            <div class="cta-copy reveal">
-                <p class="eyebrow">Empezá hoy</p>
-                <h2 class="section-title">Probá GesKio en tu comercio.</h2>
-                <p class="section-lead">Dejanos tus datos y te contactamos para que lo conozcas. Sin compromiso, sin vueltas.</p>
-
-                <div class="contact-methods">
-                    <div class="cm">
-                        <span class="cm-label">Email</span>
-                        <a class="cm-value" href="mailto:hola@geskio.com">hola@geskio.com</a>
-                    </div>
-                    <div class="cm">
-                        <span class="cm-label">Teléfono</span>
-                        <a class="cm-value" href="tel:+543511234567">+54 351 123 4567</a>
-                    </div>
-                </div>
-            </div>
-
-            <form class="cta-form reveal" data-delay="120" id="contactForm" novalidate>
-                <div class="field">
-                    <label for="nombre">Nombre</label>
-                    <input type="text" id="nombre" name="nombre" placeholder="¿Cómo te llamás?" autocomplete="name">
-                </div>
-                <div class="field">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="tu@email.com" autocomplete="email">
-                </div>
-                <div class="field">
-                    <label for="mensaje">¿De qué se trata tu comercio?</label>
-                    <textarea id="mensaje" name="mensaje" rows="3" placeholder="Contame en una línea..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Quiero probarlo</button>
-                <p class="form-note" id="formNote" role="status"></p>
-            </form>
+    <!-- ============ PRÓXIMAMENTE ============ -->
+    <section class="seccion prox">
+      <div class="wrap">
+        <div class="cab">
+          <span class="eyebrow reveal">Próximamente</span>
+          <h2 class="reveal" style="--d:.05s">Lo que viene</h2>
+          <p class="bajada reveal" style="--d:.1s">Estos son planes propuestos, sin fecha fija ni proveedor de IA elegido. Si alguna prioridad te sirve, nombrala al pedir la prueba.</p>
         </div>
+        <div class="card-grilla">
+          <article class="card reveal">
+            <span class="chip chip-activa">Plan propuesto</span>
+            <h3>Asistente con IA</h3>
+            <p>JEV está en planificación. La primera etapa propuesta es un chat de solo lectura que responda sobre los datos locales, indique período y origen, y pida precisión cuando una consulta sea ambigua. El proveedor de IA todavía está por decidir.</p>
+          </article>
+          <article class="card reveal" style="--d:.06s">
+            <span class="chip chip-activa">Plan propuesto</span>
+            <h3>Voz a texto</h3>
+            <p>La propuesta es dictar los datos de un producto y recibir un borrador editable. Nada se guarda hasta que la persona revise y confirme.</p>
+          </article>
+          <article class="card reveal" style="--d:.12s">
+            <span class="chip chip-activa">Plan propuesto</span>
+            <h3>Sugerencias para productos</h3>
+            <p>La IA podría proponer campos faltantes con su origen visible. Cada valor quedaría pendiente de revisión; costo, precio y stock no se completarían en silencio.</p>
+          </article>
+          <article class="card reveal" style="--d:.06s">
+            <span class="chip chip-activa">Plan propuesto</span>
+            <h3>Playground de gráficos</h3>
+            <p>Exploración propuesta con gráficos armados desde datos permitidos de GesKio. La primera etapa no ejecutará código ni modificará registros.</p>
+          </article>
+        </div>
+      </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <div class="container footer-inner">
-            <div class="footer-brand">
-                <a href="#top" class="logo">
-                    <svg class="logo-mark" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-                        <rect x="3" y="3" width="12" height="12" rx="2.5" fill="currentColor"/>
-                        <rect x="17" y="3" width="12" height="12" rx="2.5" fill="currentColor" opacity="0.4"/>
-                        <rect x="3" y="17" width="12" height="12" rx="2.5" fill="currentColor" opacity="0.4"/>
-                        <rect x="17" y="17" width="12" height="12" rx="2.5" class="logo-mark-accent"/>
-                    </svg>
-                    <span class="logo-text">GesKio</span>
-                </a>
-                <p class="footer-tag">Gestión comercial simple y poderosa.<br>Hecha para el comercio barrial.</p>
-            </div>
-
-            <nav class="footer-links">
-                <a href="#funcionalidades">Funcionalidades</a>
-                <a href="#numeros">Detalles</a>
-                <a href="#testimonios">Testimonios</a>
-                <a href="#contacto">Contacto</a>
-            </nav>
+    <!-- ============ FAQ ============ -->
+    <section class="seccion seccion-soft" id="faq" data-spy>
+      <div class="wrap">
+        <div class="cab">
+          <h2 class="reveal">Las preguntas que me hacen antes de pedir la prueba</h2>
         </div>
-        <div class="footer-bottom">
-            <div class="container">
-                <p>&copy; <span id="year"></span> GesKio · Hecho para el comercio de barrio</p>
-            </div>
+        <div class="faq">
+          <div class="faq-item reveal">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Necesito internet para usarla?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>No. La demo guarda sus datos en un archivo JSON local y los carga al volver a iniciar. Todavía no tiene respaldo automático ni recuperación guiada; usá datos de prueba, no registros reales.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.04s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Mis datos se suben a alguna nube?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>Los registros de la demo se guardan en JSON en esta computadora. No hay un proveedor de IA conectado todavía; privacidad y envío de datos se decidirán antes de implementar esa integración.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.08s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿En qué computadoras funciona?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>En Windows 10 y 11. Es liviana: alcanza la compu del mostrador de siempre (está pensada para una pantalla de 1100×700). ¿Tenés una más vieja? Contalo al pedir la prueba y se revisa antes de que te comprometas.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.12s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Puedo cambiar el precio de un producto cuando el proveedor sube?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>Sí. En Stock podés editar el costo y el precio de venta. La tabla muestra el margen calculado con los valores vigentes del producto.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.16s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Qué pasa si se rompe la compu?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>La demo todavía no trae una copia de seguridad automática ni una guía de recuperación. El archivo JSON está en el almacenamiento local de la app; seguí usando datos de prueba.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.2s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Se puede cambiar el color?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>Sí: viene en rojo o verde, con modo claro y oscuro, y si querés podés poner tu propio color de acento.</p></div>
+          </div>
+          <div class="faq-item reveal" style="--d:.24s">
+            <button class="faq-pregunta" aria-expanded="false"><span>¿Cuánto cuesta?</span><span class="faq-icono" aria-hidden="true"></span></button>
+            <div class="faq-respuesta"><p>Esta demo es gratuita. El precio y las condiciones de una versión lista para registrar operaciones todavía no están definidos.</p></div>
+          </div>
         </div>
-    </footer>
+      </div>
+    </section>
 
-    <script src="script.js"></script>
+    <!-- ============ CTA ============ -->
+    <section class="seccion cta">
+      <div class="wrap">
+        <div class="cta-caja reveal">
+          <h2>Probalo en tu kiosco</h2>
+          <p>Pedí una demo y recorré Caja, Stock, Clientes y Fiado con los datos de ejemplo incluidos.</p>
+          <div class="cta-btns">
+            <a href="pages/contacto.html" class="btn btn-blanco btn-lg">Quiero probarlo</a>
+            <a href="mailto:hola@geskio.com" class="btn btn-fantasma btn-lg">hola@geskio.com</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="wrap">
+      <div class="pie-grilla">
+        <div>
+          <p class="pie-logo">GesKio</p>
+        <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. Los planes de IA siguen en evaluación.</p>
+        </div>
+        <div>
+          <h4>Producto</h4>
+          <ul>
+            <li><a href="pages/funciones.html">Funciones</a></li>
+            <li><a href="index.html#como-funciona">Cómo funciona</a></li>
+            <li><a href="index.html#faq">Preguntas frecuentes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contacto</h4>
+          <ul>
+            <li><a href="pages/contacto.html">Pedir la app</a></li>
+            <li><a href="mailto:hola@geskio.com">hola@geskio.com</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie-base">
+        <p>© <span id="anio"></span> GesKio — gestión para tu kiosco.</p>
+        <p>Hecho en Argentina. IA y voz: planes propuestos, sin proveedor elegido ni fecha de implementación.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/theme.js" defer></script>
+  <script src="assets/js/nav.js" defer></script>
+  <script src="assets/js/reveal.js" defer></script>
+  <script src="assets/js/accordion.js" defer></script>
+  <script src="assets/js/mock-live.js" defer></script>
 </body>
 </html>

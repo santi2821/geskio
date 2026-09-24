@@ -1,43 +1,41 @@
 import flet as ft
-from screen_base import Screen
+from screen_base import Pantalla
 from datos import (
     productos,
     crear_producto,
     actualizar_producto,
     eliminar_producto,
-    ajustar_stock,
     margen,
 )
 from theme import (
-    FS_16,
     ICON_SM,
-    SP_4,
     SP_8,
     SP_10,
     SP_12,
-    app_colors,
-    role_color,
+    colores,
+    color_rol,
 )
 from widgets import (
-    AppDialog,
-    AppTable,
-    PageHeader,
-    Section,
-    TablePager,
-    TableToolbar,
-    confirm_delete,
-    feedback,
-    paginate_rows,
-    sync_text,
+    campo_texto,
+    dialogo,
+    tabla,
+    encabezado,
+    paginador,
+    barra_busqueda,
+    confirmar_eliminar,
+    aviso,
+    moneda,
+    paginar,
+    sincronizar_texto,
 )
 
 
-class PantallaStock(Screen):
+class PantallaStock(Pantalla):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Stock")
-        self._query = ""
+        self._busqueda = ""
         self._solo_bajo = False
-        self._page = 1
+        self._pagina = 1
 
     def actualizar(self):
         self.filtrar_datos()
@@ -47,40 +45,37 @@ class PantallaStock(Screen):
             ft.DataColumn(ft.Text("Producto")),
             ft.DataColumn(ft.Text("Costo")),
             ft.DataColumn(ft.Text("Precio")),
-            ft.DataColumn(ft.Text("%")),
+            ft.DataColumn(ft.Text("Margen")),
             ft.DataColumn(ft.Text("Stock")),
-            ft.DataColumn(ft.Text("Min")),
+            ft.DataColumn(ft.Text("Mínimo")),
             ft.DataColumn(ft.Text("Acciones")),
         ]
-        self._tabla_holder = ft.Column(
-            [AppTable(self._columnas, [], empty_message="Sin resultados")],
-            scroll=ft.ScrollMode.AUTO,
-            expand=True,
-        )
-        self._pager_holder = ft.Column([], spacing=SP_8)
+        # zonas tipo Container: refrescar = cambiar .content + update()
+        self._zona_tabla = ft.Container(expand=True)
+        self._zona_paginador = ft.Container()
         self._chip_bajo = ft.Switch(
             label="Solo bajo stock",
             value=self._solo_bajo,
-            on_change=lambda _: self._on_filtro_bajo(),
+            on_change=self._al_filtro_bajo,
         )
-        toolbar = TableToolbar(
-            on_query=self._on_query,
+        barra = barra_busqueda(
+            al_buscar=self._al_buscar,
             chips=(self._chip_bajo,),
-            search_hint="Buscar producto...",
+            pista="Buscar producto...",
         )
 
-        self.campo_nombre = ft.TextField(label="Nombre")
-        self.campo_costo = ft.TextField(
+        self.campo_nombre = campo_texto(label="Nombre")
+        self.campo_costo = campo_texto(
             label="Costo $", keyboard_type=ft.KeyboardType.NUMBER
         )
-        self.campo_precio = ft.TextField(
+        self.campo_precio = campo_texto(
             label="Precio $", keyboard_type=ft.KeyboardType.NUMBER
         )
-        self.campo_stock = ft.TextField(
+        self.campo_stock = campo_texto(
             label="Stock", value="0", keyboard_type=ft.KeyboardType.NUMBER
         )
-        self.campo_minimo = ft.TextField(
-            label="Minimo", value="5", keyboard_type=ft.KeyboardType.NUMBER
+        self.campo_minimo = campo_texto(
+            label="Mínimo", value="5", keyboard_type=ft.KeyboardType.NUMBER
         )
         for _campo in (
             self.campo_nombre,
@@ -89,167 +84,263 @@ class PantallaStock(Screen):
             self.campo_stock,
             self.campo_minimo,
         ):
-            sync_text(_campo)
+            sincronizar_texto(_campo)
+        self.campo_nombre.expand = False
+        for _campo in (
+            self.campo_costo,
+            self.campo_precio,
+            self.campo_stock,
+            self.campo_minimo,
+        ):
+            _campo.expand = True
 
-        form = ft.Row(
+        self._mensaje_nuevo = ft.Text(color=color_rol(colores.get(), "danger_text"))
+        formulario_nuevo = ft.Column(
             [
                 self.campo_nombre,
-                self.campo_costo,
-                self.campo_precio,
-                self.campo_stock,
-                self.campo_minimo,
-                ft.ElevatedButton("Guardar", on_click=self.guardar_nuevo),
+                ft.Row([self.campo_costo, self.campo_precio], spacing=SP_8),
+                ft.Row([self.campo_stock, self.campo_minimo], spacing=SP_8),
+                self._mensaje_nuevo,
             ],
-            spacing=SP_8,
+            tight=True,
+            spacing=SP_12,
         )
+        self._dialogo_nuevo = dialogo(
+            "Nuevo producto",
+            ft.Container(content=formulario_nuevo, width=420),
+            acciones=[
+                ft.TextButton("Cancelar", on_click=self._cancelar_nuevo),
+                ft.FilledButton("Guardar producto", on_click=self.guardar_nuevo),
+            ],
+        )
+        boton_nuevo = ft.FilledButton(
+            "Nuevo producto",
+            on_click=lambda _: self.abrir_dialogo(self._dialogo_nuevo),
+        )
+
+        # el build renderiza los datos actuales: entran montados con la pantalla
+        self._cargar_tabla()
 
         return ft.Column(
             [
-                PageHeader("Stock", on_refresh=lambda _: self.filtrar_datos()),
-                toolbar,
-                self._tabla_holder,
-                self._pager_holder,
-                Section("Nuevo producto", form),
+                encabezado(
+                    "Inventario",
+                    acciones=(boton_nuevo,),
+                    al_refrescar=lambda _: self.filtrar_datos(),
+                    descripcion="Productos, precios y disponibilidad de inventario.",
+                ),
+                barra,
+                self._zona_tabla,
+                self._zona_paginador,
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    # ─── toolbar + pager ────────────────────────────────────────────
+    def _cancelar_nuevo(self, e=None):
+        for campo in (self.campo_nombre, self.campo_costo, self.campo_precio):
+            campo.value = ""
+        self.campo_stock.value = "0"
+        self.campo_minimo.value = "5"
+        self._limpiar_errores(
+            {
+                "nombre": self.campo_nombre,
+                "costo": self.campo_costo,
+                "precio": self.campo_precio,
+                "stock": self.campo_stock,
+                "minimo": self.campo_minimo,
+            },
+            self._mensaje_nuevo,
+        )
+        self.cerrar_dialogo(self._dialogo_nuevo)
 
-    def _on_query(self, query):
-        self._query = query or ""
-        self._page = 1
+    # ─── busqueda + paginador ───────────────────────────────────────
+
+    def _al_buscar(self, texto):
+        self._busqueda = texto or ""
+        self._pagina = 1
         self.filtrar_datos()
 
-    def _on_filtro_bajo(self):
+    def _al_filtro_bajo(self, e=None):
+        # el .value del widget llega viejo; el estado nuevo viene en el evento
+        valor = self._solo_bajo
         try:
-            self._solo_bajo = bool(self._chip_bajo.value)
+            dato = getattr(e, "data", None)
+            if isinstance(dato, bool):
+                valor = dato
+            elif dato in ("true", "false"):
+                valor = dato == "true"
+            else:
+                control = getattr(e, "control", None)
+                if control is not None and control.value is not None:
+                    valor = bool(control.value)
         except Exception:
-            self._solo_bajo = False
-        self._page = 1
+            pass
+        self._solo_bajo = bool(valor)
+        self._pagina = 1
         self.filtrar_datos()
 
-    def _on_page(self, new_page):
+    def _al_paginar(self, nueva):
         try:
-            self._page = max(1, int(new_page or 1))
+            self._pagina = max(1, int(nueva or 1))
         except (TypeError, ValueError):
-            self._page = 1
+            self._pagina = 1
         self.filtrar_datos()
 
     # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
-    def filtrar_datos(self):
-        try:
-            palette = app_colors.get()
-            bajo_color = role_color(palette, "danger_text")
-            q = (getattr(self, "_query", "") or "").lower()
-            solo_bajo = bool(getattr(self, "_solo_bajo", False))
-            items = []
-            for p in productos:
-                if q and q not in p["nombre"].lower():
-                    continue
-                if solo_bajo and not p["stock"] <= p["minimo"]:
-                    continue
-                items.append(p)
-            items.sort(key=lambda p: p["nombre"].lower())
-            filas = []
-            for p in items:
-                m = margen(p["costo"], p["precio"])
-                bajo = p["stock"] <= p["minimo"]
-                pid = p["id"]
+    def _cargar_tabla(self):
+        # arma la tabla filtrada en las zonas, sin update
+        paleta = colores.get()
+        color_bajo = color_rol(paleta, "danger_text")
+        q = (getattr(self, "_busqueda", "") or "").lower()
+        solo_bajo = bool(getattr(self, "_solo_bajo", False))
+        items = []
+        for p in productos:
+            if q and q not in p["nombre"].lower():
+                continue
+            if solo_bajo and not p["stock"] <= p["minimo"]:
+                continue
+            items.append(p)
+        items.sort(key=lambda p: p["nombre"].lower())
+        filas = []
+        for p in items:
+            m = margen(p["costo"], p["precio"])
+            bajo = p["stock"] <= p["minimo"]
+            pid = p["id"]
 
-                filas.append(
-                    ft.DataRow(
-                        cells=[
-                            ft.DataCell(
-                                ft.Text(p["nombre"], weight=ft.FontWeight.BOLD)
-                            ),
-                            ft.DataCell(ft.Text(f"${p['costo']:,}")),
-                            ft.DataCell(ft.Text(f"${p['precio']:,}")),
-                            ft.DataCell(ft.Text(f"{m}%")),
-                            ft.DataCell(
-                                ft.Text(
-                                    str(p["stock"]),
-                                    color=bajo_color if bajo else None,
-                                    weight=ft.FontWeight.BOLD if bajo else None,
-                                )
-                            ),
-                            ft.DataCell(ft.Text(str(p["minimo"]))),
-                            ft.DataCell(
-                                ft.Row(
-                                    [
-                                        ft.IconButton(
-                                            ft.Icons.EDIT,
-                                            icon_size=ICON_SM,
-                                            tooltip="Editar",
-                                            on_click=lambda _, x=pid: (
-                                                self.editar_producto(x)
-                                            ),
+            filas.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(p["nombre"], weight=ft.FontWeight.BOLD)),
+                        ft.DataCell(ft.Text(moneda(p["costo"]))),
+                        ft.DataCell(ft.Text(moneda(p["precio"]))),
+                        ft.DataCell(ft.Text(f"{m}%")),
+                        ft.DataCell(
+                            ft.Text(
+                                str(p["stock"]),
+                                color=color_bajo if bajo else None,
+                                weight=ft.FontWeight.BOLD if bajo else None,
+                            )
+                        ),
+                        ft.DataCell(ft.Text(str(p["minimo"]))),
+                        ft.DataCell(
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        ft.Icons.EDIT,
+                                        icon_size=ICON_SM,
+                                        tooltip="Editar",
+                                        on_click=lambda _, x=pid: self.editar_producto(
+                                            x
                                         ),
-                                        ft.IconButton(
-                                            ft.Icons.ADD_CIRCLE_OUTLINE,
-                                            icon_size=ICON_SM,
-                                            tooltip="Ajustar stock",
-                                            on_click=lambda _, x=pid: (
-                                                self.ajustar_stock_dialog(x)
-                                            ),
+                                    ),
+                                    ft.IconButton(
+                                        ft.Icons.DELETE_OUTLINE,
+                                        icon_size=ICON_SM,
+                                        tooltip="Eliminar",
+                                        icon_color=paleta.danger,
+                                        on_click=lambda _, x=pid: (
+                                            self.eliminar_producto(x)
                                         ),
-                                        ft.IconButton(
-                                            ft.Icons.DELETE_OUTLINE,
-                                            icon_size=ICON_SM,
-                                            tooltip="Eliminar",
-                                            icon_color=palette.danger,
-                                            on_click=lambda _, x=pid: (
-                                                self.eliminar_producto(x)
-                                            ),
-                                        ),
-                                    ],
-                                    spacing=SP_4,
-                                )
-                            ),
-                        ]
-                    )
+                                    ),
+                                ],
+                                spacing=SP_8,
+                            )
+                        ),
+                    ]
                 )
-            page = int(getattr(self, "_page", 1) or 1)
-            visibles, current, total = paginate_rows(filas, page)
-            self._page = current
-            self._tabla_holder.controls = [
-                AppTable(self._columnas, visibles, empty_message="Sin resultados")
-            ]
-            self._pager_holder.controls = [
-                TablePager(current, total, on_page=self._on_page)
-            ]
-        except Exception as ex:
-            print(f"Error en filtrar_datos: {ex}")
-        self.pagina.update()
+            )
+        pagina = int(getattr(self, "_pagina", 1) or 1)
+        visibles, actual, total = paginar(filas, pagina)
+        self._pagina = actual
+        self._zona_tabla.content = tabla(
+            self._columnas, visibles, mensaje_vacio="Sin resultados"
+        )
+        self._zona_paginador.content = (
+            paginador(actual, total, al_paginar=self._al_paginar) if total > 1 else None
+        )
+
+    def filtrar_datos(self):
+        # refresco post-accion: mismo render + update de las zonas montadas
+        self._cargar_tabla()
+        try:
+            self._zona_tabla.update()
+            self._zona_paginador.update()
+        except Exception:
+            self.rearmar()
 
     # ─── nuevo producto ─────────────────────────────────────────────
 
     def guardar_nuevo(self, e=None):
+        campos = {
+            "nombre": self.campo_nombre,
+            "costo": self.campo_costo,
+            "precio": self.campo_precio,
+            "stock": self.campo_stock,
+            "minimo": self.campo_minimo,
+        }
+        self._limpiar_errores(campos, self._mensaje_nuevo)
         try:
-            nombre = self.campo_nombre.value.strip()
+            nombre = (self.campo_nombre.value or "").strip()
             if not nombre:
-                return
-            try:
-                crear_producto(
-                    nombre,
-                    float(self.campo_costo.value or 0),
-                    float(self.campo_precio.value or 0),
-                    int(self.campo_stock.value or 0),
-                    int(self.campo_minimo.value or 5),
+                self._marcar_error(
+                    campos, "Poné un nombre", "nombre", self._mensaje_nuevo
                 )
-            except ValueError:
-                self.mostrar_alerta("Revisa los valores numericos")
                 return
-            self.campo_nombre.value = ""
-            self.campo_costo.value = ""
-            self.campo_precio.value = ""
+            for clave, campo in (
+                ("costo", self.campo_costo),
+                ("precio", self.campo_precio),
+            ):
+                if not (campo.value or "").strip():
+                    etiqueta = "costo" if clave == "costo" else "precio"
+                    self._marcar_error(
+                        campos, f"Ingresá el {etiqueta}", clave, self._mensaje_nuevo
+                    )
+                    return
+            numericos = {}
+            for clave, campo, defecto in (
+                ("costo", self.campo_costo, 0),
+                ("precio", self.campo_precio, 0),
+                ("stock", self.campo_stock, 0),
+                ("minimo", self.campo_minimo, 5),
+            ):
+                try:
+                    numericos[clave] = float(campo.value or defecto)
+                except (TypeError, ValueError):
+                    self._marcar_error(
+                        campos,
+                        "Revisá el valor numérico",
+                        clave,
+                        self._mensaje_nuevo,
+                    )
+                    return
+            costo, precio = numericos["costo"], numericos["precio"]
+            stock, minimo = numericos["stock"], numericos["minimo"]
+            aviso_barato = precio < costo
+            try:
+                crear_producto(nombre, costo, precio, stock, minimo)
+            except ValueError as ex:
+                self._marcar_error(campos, str(ex), feedback=self._mensaje_nuevo)
+                return
+            for _campo in (
+                self.campo_nombre,
+                self.campo_costo,
+                self.campo_precio,
+            ):
+                _campo.value = ""
+                _campo.update()
             self.campo_stock.value = "0"
+            self.campo_stock.update()
             self.campo_minimo.value = "5"
+            self.campo_minimo.update()
+            self.cerrar_dialogo(self._dialogo_nuevo)
             self.filtrar_datos()
-            self.mostrar_alerta("Producto creado")
+            if aviso_barato:
+                self.mostrar_alerta("Ojo: el precio es menor al costo")
+            else:
+                self.mostrar_alerta("Producto creado")
         except Exception as ex:
             print(f"Error guardar_nuevo: {ex}")
 
@@ -261,24 +352,24 @@ class PantallaStock(Screen):
             if not p:
                 return
 
-            campo_nombre = ft.TextField(label="Nombre", value=p["nombre"])
-            campo_costo = ft.TextField(
+            campo_nombre = campo_texto(label="Nombre", value=p["nombre"])
+            campo_costo = campo_texto(
                 label="Costo $",
                 value=str(p["costo"]),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
-            campo_precio = ft.TextField(
+            campo_precio = campo_texto(
                 label="Precio $",
                 value=str(p["precio"]),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
-            campo_stock = ft.TextField(
+            campo_stock = campo_texto(
                 label="Stock",
                 value=str(p["stock"]),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
-            campo_minimo = ft.TextField(
-                label="Minimo",
+            campo_minimo = campo_texto(
+                label="Mínimo",
                 value=str(p["minimo"]),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
@@ -289,135 +380,61 @@ class PantallaStock(Screen):
                 campo_stock,
                 campo_minimo,
             ):
-                sync_text(_campo)
+                sincronizar_texto(_campo)
+            mensaje_error = ft.Text(color=color_rol(colores.get(), "danger_text"))
 
             def guardar(e):
+                campos = {
+                    "nombre": campo_nombre,
+                    "costo": campo_costo,
+                    "precio": campo_precio,
+                    "stock": campo_stock,
+                    "minimo": campo_minimo,
+                }
+                self._limpiar_errores(campos, mensaje_error)
                 try:
                     actualizar_producto(
                         pid,
-                        campo_nombre.value.strip() or p["nombre"],
+                        (campo_nombre.value or "").strip() or p["nombre"],
                         float(campo_costo.value or 0),
                         float(campo_precio.value or 0),
-                        int(campo_stock.value or 0),
-                        int(campo_minimo.value or 5),
+                        float(campo_stock.value or 0),
+                        float(campo_minimo.value or 5),
                     )
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(ventana)
                     self.filtrar_datos()
                     self.mostrar_alerta("Producto actualizado")
-                except ValueError:
-                    self.mostrar_alerta("Revisa los valores numericos")
+                except ValueError as ex:
+                    self._marcar_error(
+                        campos,
+                        str(ex) or "Revisá los valores numéricos",
+                        feedback=mensaje_error,
+                    )
                 except Exception as ex:
                     print(f"Error al guardar: {ex}")
 
-            dialogo = AppDialog(
+            ventana = dialogo(
                 "Editar producto",
                 ft.Column(
                     [
                         campo_nombre,
                         ft.Row([campo_costo, campo_precio], spacing=SP_8),
                         ft.Row([campo_stock, campo_minimo], spacing=SP_8),
+                        mensaje_error,
                     ],
                     spacing=SP_12,
                     tight=True,
                 ),
-                actions=[
+                acciones=[
                     ft.TextButton(
-                        "Cancelar", on_click=lambda e: self.cerrar_dialogo(dialogo)
+                        "Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)
                     ),
                     ft.ElevatedButton("Guardar", on_click=guardar),
                 ],
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error editar_producto: {ex}")
-
-    # ─── ajustar stock ──────────────────────────────────────────────
-
-    def ajustar_stock_dialog(self, pid):
-        try:
-            palette = app_colors.get()
-            p = next((x for x in productos if x["id"] == pid), None)
-            if not p:
-                return
-
-            texto_actual = ft.Text(
-                f"Stock actual: {p['stock']}",
-                size=FS_16,
-                weight=ft.FontWeight.BOLD,
-                color=palette.text,
-            )
-            campo = ft.TextField(
-                label="Cantidad", value="1", keyboard_type=ft.KeyboardType.NUMBER
-            )
-            sync_text(campo)
-
-            def aplicar(cantidad):
-                try:
-                    if p["stock"] + cantidad < 0:
-                        self.mostrar_alerta(f"Solo hay {p['stock']} en stock")
-                        return
-                    ajustar_stock(pid, cantidad)
-                    texto_actual.value = f"Stock actual: {p['stock']}"
-                    campo.value = "1"
-                    self.filtrar_datos()
-                except Exception as ex:
-                    print(f"Error aplicar: {ex}")
-
-            def confirmar(e):
-                try:
-                    c = int(campo.value or 0)
-                    if c == 0:
-                        return
-                    ajustar_stock(pid, c)
-                    dialogo.open = False
-                    self.pagina.update()
-                    self.filtrar_datos()
-                    self.mostrar_alerta(f"Stock de {p['nombre']} actualizado")
-                except ValueError:
-                    pass
-                except Exception as ex:
-                    print(f"Error confirmar: {ex}")
-
-            dialogo = AppDialog(
-                f"Ajustar stock — {p['nombre']}",
-                ft.Column(
-                    [
-                        texto_actual,
-                        ft.Row(
-                            [
-                                ft.ElevatedButton(
-                                    "−10", on_click=lambda e: aplicar(-10)
-                                ),
-                                ft.ElevatedButton("−1", on_click=lambda e: aplicar(-1)),
-                                campo,
-                                ft.ElevatedButton("+1", on_click=lambda e: aplicar(1)),
-                                ft.ElevatedButton(
-                                    "+10", on_click=lambda e: aplicar(10)
-                                ),
-                            ],
-                            spacing=SP_8,
-                        ),
-                    ],
-                    spacing=SP_12,
-                    tight=True,
-                ),
-                actions=[
-                    ft.TextButton(
-                        "Cerrar", on_click=lambda e: self.cerrar_dialogo(dialogo)
-                    ),
-                    ft.ElevatedButton("Aplicar y cerrar", on_click=confirmar),
-                ],
-            )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error ajustar_stock_dialog: {ex}")
 
     # ─── eliminar ───────────────────────────────────────────────────
 
@@ -440,26 +457,86 @@ class PantallaStock(Screen):
                 except Exception as ex:
                     print(f"Error confirmar eliminar: {ex}")
 
-            confirm_delete(
+            confirmar_eliminar(
                 self.pagina,
                 confirmar,
-                item_name=p["nombre"],
-                title="Eliminar producto",
+                nombre=p["nombre"],
+                titulo="Eliminar producto",
             )
         except Exception as ex:
             print(f"Error eliminar_producto: {ex}")
 
     # ─── helpers ────────────────────────────────────────────────────
 
-    def cerrar_dialogo(self, dialogo):
+    def _limpiar_errores(self, campos, feedback=None):
+        for campo in campos.values():
+            campo.error_text = None
+            try:
+                campo.update()
+            except Exception:
+                pass
+        if feedback is not None:
+            feedback.value = ""
+            try:
+                feedback.update()
+            except Exception:
+                pass
+
+    def _marcar_error(self, campos, mensaje, preferido=None, feedback=None):
+        texto = mensaje.lower()
+        if "nombre" in texto or "poné" in texto:
+            afectados = ("nombre",)
+        elif "costo" in texto:
+            afectados = ("costo",)
+        elif "precio" in texto:
+            afectados = ("precio",)
+        elif "stock" in texto and "mínimo" in texto:
+            afectados = ("stock", "minimo")
+        elif "stock" in texto:
+            afectados = ("stock",)
+        elif "mínimo" in texto:
+            afectados = ("minimo",)
+        else:
+            afectados = (preferido,) if preferido else tuple(campos)
+        for clave in afectados:
+            campo = campos.get(clave)
+            if campo is not None:
+                campo.error_text = mensaje
+                try:
+                    campo.update()
+                except Exception:
+                    pass
+        campo = campos.get(afectados[0])
+        if feedback is not None:
+            feedback.value = mensaje
+            try:
+                feedback.update()
+            except Exception:
+                pass
+        if campo is not None:
+            try:
+                campo.focus()
+            except Exception:
+                pass
+
+    def abrir_dialogo(self, ventana):
         try:
-            dialogo.open = False
+            ventana.open = True
+            if ventana not in self.pagina.overlay:
+                self.pagina.overlay.append(ventana)
+            ventana.update()
+        except Exception:
             self.pagina.update()
-        except Exception as ex:
-            print(f"Error cerrar dialogo: {ex}")
+
+    def cerrar_dialogo(self, ventana):
+        try:
+            ventana.open = False
+            ventana.update()
+        except Exception:
+            self.pagina.update()
 
     def mostrar_alerta(self, texto):
         try:
-            feedback(self.pagina, texto)
+            aviso(self.pagina, texto)
         except Exception as ex:
             print(f"Error mostrar_alerta: {ex}")

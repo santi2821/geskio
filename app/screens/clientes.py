@@ -1,5 +1,5 @@
 import flet as ft
-from screen_base import Screen
+from screen_base import Pantalla
 from datos import (
     clientes,
     ventas,
@@ -14,196 +14,219 @@ from theme import (
     SP_8,
     SP_10,
     SP_12,
-    app_colors,
-    role_color,
+    colores,
+    color_rol,
 )
 from widgets import (
-    AppDialog,
-    AppTable,
-    PageHeader,
-    Section,
-    TablePager,
-    TableToolbar,
-    confirm_delete,
-    feedback,
-    paginate_rows,
-    sync_text,
+    campo_texto,
+    dialogo,
+    tabla,
+    encabezado,
+    seccion,
+    paginador,
+    barra_busqueda,
+    confirmar_eliminar,
+    aviso,
+    moneda,
+    paginar,
+    sincronizar_texto,
 )
 
 
-class PantallaClientes(Screen):
+class PantallaClientes(Pantalla):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Clientes")
-        self._query = ""
+        self._busqueda = ""
         self._solo_deuda = False
-        self._page = 1
+        self._pagina = 1
 
     def actualizar(self):
         self.filtrar_datos()
 
     def build(self):
+        paleta = colores.get()
         self._columnas = [
             ft.DataColumn(ft.Text("Nombre")),
-            ft.DataColumn(ft.Text("Telefono")),
+            ft.DataColumn(ft.Text("Teléfono")),
             ft.DataColumn(ft.Text("Compras")),
             ft.DataColumn(ft.Text("Debe")),
             ft.DataColumn(ft.Text("")),
         ]
-        self._tabla_holder = ft.Column(
-            [AppTable(self._columnas, [], empty_message="Sin resultados")],
-            scroll=ft.ScrollMode.AUTO,
-            expand=True,
-        )
-        self._pager_holder = ft.Column([], spacing=SP_8)
+        self._zona_tabla = ft.Container(expand=True)
+        self._zona_paginador = ft.Container()
         self._chip_deuda = ft.Switch(
             label="Con deuda",
             value=self._solo_deuda,
-            on_change=lambda _: self._on_filtro_deuda(),
+            on_change=self._al_filtro_deuda,
         )
-        toolbar = TableToolbar(
-            on_query=self._on_query,
+        barra = barra_busqueda(
+            al_buscar=self._al_buscar,
             chips=(self._chip_deuda,),
-            search_hint="Buscar cliente...",
+            pista="Buscar cliente...",
         )
 
-        self.campo_nombre = ft.TextField(label="Nombre", expand=True)
-        self.campo_telefono = ft.TextField(label="Telefono")
+        self.campo_nombre = campo_texto(label="Nombre", expand=True)
+        self.campo_telefono = campo_texto(label="Teléfono")
         for _campo in (self.campo_nombre, self.campo_telefono):
-            sync_text(_campo)
+            sincronizar_texto(_campo)
 
         form = ft.Row(
             [
                 self.campo_nombre,
                 self.campo_telefono,
-                ft.ElevatedButton("Agregar", on_click=self.guardar_nuevo),
+                ft.FilledButton(
+                    "Agregar",
+                    on_click=self.guardar_nuevo,
+                    style=ft.ButtonStyle(
+                        bgcolor=paleta.primary, color=paleta.on_primary
+                    ),
+                ),
             ],
             spacing=SP_8,
         )
 
+        # el build renderiza los datos actuales: entran montados con la pantalla
+        self._cargar_tabla()
+
         return ft.Column(
             [
-                PageHeader("Clientes", on_refresh=lambda _: self.filtrar_datos()),
-                toolbar,
-                self._tabla_holder,
-                self._pager_holder,
-                Section("Nuevo cliente", form),
+                encabezado(
+                    "Directorio de clientes",
+                    al_refrescar=lambda _: self.filtrar_datos(),
+                    descripcion="Personas y datos de contacto de tu comercio.",
+                ),
+                barra,
+                self._zona_tabla,
+                self._zona_paginador,
+                seccion("Nuevo cliente", form),
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    # ─── toolbar + pager ────────────────────────────────────────────
+    # ─── busqueda + paginador ───────────────────────────────────────
 
-    def _on_query(self, query):
-        self._query = query or ""
-        self._page = 1
+    def _al_buscar(self, texto):
+        self._busqueda = texto or ""
+        self._pagina = 1
         self.filtrar_datos()
 
-    def _on_filtro_deuda(self):
+    def _al_filtro_deuda(self, e=None):
+        valor = self._solo_deuda
         try:
-            self._solo_deuda = bool(self._chip_deuda.value)
+            if e is not None:
+                dato = getattr(e, "data", None)
+                if isinstance(dato, bool):
+                    valor = dato
+                elif dato in ("true", "false"):
+                    valor = dato == "true"
+                else:
+                    control = getattr(e, "control", None)
+                    if control is not None and control.value is not None:
+                        valor = bool(control.value)
         except Exception:
-            self._solo_deuda = False
-        self._page = 1
+            pass
+        self._solo_deuda = bool(valor)
+        self._pagina = 1
         self.filtrar_datos()
 
-    def _on_page(self, new_page):
+    def _al_paginar(self, nueva):
         try:
-            self._page = max(1, int(new_page or 1))
+            self._pagina = max(1, int(nueva or 1))
         except (TypeError, ValueError):
-            self._page = 1
+            self._pagina = 1
         self.filtrar_datos()
 
     # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
-    def filtrar_datos(self):
-        try:
-            palette = app_colors.get()
-            deuda_color = role_color(palette, "danger_text")
-            q = (getattr(self, "_query", "") or "").lower()
-            solo_deuda = bool(getattr(self, "_solo_deuda", False))
-            items = []
-            for c in clientes:
-                if (
-                    q
-                    and q not in c["nombre"].lower()
-                    and q not in c.get("telefono", "")
-                ):
-                    continue
-                debe = sum(
-                    x["total"] - x["pagado"]
-                    for x in cuentas
-                    if x["cliente_id"] == c["id"]
-                )
-                if solo_deuda and debe <= 0:
-                    continue
-                items.append(c)
-            items.sort(key=lambda c: c["nombre"].lower())
-            filas = []
-            for c in items:
-                compras = len([v for v in ventas if v.get("cliente_id") == c["id"]])
-                debe = sum(
-                    x["total"] - x["pagado"]
-                    for x in cuentas
-                    if x["cliente_id"] == c["id"]
-                )
-                cid = c["id"]
+    def _cargar_tabla(self):
+        # arma la tabla filtrada en las zonas, sin update
+        paleta = colores.get()
+        color_deuda = color_rol(paleta, "danger_text")
+        q = (getattr(self, "_busqueda", "") or "").lower()
+        solo_deuda = bool(getattr(self, "_solo_deuda", False))
+        items = []
+        for c in clientes:
+            if q and q not in c["nombre"].lower() and q not in c.get("telefono", ""):
+                continue
+            debe = sum(
+                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"]
+            )
+            if solo_deuda and debe <= 0:
+                continue
+            items.append(c)
+        items.sort(key=lambda c: c["nombre"].lower())
+        filas = []
+        for c in items:
+            compras = len([v for v in ventas if v.get("cliente_id") == c["id"]])
+            debe = sum(
+                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"]
+            )
+            cid = c["id"]
 
-                filas.append(
-                    ft.DataRow(
-                        cells=[
-                            ft.DataCell(
-                                ft.Text(c["nombre"], weight=ft.FontWeight.BOLD)
-                            ),
-                            ft.DataCell(ft.Text(c.get("telefono", "—"))),
-                            ft.DataCell(ft.Text(str(compras))),
-                            ft.DataCell(
-                                ft.Text(
-                                    f"${debe:,}",
-                                    color=deuda_color if debe else None,
-                                    weight=ft.FontWeight.BOLD if debe else None,
-                                )
-                            ),
-                            ft.DataCell(
-                                ft.Row(
-                                    [
-                                        ft.IconButton(
-                                            ft.Icons.EDIT,
-                                            icon_size=ICON_SM,
-                                            tooltip="Editar",
-                                            on_click=lambda _, x=cid: (
-                                                self.editar_cliente(x)
-                                            ),
+            filas.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(c["nombre"], weight=ft.FontWeight.BOLD)),
+                        ft.DataCell(ft.Text(c.get("telefono", "—"))),
+                        ft.DataCell(ft.Text(str(compras))),
+                        ft.DataCell(
+                            ft.Text(
+                                moneda(debe),
+                                color=color_deuda if debe > 0 else paleta.text_muted,
+                                weight=ft.FontWeight.BOLD if debe > 0 else None,
+                            )
+                            if debe > 0
+                            else ft.Text("—", color=paleta.text_muted)
+                        ),
+                        ft.DataCell(
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        ft.Icons.EDIT,
+                                        icon_size=ICON_SM,
+                                        tooltip="Editar",
+                                        on_click=lambda _, x=cid: self.editar_cliente(
+                                            x
                                         ),
-                                        ft.IconButton(
-                                            ft.Icons.DELETE_OUTLINE,
-                                            icon_size=ICON_SM,
-                                            tooltip="Eliminar",
-                                            icon_color=palette.danger,
-                                            on_click=lambda _, x=cid: (
-                                                self.eliminar_cliente(x)
-                                            ),
+                                    ),
+                                    ft.IconButton(
+                                        ft.Icons.DELETE_OUTLINE,
+                                        icon_size=ICON_SM,
+                                        tooltip="Eliminar",
+                                        icon_color=paleta.danger,
+                                        on_click=lambda _, x=cid: self.eliminar_cliente(
+                                            x
                                         ),
-                                    ],
-                                    spacing=SP_4,
-                                )
-                            ),
-                        ]
-                    )
+                                    ),
+                                ],
+                                spacing=SP_4,
+                            )
+                        ),
+                    ]
                 )
-            page = int(getattr(self, "_page", 1) or 1)
-            visibles, current, total = paginate_rows(filas, page)
-            self._page = current
-            self._tabla_holder.controls = [
-                AppTable(self._columnas, visibles, empty_message="Sin resultados")
-            ]
-            self._pager_holder.controls = [
-                TablePager(current, total, on_page=self._on_page)
-            ]
-        except Exception as ex:
-            print(f"Error en filtrar_datos clientes: {ex}")
-        self.pagina.update()
+            )
+        pagina = int(getattr(self, "_pagina", 1) or 1)
+        visibles, actual, total = paginar(filas, pagina)
+        self._pagina = actual
+        filtro_activo = bool(q or solo_deuda)
+        texto_vacio = "Sin resultados" if filtro_activo else "Sin clientes"
+        self._zona_tabla.content = tabla(
+            self._columnas, visibles, mensaje_vacio=texto_vacio
+        )
+        self._zona_paginador.content = (
+            paginador(actual, total, al_paginar=self._al_paginar) if total > 1 else None
+        )
+
+    def filtrar_datos(self):
+        # refresco post-accion: mismo render + update de las zonas montadas
+        self._cargar_tabla()
+        try:
+            self._zona_tabla.update()
+            self._zona_paginador.update()
+        except Exception:
+            self.rearmar()
 
     # ─── nuevo ─────────────────────────────────────────────────────
 
@@ -211,6 +234,7 @@ class PantallaClientes(Screen):
         try:
             nombre = self.campo_nombre.value.strip()
             if not nombre:
+                aviso(self.pagina, "Poné un nombre", rol="warning")
                 return
             crear_cliente(nombre, self.campo_telefono.value.strip())
             self.campo_nombre.value = ""
@@ -228,10 +252,10 @@ class PantallaClientes(Screen):
             if not c:
                 return
 
-            campo_nombre = ft.TextField(label="Nombre", value=c["nombre"])
-            campo_telefono = ft.TextField(label="Telefono", value=c.get("telefono", ""))
+            campo_nombre = campo_texto(label="Nombre", value=c["nombre"])
+            campo_telefono = campo_texto(label="Teléfono", value=c.get("telefono", ""))
             for _campo in (campo_nombre, campo_telefono):
-                sync_text(_campo)
+                sincronizar_texto(_campo)
 
             def guardar(e):
                 try:
@@ -240,27 +264,23 @@ class PantallaClientes(Screen):
                         campo_nombre.value.strip() or c["nombre"],
                         campo_telefono.value.strip(),
                     )
-                    dialogo.open = False
-                    self.pagina.update()
+                    self.cerrar_dialogo(ventana)
                     self.filtrar_datos()
                     self.mostrar_alerta("Cliente actualizado")
                 except Exception as ex:
                     print(f"Error guardar editar cliente: {ex}")
 
-            dialogo = AppDialog(
+            ventana = dialogo(
                 "Editar cliente",
                 ft.Column([campo_nombre, campo_telefono], spacing=SP_12, tight=True),
-                actions=[
+                acciones=[
                     ft.TextButton(
-                        "Cancelar", on_click=lambda e: self.cerrar_dialogo(dialogo)
+                        "Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)
                     ),
                     ft.ElevatedButton("Guardar", on_click=guardar),
                 ],
             )
-            dialogo.open = True
-            if dialogo not in self.pagina.overlay:
-                self.pagina.overlay.append(dialogo)
-            self.pagina.update()
+            self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error editar_cliente: {ex}")
 
@@ -272,45 +292,71 @@ class PantallaClientes(Screen):
             if not c:
                 return
 
-            tiene_deuda = (
-                sum(x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == cid)
-                > 0
+            debe = sum(
+                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == cid
             )
+            if debe > 0:
+                aviso(
+                    self.pagina,
+                    f"No se puede eliminar: {c['nombre']} debe {moneda(debe)} — cobrá el fiado primero",
+                    rol="warning",
+                )
+                return
+            if any(v.get("cliente_id") == cid for v in ventas) or any(
+                x.get("cliente_id") == cid for x in cuentas
+            ):
+                aviso(
+                    self.pagina,
+                    f"No se puede eliminar a {c['nombre']}: conserva historial de compras o pagos.",
+                    rol="warning",
+                )
+                return
 
             def confirmar(e):
                 try:
-                    eliminar_cliente(cid)
+                    if not eliminar_cliente(cid):
+                        self.mostrar_alerta(
+                            "No se pudo eliminar el cliente con historial asociado"
+                        )
+                        return
                     self.filtrar_datos()
                     self.mostrar_alerta(f"'{c['nombre']}' eliminado")
                 except Exception as ex:
                     print(f"Error confirmar eliminar cliente: {ex}")
 
-            msg = f"¿Eliminar a '{c['nombre']}'?"
-            if tiene_deuda:
-                msg += "\nTiene deudas pendientes"
-            msg += "\nNo se puede deshacer."
+            mensaje = f"¿Eliminar a '{c['nombre']}'?"
+            mensaje += "\nNo se puede deshacer."
 
-            confirm_delete(
+            confirmar_eliminar(
                 self.pagina,
                 confirmar,
-                item_name=c["nombre"],
-                title="Eliminar cliente",
-                message=msg,
+                nombre=c["nombre"],
+                titulo="Eliminar cliente",
+                mensaje=mensaje,
             )
         except Exception as ex:
             print(f"Error eliminar_cliente: {ex}")
 
     # ─── helpers ───────────────────────────────────────────────────
 
-    def cerrar_dialogo(self, dialogo):
+    def abrir_dialogo(self, ventana):
         try:
-            dialogo.open = False
+            ventana.open = True
+            if ventana not in self.pagina.overlay:
+                self.pagina.overlay.append(ventana)
+            ventana.update()
+        except Exception:
             self.pagina.update()
-        except Exception as ex:
-            print(f"Error cerrar dialogo: {ex}")
+
+    def cerrar_dialogo(self, ventana):
+        try:
+            ventana.open = False
+            ventana.update()
+        except Exception:
+            self.pagina.update()
 
     def mostrar_alerta(self, texto):
         try:
-            feedback(self.pagina, texto)
+            aviso(self.pagina, texto)
         except Exception as ex:
             print(f"Error mostrar_alerta: {ex}")

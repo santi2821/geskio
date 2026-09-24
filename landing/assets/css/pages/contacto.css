@@ -1,0 +1,26 @@
+/* GesKio — página: contacto */
+
+.contacto-grilla {
+  display: grid; grid-template-columns: 1.1fr 1fr;
+  gap: 48px; align-items: start;
+}
+.contacto-panel {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 32px; background: var(--surface); box-shadow: var(--shadow);
+}
+.contacto-lado { display: grid; gap: 24px; }
+.contacto-dato {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--bg-soft);
+}
+.contacto-dato .card-ico { margin: 0; }
+.contacto-dato h3 { font-size: .98rem; margin-bottom: 4px; }
+.contacto-dato p { font-size: .88rem; color: var(--text-soft); }
+.contacto-dato a { color: var(--accent-text); font-weight: 600; text-decoration: none; }
+.contacto-dato a:hover { text-decoration: underline; }
+
+@media (max-width: 860px) {
+  .contacto-grilla { grid-template-columns: 1fr; }
+  .contacto-panel { padding: 24px; }
+}

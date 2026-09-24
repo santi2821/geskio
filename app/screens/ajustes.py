@@ -1,197 +1,270 @@
 import flet as ft
-from screen_base import Screen
-from theme import FS_14, SP_8, SP_10, SP_12, app_colors
-from widgets import PageHeader, Section, feedback, sync_text
+import datos
+from screen_base import Pantalla
+from theme import (
+    ANCHO_BORDE,
+    FS_14,
+    R_MD,
+    R_SM,
+    SP_4,
+    SP_8,
+    SP_10,
+    SP_12,
+    colores,
+)
+from widgets import campo_texto, encabezado, seccion, aviso, sincronizar_texto
 
-ACCENT_PRESETS = ("#c81e1e", "#166534", "#2563eb", "#7c3aed", "#ea580c", "#0d9488")
-_SWATCH_SIZE = 40
+ACENTOS = ("#c81e1e", "#166534", "#2563eb", "#7c3aed", "#ea580c", "#0d9488")
 
 
-class PantallaAjustes(Screen):
-    def __init__(self, page: ft.Page, on_appearance=None):
+class PantallaAjustes(Pantalla):
+    def __init__(self, page: ft.Page, al_apariencia=None):
         super().__init__(page, "Ajustes")
-        self.on_appearance = on_appearance
+        self.al_apariencia = al_apariencia
         self._hex_value = ""
 
-    def actualizar(self):
-        if self.armado:
-            self.content = self.build()
-            self._safe_update()
-
     def build(self):
-        palette = app_colors.get()
+        paleta = colores.get()
         self._seg_modo = ft.SegmentedButton(
             segments=[
                 ft.Segment(value="light", label=ft.Text("Claro")),
                 ft.Segment(value="dark", label=ft.Text("Oscuro")),
             ],
-            selected=[app_colors.mode],
-            on_change=self._on_modo,
+            selected=[colores.mode],
+            on_change=self._al_modo,
         )
-        marca_cards = ft.Row(
-            [self._marca_card("rojo", "Rojo"), self._marca_card("verde", "Verde")],
+        tarjetas_marca = ft.Row(
+            [
+                self._tarjeta_marca("rojo", "Rojo"),
+                self._tarjeta_marca("verde", "Verde"),
+            ],
             spacing=SP_12,
+            wrap=True,
         )
-        swatches = ft.Row(
-            [self._swatch(h) for h in ACCENT_PRESETS],
+        muestras = ft.Row(
+            [self._muestra(h) for h in ACENTOS],
             spacing=SP_8,
             wrap=True,
         )
-        self.campo_hex = ft.TextField(
+        self.campo_hex = campo_texto(
             label="Hex personalizado",
             hint_text="#c81e1e",
-            value=self._hex_value or app_colors.accent_override or "",
+            value=self._hex_value or colores.accent_override or "",
             on_submit=lambda _: self.aplicar_hex(),
+            width=280,
         )
-        sync_text(self.campo_hex)
-        acento_form = ft.Column(
+        sincronizar_texto(self.campo_hex)
+        form_acento = ft.Column(
             [
-                swatches,
+                muestras,
                 ft.Row(
                     [
                         self.campo_hex,
-                        ft.ElevatedButton(
-                            "Aplicar", on_click=lambda _: self.aplicar_hex()
+                        ft.FilledButton(
+                            "Aplicar",
+                            on_click=lambda _: self.aplicar_hex(),
+                            style=ft.ButtonStyle(
+                                bgcolor=paleta.primary,
+                                color=paleta.on_primary,
+                            ),
                         ),
                         ft.TextButton(
                             "Restablecer", on_click=lambda _: self.restablecer_acento()
                         ),
                     ],
                     spacing=SP_8,
-                ),
-                ft.Text(
-                    "El acento tiñe botones y enlaces activos.",
-                    size=FS_14,
-                    color=palette.text_muted,
+                    wrap=True,
                 ),
             ],
             spacing=SP_8,
         )
+        personalizar_acento = ft.ExpansionTile(
+            title="Color de acento",
+            subtitle="Opciones de personalización",
+            controls=[form_acento],
+            dense=True,
+            controls_padding=SP_12,
+            tile_padding=ft.Padding.symmetric(horizontal=SP_8, vertical=SP_4),
+            collapsed_text_color=paleta.text,
+            text_color=paleta.text,
+            collapsed_icon_color=paleta.text_muted,
+            icon_color=paleta.text_muted,
+            collapsed_shape=ft.RoundedRectangleBorder(radius=R_MD),
+            shape=ft.RoundedRectangleBorder(radius=R_MD),
+            collapsed_bgcolor=paleta.surface,
+            bgcolor=paleta.surface,
+        )
         return ft.Column(
             [
-                PageHeader("Ajustes", on_refresh=lambda _: self.actualizar()),
-                Section("Modo", self._seg_modo),
-                Section("Marca", marca_cards),
-                Section("Acento", acento_form),
+                encabezado(
+                    "Preferencias",
+                    al_refrescar=lambda _: self.actualizar(),
+                    descripcion="Preferencias visuales y ubicación de los datos de demo.",
+                ),
+                seccion(
+                    "Apariencia",
+                    ft.Column(
+                        [
+                            ft.Row(
+                                [
+                                    ft.Text("Modo", size=FS_14, weight=ft.FontWeight.W_600, color=paleta.text),
+                                    self._seg_modo,
+                                ],
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
+                            ft.Divider(color=paleta.border),
+                            ft.Row(
+                                [
+                                    ft.Text("Color base", size=FS_14, weight=ft.FontWeight.W_600, color=paleta.text),
+                                    tarjetas_marca,
+                                ],
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                wrap=True,
+                            ),
+                            ft.Divider(color=paleta.border),
+                            personalizar_acento,
+                        ],
+                        spacing=SP_10,
+                    ),
+                ),
+                seccion(
+                    "Datos de la demo",
+                    ft.Column(
+                        [
+                            ft.Text(
+                                "Los cambios se guardan automáticamente en este equipo.",
+                                size=FS_14,
+                                color=paleta.text,
+                            ),
+                            ft.Text(
+                                str(datos.RUTA_ARCHIVO_DATOS),
+                                size=FS_14,
+                                color=paleta.text_muted,
+                                selectable=True,
+                            ),
+                            ft.Text(
+                                "Esta ubicación corresponde al archivo JSON local de la demo.",
+                                size=FS_14,
+                                color=paleta.text_muted,
+                            ),
+                        ],
+                        spacing=SP_8,
+                    ),
+                ),
             ],
-            spacing=SP_10,
+            spacing=SP_12,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    def _marca_card(self, name: str, label: str) -> ft.Container:
-        palette = app_colors.get()
-        active = app_colors.theme_name == name
-        light, dark = app_colors.THEMES[name]
-        dot_hex = (dark if app_colors.mode == "dark" else light).primary
-        dot = ft.Container(
-            width=_SWATCH_SIZE,
-            height=_SWATCH_SIZE,
-            bgcolor=dot_hex,
-            border_radius=ft.BorderRadius.all(_SWATCH_SIZE // 2),
-        )
-        marca = ft.Text(
-            label, size=FS_14, weight=ft.FontWeight.BOLD, color=palette.text
-        )
-        tick = (
-            ft.Icon(ft.Icons.CHECK_CIRCLE, color=palette.success)
-            if active
-            else ft.Container()
-        )
-        card = ft.Container(
-            content=ft.Row([dot, marca, tick], spacing=SP_8),
-            padding=SP_12,
-            bgcolor=palette.surface,
-            border=ft.Border.all(
-                2 if active else 1, palette.primary if active else palette.border
+    def _tarjeta_marca(self, nombre: str, etiqueta: str) -> ft.Container:
+        paleta = colores.get()
+        activa = colores.theme_name == nombre
+        clara, oscura = colores.THEMES[nombre]
+        hex_punto = (oscura if colores.mode == "dark" else clara).primary
+        return ft.OutlinedButton(
+            content=etiqueta,
+            icon=ft.Icons.CHECK_CIRCLE if activa else ft.Icons.RADIO_BUTTON_UNCHECKED,
+            tooltip=f"Usar marca {etiqueta}",
+            on_click=lambda _, n=nombre: self.fijar_marca(n),
+            width=150,
+            height=48,
+            style=ft.ButtonStyle(
+                color=paleta.primary if activa else paleta.text,
+                icon_color=paleta.primary if activa else hex_punto,
+                bgcolor=paleta.accent_soft if activa else paleta.surface,
+                side=ft.BorderSide(ANCHO_BORDE, paleta.primary if activa else paleta.border),
+                shape=ft.RoundedRectangleBorder(radius=R_SM),
             ),
-            border_radius=ft.BorderRadius.all(SP_8),
         )
-        card.on_click = lambda _, n=name: self.set_marca(n)
-        card.tooltip = label
-        return card
 
-    def _swatch(self, hex_value: str) -> ft.Container:
-        palette = app_colors.get()
-        active = (app_colors.accent_override or "").lower() == hex_value.lower()
-        sw = ft.Container(
-            width=_SWATCH_SIZE,
-            height=_SWATCH_SIZE,
-            bgcolor=hex_value,
-            border=ft.Border.all(
-                2 if active else 1, palette.primary if active else palette.border
+    def _muestra(self, hex: str) -> ft.IconButton:
+        paleta = colores.get()
+        activa = (colores.accent_override or "").lower() == hex.lower()
+        etiqueta = {
+            "#c81e1e": "Rojo",
+            "#166534": "Verde",
+            "#2563eb": "Azul",
+            "#7c3aed": "Violeta",
+            "#ea580c": "Naranja",
+            "#0d9488": "Turquesa",
+        }.get(hex.lower(), hex)
+        return ft.IconButton(
+            icon=ft.Icons.CIRCLE,
+            icon_color=hex,
+            tooltip=(f"Acento actual: {etiqueta}" if activa else f"Usar acento {etiqueta}"),
+            on_click=lambda _, h=hex: self.fijar_acento(h),
+            width=40,
+            height=40,
+            style=ft.ButtonStyle(
+                padding=0,
+                bgcolor=paleta.accent_soft if activa else paleta.surface,
+                side=ft.BorderSide(2 if activa else ANCHO_BORDE, paleta.primary if activa else paleta.border),
+                shape=ft.CircleBorder(),
             ),
-            border_radius=ft.BorderRadius.all(SP_8),
-            tooltip=hex_value,
         )
-        sw.on_click = lambda _, h=hex_value: self.set_acento(h)
-        return sw
 
-    def _on_modo(self, e) -> None:
+    def _al_modo(self, e) -> None:
         try:
-            selected = (
+            elegido = (
                 e.control.selected
                 if e is not None and hasattr(e, "control")
-                else [app_colors.mode]
+                else [colores.mode]
             )
-            modo = selected[0] if selected else app_colors.mode
+            modo = elegido[0] if elegido else colores.mode
         except Exception:
-            modo = app_colors.mode
-        self.set_modo(modo)
+            modo = colores.mode
+        self.fijar_modo(modo)
 
-    def set_modo(self, modo: str) -> None:
+    def fijar_modo(self, modo: str) -> None:
         try:
-            app_colors.set_mode(modo, self.pagina)
+            colores.set_mode(modo, self.pagina)
         except ValueError:
             return
         self._aplicar("Modo " + ("oscuro" if modo == "dark" else "claro"))
 
-    def set_marca(self, name: str) -> None:
+    def fijar_marca(self, nombre: str) -> None:
         try:
-            app_colors.set_theme(name, self.pagina)
+            colores.set_theme(nombre, self.pagina)
         except ValueError:
             return
-        self._aplicar("Marca " + name)
+        self._aplicar("Marca " + nombre.capitalize())
 
-    def set_acento(self, hex_value: str) -> None:
+    def fijar_acento(self, hex: str) -> None:
         try:
-            app_colors.set_accent(hex_value, self.pagina)
+            colores.set_accent(hex, self.pagina)
         except ValueError:
-            feedback(self.pagina, "Hex inválido (ej: #c81e1e)")
+            aviso(self.pagina, "Hex inválido (ej: #c81e1e)")
             return
-        self._hex_value = hex_value
-        self._aplicar("Acento " + hex_value)
+        self._hex_value = hex
+        self._aplicar("Acento " + hex)
 
     def aplicar_hex(self, e=None) -> None:
         try:
-            typed = (self.campo_hex.value or "").strip()
+            escrito = (self.campo_hex.value or "").strip()
         except Exception:
-            typed = ""
-        if not typed:
+            escrito = ""
+        if not escrito:
             return
-        self.set_acento(typed)
+        self.fijar_acento(escrito)
 
     def restablecer_acento(self, e=None) -> None:
-        app_colors.set_accent(None, self.pagina)
+        colores.set_accent(None, self.pagina)
         self._hex_value = ""
         self._aplicar("Acento restablecido")
 
     def _aplicar(self, texto: str) -> None:
         self.invalidate()
         try:
-            if callable(self.on_appearance):
-                self.on_appearance()
+            if callable(self.al_apariencia):
+                self.al_apariencia()
             else:
                 self.al_entrar()
         except Exception:
             pass
         try:
-            feedback(self.pagina, texto)
-        except Exception:
-            pass
-
-    def _safe_update(self) -> None:
-        try:
-            self.pagina.update()
+            aviso(self.pagina, texto)
         except Exception:
             pass

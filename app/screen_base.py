@@ -1,34 +1,37 @@
 import flet as ft
 
-from theme import SHELL_CONTENT_PADDING
+from theme import CONTENIDO_PADDING
 
 
-class Screen(ft.Container):
-    """Base screen rendered unchanged inside the Shell adapter slot.
+class Pantalla(ft.Container):
+    """Base de las pantallas del Marco."""
 
-    Content padding resolves to the shell content token (SP_24 grid step);
-    the Shell host adds no extra padding so v1 screens keep their rhythm.
-    """
-
-    def __init__(self, page: ft.Page, title: str):
-        super().__init__(expand=True, visible=False, padding=SHELL_CONTENT_PADDING)
-        self.pagina = page
-        self.titulo = title
+    def __init__(self, pagina: ft.Page, titulo: str):
+        super().__init__(expand=True, visible=False, padding=CONTENIDO_PADDING)
+        self.pagina = pagina
+        self.titulo = titulo
         self.armado = False
 
     def invalidate(self):
-        """Mark for rebuild on next al_entrar (theme switch hook)."""
         self.armado = False
 
     def al_entrar(self):
-        if not self.armado:
-            self.content = self.build()
-            self.armado = True
-        self.actualizar()
-        self.pagina.update()
+        self.rearmar()
 
     def actualizar(self):
-        pass
+        self.rearmar()
+
+    def rearmar(self):
+        # en Flet 0.84 page.update() no baja al arbol interno de la pantalla;
+        # re-asignar content (prop de la pantalla) y update() es lo que repinta.
+        # build() debe renderizar con los datos actuales, sin updates internos
+        # (el montaje los envia todos juntos).
+        self.content = self.build()
+        self.armado = True
+        try:
+            self.update()
+        except Exception:
+            self.pagina.update()
 
     def build(self):  # type: ignore[override]
         return ft.Text(self.titulo)

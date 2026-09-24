@@ -1,70 +1,4 @@
-"""GesKio design tokens (single namespace).
-
-Provenance: colors/radii/typography come from ``landing/styles.css``
-``:root`` / ``[data-theme="dark"]``; spacing steps {4, 8, 10, 12, 20, 24}
-come from established app patterns. Reference kits contribute patterns
-only, never values.
-
-Flet 0.84.0 verified in this env: ``ft.Theme(color_scheme=...)``,
-``ft.ColorScheme``, ``page.theme`` / ``page.dark_theme`` /
-``page.theme_mode``, ``page.fonts``, ``page.overlay`` and
-``SnackBar(open=True, duration=...)`` exist. ``page.client_storage``,
-``page.show_snack_bar`` and ``page.open`` do NOT exist, so persistence
-resolves ``client_storage`` (forward-compat) then ``page.session.store``
-with an in-memory fallback, and feedback goes through ``page.overlay``.
-
-Hover derivation: the light hover darkens the primary (#c81e1e ->
-#b91c1c) for contrast on light surfaces; the dark hover lightens it
-(#e11d48 -> #f43f5e) for contrast on dark surfaces. The verde alternate
-mirrors this: light darkens (#166534 -> #14532d), dark keeps a deep
-base (#15803d) whose hover lightens (#16a34a) for icons on dark.
-
-Hardening slice (B-1..B-7, geskio): recalibrated to WCAG 2.2 AA.
-Decision B-2: deepen the LIGHT primaries inside the brand family
-(rojo #ef4444 -> #c81e1e, verde #16a34a -> #166534) and keep white
-on-primary, instead of darkening on-primary to near-black. Rationale:
-white-on-red CTA preserves brand; a dark on-primary would break the
-shared on_primary used by the danger button. Dark rojo primary is
-deepened (#f43f5e -> #e11d48) so white-on-primary passes; nav and
-chat bubbles use text-on-accent_soft (15+:1) so primary vibrancy loss
-does not affect chrome legibility. Danger dark is a deep ground
-(#fb7185 -> #dc2626) so white-on-danger passes 4.83 (B-3). Success LIGHT
-is deepened (#16a34a -> #166534) so paid 14px passes 7.13; accepted
-collision success==verde primary in VERDE_LIGHT mirrors ADR-1/M-12
-(green stays semantic).
-Danger-as-text is split: `danger` stays the button/background ground
-(#dc2626 both modes) while `danger_text` carries normal-text usage
-(light #dc2626 = 4.83 on #fff; dark #fb7185 = 6.35 on #181c23).
-
-Recalculated key pairs (sRGB relative luminance, WCAG 1.4.3 normal
-text >= 4.5, large/UI >= 3.0; next verify must assert these):
-- light muted #606b7a on bg-soft #f6f7f9: 5.05 / on surface #fff: 5.41
-- dark muted #7f8894 on bg-soft #15181e: 4.95 / on surface #181c23: 4.76
-- light rojo white on #c81e1e: 5.74 (was 3.76); verde white on #166534: 7.13 (was 3.30)
-- dark rojo white on #e11d48: 4.70 (was 3.67); verde dark white on #15803d: 5.02 (kept)
-- light paid success #166534 on #fff: 7.13 (was 3.30); dark success #4ade80 on #181c23: 9.80 (kept >=4.5)
-- dark white on danger #dc2626: 4.83 (was 2.69)
-- danger_text light #dc2626 on #fff: 4.83; dark #fb7185 on #181c23: 6.35
-- light nav rojo #c81e1e on accent_soft #fdecec: 5.02 (was 3.29);
-  verde #166534 on #e7f5ec: 6.34 (was 2.93); nav also bold + 2px border (B-6)
-- light due warning #b45309 on #fff: 5.02 (was 3.19), plus icon + bold (B-5)
-- light bubble text #161b22 on #fdecec: 15.15; dark text #f3f5f8 on #2c121b: 15.90 (B-4)
-- on_accent_soft on accent_soft: light rojo #c81e1e/#fdecec 5.02, verde #166534/#e7f5ec 6.34; dark rojo #fb7185/#2c121b 6.45, verde #4ade80/#0e1f19 9.81 (micro-fix contrast-3; nav + user bubble)
-- Landing 1:1 holds incl. --on-accent-soft (light #c81e1e / dark #fb7185 for pill-warn + card-icon); verde on_accent_soft is app-only (landing mirrors rojo only).
-- landing focus ring/input halo solid accent: light #c81e1e on #fff 5.74,
-  dark #e11d48 on #0e1014 4.05 (both >= 3.0, B-7).
-Resolved split (micro-fix): `danger` #dc2626 on dark surface #181c23 =
-3.54 (passes 3:1 UI/large, fails 4.5 normal) is kept for button
-backgrounds only; `danger_text` (#dc2626 light / #fb7185 dark) is
-used for 14px normal text (stock bajo, debe, late) and passes >= 4.5
-in both modes. Landing 1:1 holds incl. --danger-text (see styles.css).
-Remediation C-1 mirrors it: `accent` stays the button/ring ground
-(light #c81e1e / dark #e11d48) while `accent_text` carries normal-text
-usage (rojo light #c81e1e = 5.74 on #fff; rojo dark #f43f5e = 4.65 on
-#181c23, 4.84 on #15181e, 5.42 on #08090c); verde brand-mirrors
-(light #166534 / dark #4ade80). Landing 1:1 holds incl. --accent-text.
-Footer is dark in both modes (light #161b22 / dark #08090c) so `footer_hover` is #f43f5e in both modes (4.71 / 5.42); accent_text light #c81e1e on footer 3.02 FAIL.
-"""
+"""Tokens de disenio de GesKio (paletas rojo/verde x claro/oscuro)."""
 
 from __future__ import annotations
 
@@ -73,36 +7,35 @@ from dataclasses import dataclass, replace
 
 import flet as ft
 
-FONT_FAMILY = "Inter"
+FUENTE = "Inter"
 
 SP_4 = 4
 SP_8 = 8
 SP_10 = 10
 SP_12 = 12
+SP_16 = 16
 SP_20 = 20
 SP_24 = 24
 
-R_SM = 10
-R_MD = 12
-R_LG = 18
+R_SM = 8   # botones y elementos compactos
+R_MD = 10  # campos, tablas, diálogos y tarjetas de trabajo
+R_LG = 16  # paneles mayores y marco de contenido
 R_PILL = 999
 
-BORDER_WIDTH = 1
-DIVIDER_HEIGHT = 12
-FEEDBACK_DURATION_MS = 4000
+ANCHO_BORDE = 1
+ALTO_DIVISOR = 12
+DURACION_AVISO_MS = 4000
 
-# Slice-a shell/layout tokens (AD-5, additive only, zero new hex).
-# PaletteTheme fields stay frozen; new ROLES reuse verified AA pairs only (AD-6).
-# Breakpoints lowered so 1100x700 boots expanded; rail remains for narrow.
-SHELL_SIDEBAR_W = 240
-SHELL_RAIL_W = 64
-SHELL_TOPBAR_H = 56
-SHELL_BREAKPOINT_W = 1024
-SHELL_BREAKPOINT_H = 600
-FOCAL_BORDER_WIDTH = 2
-SHELL_CONTENT_PADDING = SP_24
-CALENDAR_GAP = SP_8
-CALENDAR_CELL_SPACING = SP_4
+# breakpoints bajos para que 1100x700 arranque expandido
+LATERAL_ANCHO = 240
+RAIL_ANCHO = 64
+SUPERIOR_ALTO = 56
+RUPTURA_ANCHO = 1024
+RUPTURA_ALTO = 600
+FOCO_BORDE = 2
+CONTENIDO_PADDING = SP_20
+CALENDARIO_GAP = SP_8
+CALENDARIO_CELDA_GAP = SP_4
 
 ICON_SM = 18
 ICON_MD = 24
@@ -114,19 +47,110 @@ FS_14 = 14
 FS_16 = 16
 FS_18 = 18
 FS_20 = 20
+FS_24 = 24
 FS_28 = 28
 FS_30 = 30
 FS_36 = 36
 
-# Focal/stat type steps reuse the proven scale (no new sizes).
-FOCAL_VALUE_FS = FS_36
-STAT_VALUE_FS = FS_28
+# reusan la escala probada, sin tamanios nuevos
+VALOR_FOCAL_FS = FS_30
+VALOR_STAT_FS = FS_24
 
 _HEX_RE = re.compile(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})")
 
 
+def _hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
+    h = hex_value.lstrip("#")
+    if len(h) == 3:
+        h = "".join(ch * 2 for ch in h)
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+    clamped = tuple(max(0, min(255, c)) for c in rgb)
+    return "#{:02x}{:02x}{:02x}".format(*clamped)
+
+
+def _srgb_channel(value: int) -> float:
+    c = value / 255.0
+    if c <= 0.03928:
+        return c / 12.92
+    return ((c + 0.055) / 1.055) ** 2.4
+
+
+def _luminance(hex_value: str) -> float:
+    r, g, b = _hex_to_rgb(hex_value)
+    return (
+        0.2126 * _srgb_channel(r)
+        + 0.7152 * _srgb_channel(g)
+        + 0.0722 * _srgb_channel(b)
+    )
+
+
+def _contrast(a: str, b: str) -> float:
+    la = _luminance(a)
+    lb = _luminance(b)
+    lighter = max(la, lb)
+    darker = min(la, lb)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _blend(fg_hex: str, bg_hex: str, alpha: float) -> str:
+    fr, fgc, fb = _hex_to_rgb(fg_hex)
+    br, bgc, bb = _hex_to_rgb(bg_hex)
+    return _rgb_to_hex(
+        (
+            round(fr * alpha + br * (1 - alpha)),
+            round(fgc * alpha + bgc * (1 - alpha)),
+            round(fb * alpha + bb * (1 - alpha)),
+        )
+    )
+
+
+def _adjust_until(accent: str, against: str, target: float, step: float) -> str:
+    current = accent
+    for _ in range(40):
+        if _contrast(current, against) >= target:
+            return current
+        current = _blend("#000000" if step < 0 else "#ffffff", current, 0.08)
+    return current
+
+
+def resolver_acento(paleta: TemaPaleta, acento: str) -> TemaPaleta:
+    # deriva toda la familia del primario desde un acento a medida
+    is_light = _luminance(paleta.bg) > 0.5
+    if is_light:
+        ground = _adjust_until(acento, "#ffffff", 4.5, -1)
+    else:
+        ground = acento
+        if _contrast("#ffffff", ground) < 4.5:
+            ground = _adjust_until(ground, "#ffffff", 4.5, -1)
+        if _contrast(ground, paleta.bg) < 3.0:
+            probe = ground
+            for _ in range(40):
+                nxt = _blend("#ffffff", probe, 0.08)
+                if _contrast("#ffffff", nxt) < 4.5:
+                    break
+                probe = nxt
+                if _contrast(probe, paleta.bg) >= 3.0:
+                    ground = probe
+                    break
+    soft_alpha = 0.10 if is_light else 0.14
+    soft = _blend(ground, paleta.bg, soft_alpha)
+    on_soft = _adjust_until(ground, soft, 4.5, -1 if is_light else 1)
+    hover = _blend("#000000" if is_light else "#ffffff", ground, 0.12)
+    return replace(
+        paleta,
+        primary=ground,
+        accent_hover=hover,
+        accent_soft=soft,
+        on_accent_soft=on_soft,
+        accent_text=ground,
+    )
+
+
 @dataclass(frozen=True)
-class PaletteTheme:
+class TemaPaleta:
     bg: str
     bg_soft: str
     surface: str
@@ -149,98 +173,96 @@ class PaletteTheme:
     info: str
 
 
-ROJO_LIGHT = PaletteTheme(
-    bg="#ffffff",
-    bg_soft="#f6f7f9",
+ROJO_CLARO = TemaPaleta(
+    bg="#f3f5f7",
+    bg_soft="#f3f5f7",
     surface="#ffffff",
-    text="#161b22",
-    text_soft="#52606d",
-    text_muted="#606b7a",
-    border="#e7e9ed",
-    border_strong="#d5d9e0",
-    primary="#c81e1e",
+    text="#202833",
+    text_soft="#4f5b67",
+    text_muted="#65717e",
+    border="#dde2e7",
+    border_strong="#c8d0d8",
+    primary="#9e3035",
     on_primary="#ffffff",
-    accent_hover="#b91c1c",
-    # Pre-blended approx of landing rgba(200,30,30,.10) over bg.
-    accent_soft="#fdecec",
-    on_accent_soft="#c81e1e",
-    success="#166534",
-    warning="#b45309",
-    danger="#dc2626",
-    danger_text="#dc2626",
-    accent_text="#c81e1e",
-    footer_hover="#f43f5e",
-    info="#2563eb",
+    accent_hover="#82262c",
+    accent_soft="#f6eaeb",
+    on_accent_soft="#84252b",
+    success="#28704f",
+    warning="#8a5a18",
+    danger="#b33d42",
+    danger_text="#a22e35",
+    accent_text="#84252b",
+    footer_hover="#8e3438",
+    info="#425c75",
 )
 
-ROJO_DARK = PaletteTheme(
-    bg="#0e1014",
-    bg_soft="#15181e",
-    surface="#181c23",
-    text="#f3f5f8",
-    text_soft="#aab2bf",
-    text_muted="#7f8894",
-    border="#232831",
-    border_strong="#2f3540",
-    primary="#e11d48",
-    on_primary="#ffffff",
-    accent_hover="#f43f5e",
-    # Pre-blended approx of landing rgba(225,29,72,.14) over bg.
-    accent_soft="#2c121b",
-    on_accent_soft="#fb7185",
-    success="#4ade80",
-    warning="#fbbf24",
-    danger="#dc2626",
-    danger_text="#fb7185",
-    accent_text="#f43f5e",
-    footer_hover="#f43f5e",
-    info="#60a5fa",
+ROJO_OSCURO = TemaPaleta(
+    bg="#121920",
+    bg_soft="#171f27",
+    surface="#1e2831",
+    text="#ebeff3",
+    text_soft="#bdc6ce",
+    text_muted="#a0acb7",
+    border="#2c3944",
+    border_strong="#394a56",
+    primary="#e49496",
+    on_primary="#2b1416",
+    accent_hover="#e49496",
+    accent_soft="#34272a",
+    on_accent_soft="#f0bfc1",
+    success="#75ba91",
+    warning="#e9b86f",
+    danger="#e16e73",
+    danger_text="#f0a0a3",
+    accent_text="#e49496",
+    footer_hover="#e49496",
+    info="#91afc4",
 )
 
-VERDE_LIGHT = PaletteTheme(
-    bg="#ffffff",
-    bg_soft="#f6f7f9",
+VERDE_CLARO = TemaPaleta(
+    bg="#f3f5f7",
+    bg_soft="#f3f5f7",
     surface="#ffffff",
-    text="#161b22",
-    text_soft="#52606d",
-    text_muted="#606b7a",
-    border="#e7e9ed",
-    border_strong="#d5d9e0",
-    primary="#166534",
+    text="#202833",
+    text_soft="#4f5b67",
+    text_muted="#65717e",
+    border="#dde2e7",
+    border_strong="#c8d0d8",
+    primary="#286b50",
     on_primary="#ffffff",
-    accent_hover="#14532d",
-    accent_soft="#e7f5ec",
-    on_accent_soft="#166534",
-    success="#166534",
-    warning="#b45309",
-    danger="#dc2626",
-    danger_text="#dc2626",
-    accent_text="#166534",
-    footer_hover="#f43f5e",
-    info="#2563eb",
+    accent_hover="#1e563e",
+    accent_soft="#eaf2ee",
+    on_accent_soft="#225b45",
+    success="#28704f",
+    warning="#8a5a18",
+    danger="#b33d42",
+    danger_text="#a22e35",
+    accent_text="#225b45",
+    footer_hover="#1e563e",
+    info="#425c75",
 )
 
-VERDE_DARK = PaletteTheme(
-    bg="#0e1014",
-    bg_soft="#15181e",
-    surface="#181c23",
-    text="#f3f5f8",
-    text_soft="#aab2bf",
-    text_muted="#7f8894",
-    border="#232831",
-    border_strong="#2f3540",
-    primary="#15803d",
-    on_primary="#ffffff",
-    accent_hover="#16a34a",
-    accent_soft="#0e1f19",
-    on_accent_soft="#4ade80",
-    success="#4ade80",
-    warning="#fbbf24",
-    danger="#dc2626",
-    danger_text="#fb7185",
-    accent_text="#4ade80",
-    footer_hover="#f43f5e",
-    info="#60a5fa",
+VERDE_OSCURO = TemaPaleta(
+    bg="#121920",
+    bg_soft="#171f27",
+    surface="#1e2831",
+    text="#ebeff3",
+    text_soft="#bdc6ce",
+    text_muted="#a0acb7",
+    border="#2c3944",
+    border_strong="#394a56",
+    primary="#6bac8b",
+    on_primary="#10251b",
+    accent_hover="#8ac4a4",
+    accent_soft="#1e3028",
+    on_accent_soft="#a1d2b5",
+    success="#75ba91",
+    warning="#e9b86f",
+    danger="#e16e73",
+    danger_text="#f0a0a3",
+    accent_text="#a1d2b5",
+    footer_hover="#8ac4a4",
+    info="#91afc4",
 )
 
 _ROLE_ALIASES = {
@@ -254,30 +276,37 @@ _ROLE_ALIASES = {
 }
 
 
-def role_color(palette: PaletteTheme, role: str) -> str:
-    """Resolve a semantic role (or dashboard/state alias) to a hex color."""
-    key = _ROLE_ALIASES.get(role, role)
-    return getattr(palette, key)
+def color_rol(paleta: TemaPaleta, rol: str) -> str:
+    # resuelve un rol semantico (o alias del dashboard) a un hex
+    key = _ROLE_ALIASES.get(rol, rol)
+    return getattr(paleta, key)
 
 
-def to_flet_theme(palette: PaletteTheme) -> ft.Theme:
-    """Build an ft.Theme from a palette (font via ADR-2, no bundling)."""
+def a_tema_flet(paleta: TemaPaleta) -> ft.Theme:
+    # arma el ft.Theme de Flet desde una paleta
+    estilo_boton = ft.ButtonStyle(
+        shape=ft.RoundedRectangleBorder(radius=R_SM),
+    )
     return ft.Theme(
-        font_family=FONT_FAMILY,
+        font_family=FUENTE,
+        button_theme=ft.ButtonTheme(style=estilo_boton),
+        filled_button_theme=ft.FilledButtonTheme(style=estilo_boton),
+        outlined_button_theme=ft.OutlinedButtonTheme(style=estilo_boton),
+        text_button_theme=ft.TextButtonTheme(style=estilo_boton),
         color_scheme=ft.ColorScheme(
-            primary=palette.primary,
-            on_primary=palette.on_primary,
-            primary_container=palette.accent_soft,
-            on_primary_container=palette.on_accent_soft,
-            secondary=palette.info,
-            on_secondary=palette.on_primary,
-            error=palette.danger,
-            on_error=palette.on_primary,
-            surface=palette.surface,
-            on_surface=palette.text,
-            on_surface_variant=palette.text_soft,
-            outline=palette.border,
-            outline_variant=palette.border_strong,
+            primary=paleta.primary,
+            on_primary=paleta.on_primary,
+            primary_container=paleta.accent_soft,
+            on_primary_container=paleta.on_accent_soft,
+            secondary=paleta.info,
+            on_secondary=paleta.on_primary,
+            error=paleta.danger,
+            on_error=paleta.on_primary,
+            surface=paleta.surface,
+            on_surface=paleta.text,
+            on_surface_variant=paleta.text_soft,
+            outline=paleta.border,
+            outline_variant=paleta.border_strong,
         ),
     )
 
@@ -317,17 +346,17 @@ def _write_key(page: ft.Page, key: str, value: str) -> None:
     _MEMORY_FALLBACK[key] = value
 
 
-class AppColors:
-    """Theme registry: brand x mode palettes plus accent personalization."""
+class Tema:
+    # paleta por marca x modo, mas acento personalizado
 
-    THEMES: dict[str, tuple[PaletteTheme, PaletteTheme]] = {
-        "rojo": (ROJO_LIGHT, ROJO_DARK),
-        "verde": (VERDE_LIGHT, VERDE_DARK),
+    THEMES: dict[str, tuple[TemaPaleta, TemaPaleta]] = {
+        "rojo": (ROJO_CLARO, ROJO_OSCURO),
+        "verde": (VERDE_CLARO, VERDE_OSCURO),
     }
     DEFAULT_THEME = "rojo"
     DEFAULT_MODE = "light"
     VALID_MODES = ("light", "dark")
-    # MODE_KEY shares landing `localStorage geskio-theme` semantics.
+    # misma clave que usa el landing en localStorage
     MODE_KEY = "geskio-theme"
     BRAND_KEY = "geskio-brand"
     ACCENT_KEY = "geskio-accent"
@@ -346,16 +375,16 @@ class AppColors:
     def available_themes(cls) -> list[str]:
         return list(cls.THEMES)
 
-    def get(self, mode: str | None = None) -> PaletteTheme:
+    def get(self, mode: str | None = None) -> TemaPaleta:
         resolved = mode or self.mode
         light, dark = self.THEMES[self.theme_name]
-        palette = dark if resolved == "dark" else light
+        paleta = dark if resolved == "dark" else light
         if self.accent_override:
-            palette = replace(palette, primary=self.accent_override)
-        return palette
+            paleta = resolver_acento(paleta, self.accent_override)
+        return paleta
 
     @property
-    def current(self) -> PaletteTheme:
+    def current(self) -> TemaPaleta:
         return self.get()
 
     def set_theme(self, name: str, page: ft.Page | None = None) -> None:
@@ -397,14 +426,14 @@ class AppColors:
         _write_key(page, self.MODE_KEY, self.mode)
         _write_key(page, self.ACCENT_KEY, self.accent_override or "")
 
-    def apply_to_page(self, page: ft.Page) -> PaletteTheme:
-        """Push light/dark ft.Themes plus theme_mode; caller runs update."""
+    def apply_to_page(self, page: ft.Page) -> TemaPaleta:
+        # aplica tema claro/oscuro y modo a la page; quien llama hace update
         light, dark = self.THEMES[self.theme_name]
         if self.accent_override:
-            light = replace(light, primary=self.accent_override)
-            dark = replace(dark, primary=self.accent_override)
-        page.theme = to_flet_theme(light)
-        page.dark_theme = to_flet_theme(dark)
+            light = resolver_acento(light, self.accent_override)
+            dark = resolver_acento(dark, self.accent_override)
+        page.theme = a_tema_flet(light)
+        page.dark_theme = a_tema_flet(dark)
         page.theme_mode = (
             ft.ThemeMode.DARK if self.mode == "dark" else ft.ThemeMode.LIGHT
         )
@@ -413,4 +442,4 @@ class AppColors:
         return active
 
 
-app_colors = AppColors()
+colores = Tema()

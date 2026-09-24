@@ -1,8 +1,10 @@
+import math
+
 import flet as ft
-from screen_base import Screen
-from datos import productos, clientes, crear_venta, prod_por_id
+from screen_base import Pantalla
+from datos import productos, clientes, crear_venta, deshacer_venta, prod_por_id
 from theme import (
-    BORDER_WIDTH,
+    ANCHO_BORDE,
     FS_12,
     FS_13,
     FS_14,
@@ -15,12 +17,23 @@ from theme import (
     SP_8,
     SP_10,
     SP_12,
-    app_colors,
+    colores,
 )
-from widgets import PageHeader, Section, feedback, sync_text
+from widgets import (
+    campo_texto,
+    selector,
+    encabezado,
+    seccion,
+    confirmar_eliminar,
+    aviso,
+    moneda,
+    leer_texto,
+    sincronizar_combo,
+    sincronizar_texto,
+)
 
 
-class PantallaCaja(Screen):
+class PantallaCaja(Pantalla):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Caja")
         self.items_carrito = []
@@ -28,75 +41,105 @@ class PantallaCaja(Screen):
         self._ultimo_pago = "efectivo"
 
     def actualizar(self):
-        self.items_carrito.clear()
         self.cargar_opciones()
         self.actualizar_carrito()
 
     def cargar_opciones(self):
-        try:
-            self.combo_cliente.options = [ft.dropdown.Option("", "— Mostrador —")] + [
-                ft.dropdown.Option(c["id"], c["nombre"]) for c in clientes
-            ]
-            self.combo_producto.options = [
-                ft.dropdown.Option(
-                    p["id"], f"{p['nombre']} (${p['precio']:,} — stock: {p['stock']})"
-                )
-                for p in productos
-                if p["stock"] > 0
-            ]
-            self.pagina.update()
-        except Exception as ex:
-            print(f"Error cargar_opciones: {ex}")
+        ids_clientes = {c["id"] for c in clientes}
+        cliente_actual = self._ultimo_cid or self.combo_cliente.value or ""
+        if cliente_actual and cliente_actual not in ids_clientes:
+            self._ultimo_cid = ""
+            self.combo_cliente.value = None
+        self.combo_cliente.options = self._opciones_clientes()
+        self.combo_producto.options = self._opciones_productos()
+        for combo in (self.combo_cliente, self.combo_producto):
+            try:
+                combo.update()
+            except Exception:
+                # build() puede preparar opciones antes de montar el control.
+                pass
+
+    @staticmethod
+    def _opciones_clientes():
+        return [ft.dropdown.Option("", "— Mostrador —")] + [
+            ft.dropdown.Option(c["id"], c["nombre"]) for c in clientes
+        ]
+
+    @staticmethod
+    def _opciones_productos():
+        return [
+            ft.dropdown.Option(
+                p["id"],
+                f"{p['nombre']} ({moneda(p['precio'])} — stock: {p['stock']})",
+            )
+            for p in productos
+            if p["stock"] > 0
+        ]
 
     def build(self):
-        palette = app_colors.get()
-        self._ultimo_cid = ""
-        self._ultimo_pago = "efectivo"
-        self._ultimo_pid = ""
-        self.combo_cliente = ft.Dropdown(
+        paleta = colores.get()
+        ids_clientes = {c["id"] for c in clientes}
+        if self._ultimo_cid and self._ultimo_cid not in ids_clientes:
+            self._ultimo_cid = ""
+        self.combo_cliente = selector(
             label="Cliente",
             hint_text="Mostrador",
             expand=True,
-            on_select=self.on_cliente_change,
+            value=self._ultimo_cid or None,
+            options=self._opciones_clientes(),
+            on_select=self.al_cambio_cliente,
         )
-        self.combo_pago = ft.Dropdown(
+        sincronizar_combo(self.combo_cliente)
+        self.combo_pago = selector(
             label="Pago",
-            value="efectivo",
+            value=self._ultimo_pago or "efectivo",
             expand=True,
-            on_select=self.on_pago_change,
+            on_select=self.al_cambio_pago,
             options=[
-                ft.dropdown.Option("efectivo"),
-                ft.dropdown.Option("transferencia"),
-                ft.dropdown.Option("debito"),
-                ft.dropdown.Option("credito"),
+                ft.dropdown.Option("efectivo", "Efectivo"),
+                ft.dropdown.Option("transferencia", "Transferencia"),
                 ft.dropdown.Option("fiado", "Fiado"),
             ],
         )
-        self.combo_producto = ft.Dropdown(
+        sincronizar_combo(self.combo_pago)
+        self.combo_producto = selector(
             label="Producto",
             expand=True,
-            on_select=self.on_producto_change,
+            options=self._opciones_productos(),
+            on_select=self.al_cambio_producto,
         )
-        self.campo_cantidad = ft.TextField(
+        sincronizar_combo(self.combo_producto)
+        self.campo_cantidad = campo_texto(
             label="Cant", value="1", width=80, keyboard_type=ft.KeyboardType.NUMBER
         )
-        sync_text(self.campo_cantidad)
+        sincronizar_texto(self.campo_cantidad)
 
-        self.lista_carrito = ft.Column(spacing=SP_4)
+        self._zona_carrito = ft.Container(expand=True)
+        self._pintar_carrito()
+        t = sum(i["precio"] * i["cantidad"] for i in self.items_carrito)
         self.texto_total = ft.Text(
-            "$0", size=FS_36, weight=ft.FontWeight.BOLD, color=palette.success
+            moneda(t), size=FS_36, weight=ft.FontWeight.BOLD, color=paleta.success
         )
-        self.texto_items = ft.Text("0 items", size=FS_13, color=palette.text_muted)
+        self.texto_items = ft.Text(
+            f"{len(self.items_carrito)} items", size=FS_13, color=paleta.text_muted
+        )
 
-        venta_form = ft.Column(
+        form_venta = ft.Column(
             [
                 ft.Row([self.combo_cliente, self.combo_pago], spacing=SP_12),
                 ft.Row(
                     [
                         self.combo_producto,
                         self.campo_cantidad,
-                        ft.ElevatedButton(
-                            "Agregar", icon=ft.Icons.ADD, on_click=self.agregar_item
+                        ft.FilledButton(
+                            "Agregar",
+                            icon=ft.Icons.ADD,
+                            on_click=self.agregar_item,
+                            style=ft.ButtonStyle(
+                                bgcolor=paleta.primary,
+                                color=paleta.on_primary,
+                                shape=ft.RoundedRectangleBorder(radius=R_SM),
+                            ),
                         ),
                     ],
                     spacing=SP_12,
@@ -104,16 +147,10 @@ class PantallaCaja(Screen):
             ],
             spacing=SP_8,
         )
-        venta_section = Section("Venta", venta_form)
+        seccion_venta = seccion("Venta", form_venta)
 
-        carrito_header = ft.Row(
+        encabezado_carrito = ft.Row(
             [
-                ft.Text(
-                    "Carrito",
-                    size=FS_16,
-                    weight=ft.FontWeight.BOLD,
-                    color=palette.text,
-                ),
                 self.texto_items,
                 ft.Container(expand=True),
                 ft.TextButton(
@@ -123,70 +160,72 @@ class PantallaCaja(Screen):
                 ),
             ]
         )
-        carrito_body = ft.Column(
-            [carrito_header, self.lista_carrito],
+        cuerpo_carrito = ft.Column(
+            [encabezado_carrito, self._zona_carrito],
             spacing=SP_8,
         )
-        carrito_section = Section("Carrito", carrito_body)
+        seccion_carrito = seccion("Carrito", cuerpo_carrito)
 
-        total_row = ft.Row(
+        fila_total = ft.Row(
             [
                 ft.Text(
                     "TOTAL",
                     size=FS_20,
                     weight=ft.FontWeight.BOLD,
-                    color=palette.text,
+                    color=paleta.text,
                 ),
                 self.texto_total,
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
-        cobrar_btn = ft.FilledButton(
+        boton_cobrar = ft.FilledButton(
             "Cobrar",
             on_click=self.cobrar_carrito,
+            expand=True,
             style=ft.ButtonStyle(
-                bgcolor=palette.primary,
-                color=palette.on_primary,
+                bgcolor=paleta.primary,
+                color=paleta.on_primary,
                 shape=ft.RoundedRectangleBorder(radius=R_SM),
-                padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_8),
+                padding=ft.Padding.symmetric(horizontal=SP_12, vertical=SP_12),
             ),
         )
-        total_section = Section(
-            "Total",
-            ft.Column([total_row, cobrar_btn], spacing=SP_8),
-        )
+        cierre = ft.Column([fila_total, boton_cobrar], spacing=SP_8)
 
         return ft.Column(
             [
-                PageHeader("Caja", on_refresh=lambda _: self.actualizar()),
-                venta_section,
-                carrito_section,
-                total_section,
+                encabezado(
+                    "Nueva venta",
+                    al_refrescar=lambda _: self.actualizar(),
+                    descripcion="Registrá productos, revisá el total y cobrá la venta.",
+                ),
+                seccion_venta,
+                seccion_carrito,
+                cierre,
             ],
             spacing=SP_10,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
 
-    def on_producto_change(self, e):
-        """Track selected product ID when user selects from dropdown."""
+    def al_cambio_producto(self, e):
+        """Guarda el id del producto elegido en el combo."""
         try:
             pid = e.data if e.data else e.control.value
             if pid:
                 self._ultimo_pid = pid
         except Exception as ex:
-            print(f"Error on_producto_change: {ex}")
+            print(f"Error al_cambio_producto: {ex}")
 
-    def on_cliente_change(self, e):
+    def al_cambio_cliente(self, e):
         try:
             cid = getattr(e, "data", None) or getattr(
                 getattr(e, "control", None), "value", ""
             )
             self._ultimo_cid = cid or ""
         except Exception as ex:
-            print(f"Error on_cliente_change: {ex}")
+            print(f"Error al_cambio_cliente: {ex}")
 
-    def on_pago_change(self, e):
+    def al_cambio_pago(self, e):
         try:
             pago = getattr(e, "data", None) or getattr(
                 getattr(e, "control", None), "value", ""
@@ -194,18 +233,17 @@ class PantallaCaja(Screen):
             if pago:
                 self._ultimo_pago = pago
         except Exception as ex:
-            print(f"Error on_pago_change: {ex}")
+            print(f"Error al_cambio_pago: {ex}")
 
     # ─── carrito ────────────────────────────────────────────────────
 
-    def actualizar_carrito(self):
+    def _pintar_carrito(self):
+        # arma las filas del carrito en la zona, sin update
         try:
-            palette = app_colors.get()
-            t = 0
+            paleta = colores.get()
             controles = []
             for i, item in enumerate(self.items_carrito):
                 st = item["precio"] * item["cantidad"]
-                t += st
                 idx = i
                 controles.append(
                     ft.Container(
@@ -217,43 +255,61 @@ class PantallaCaja(Screen):
                                             item["nombre"],
                                             weight=ft.FontWeight.BOLD,
                                             size=FS_14,
-                                            color=palette.text,
+                                            color=paleta.text,
                                         ),
                                         ft.Text(
-                                            f"${item['precio']:,} x {item['cantidad']}",
+                                            f"{moneda(item['precio'])} x {item['cantidad']}",
                                             size=FS_12,
-                                            color=palette.text_muted,
+                                            color=paleta.text_muted,
                                         ),
                                     ],
                                     spacing=SP_4,
                                     expand=True,
                                 ),
                                 ft.Text(
-                                    f"${st:,}",
+                                    moneda(st),
                                     size=FS_16,
                                     weight=ft.FontWeight.BOLD,
-                                    color=palette.text,
+                                    color=paleta.text,
                                 ),
                                 ft.IconButton(
                                     ft.Icons.CLOSE,
                                     icon_size=ICON_SM,
-                                    icon_color=palette.danger,
+                                    icon_color=paleta.danger,
                                     on_click=lambda _, n=idx: self.quitar_item(n),
                                 ),
                             ]
                         ),
                         padding=ft.Padding.symmetric(vertical=SP_4, horizontal=SP_4),
                         border=ft.Border(
-                            bottom=ft.BorderSide(BORDER_WIDTH, palette.border)
+                            bottom=ft.BorderSide(ANCHO_BORDE, paleta.border)
                         ),
                     )
                 )
-            self.lista_carrito.controls = controles
-            self.texto_total.value = f"${t:,}"
+            if not controles:
+                controles.append(
+                    ft.Text(
+                        "Agregá productos desde arriba",
+                        size=FS_14,
+                        color=paleta.text_muted,
+                    )
+                )
+            self._zona_carrito.content = ft.Column(controles, spacing=SP_4)
+        except Exception as ex:
+            print(f"Error pintar_carrito: {ex}")
+
+    def actualizar_carrito(self):
+        # refresco post-accion: mismo render + update de los controles montados
+        self._pintar_carrito()
+        try:
+            self._zona_carrito.update()
+            t = sum(i["precio"] * i["cantidad"] for i in self.items_carrito)
+            self.texto_total.value = moneda(t)
+            self.texto_total.update()
             self.texto_items.value = f"{len(self.items_carrito)} items"
+            self.texto_items.update()
         except Exception as ex:
             print(f"Error actualizar_carrito: {ex}")
-        self.pagina.update()
 
     def quitar_item(self, i):
         try:
@@ -266,20 +322,33 @@ class PantallaCaja(Screen):
 
     def vaciar_carrito(self, e=None):
         try:
-            self.items_carrito.clear()
-            self.actualizar_carrito()
+
+            def _confirmar(e=None):
+                try:
+                    self.items_carrito.clear()
+                    self.actualizar_carrito()
+                except Exception as ex:
+                    print(f"Error vaciar_carrito: {ex}")
+
+            confirmar_eliminar(
+                self.pagina,
+                _confirmar,
+                titulo="Vaciar carrito",
+                mensaje="¿Vaciar el carrito? Se quitarán todos los items.",
+                nombre="",
+            )
         except Exception as ex:
             print(f"Error vaciar_carrito: {ex}")
 
     def agregar_item(self, e=None):
         try:
             pid = self.combo_producto.value
-            # Fallback: use tracked value if direct dropdown value is empty
+            # si el combo viene vacio, uso el ultimo elegido
             if not pid and hasattr(self, "_ultimo_pid"):
                 pid = self._ultimo_pid
 
             if not pid:
-                self.mostrar_alerta("Selecciona un producto")
+                self.mostrar_alerta("Seleccioná un producto")
                 return
 
             prod = prod_por_id(pid)
@@ -288,27 +357,30 @@ class PantallaCaja(Screen):
                 return
 
             try:
-                qty = int(self.campo_cantidad.value or 1)
-            except ValueError:
-                qty = 1
-
-            if qty <= 0:
-                self.mostrar_alerta("Cantidad invalida")
+                cantidad = int((leer_texto(self.campo_cantidad, e) or "1").strip())
+            except (TypeError, ValueError, AttributeError):
+                self.mostrar_alerta("Cantidad inválida")
                 return
 
-            if prod["stock"] < qty:
+            if cantidad <= 0:
+                self.mostrar_alerta("Cantidad inválida")
+                return
+
+            if prod["stock"] < cantidad:
                 self.mostrar_alerta(f"Solo hay {prod['stock']} en stock")
                 return
 
-            ex = next((x for x in self.items_carrito if x["prod_id"] == pid), None)
-            if ex:
-                ex["cantidad"] += qty
+            existente = next(
+                (x for x in self.items_carrito if x["prod_id"] == pid), None
+            )
+            if existente:
+                existente["cantidad"] += cantidad
             else:
                 self.items_carrito.append(
                     {
                         "prod_id": pid,
                         "nombre": prod["nombre"],
-                        "cantidad": qty,
+                        "cantidad": cantidad,
                         "precio": prod["precio"],
                     }
                 )
@@ -322,26 +394,65 @@ class PantallaCaja(Screen):
     def cobrar_carrito(self, e=None):
         try:
             if not self.items_carrito:
-                self.mostrar_alerta("Carrito vacio")
+                self.mostrar_alerta("Carrito vacío")
                 return
             pago = self._ultimo_pago or self.combo_pago.value or "efectivo"
             cid = self._ultimo_cid or self.combo_cliente.value or ""
+            if pago == "fiado" and not cid:
+                self.mostrar_alerta("Elegí un cliente para fiado")
+                return
 
             # verificar stock de nuevo
             for item in self.items_carrito:
                 p = prod_por_id(item["prod_id"])
-                if p and p["stock"] < item["cantidad"]:
+                if not p:
+                    self.mostrar_alerta(
+                        f"{item['nombre']} ya no existe en Stock. Quitalo del carrito."
+                    )
+                    return
+                if not math.isclose(
+                    float(item["precio"]), float(p["precio"]), rel_tol=1e-9, abs_tol=1e-9
+                ):
+                    self.mostrar_alerta(
+                        f"Cambió el precio de {p['nombre']}. Quitalo y agregalo nuevamente para revisar el precio actual."
+                    )
+                    return
+                if p["stock"] < item["cantidad"]:
                     self.mostrar_alerta(
                         f"Stock insuficiente de {item['nombre']}: quedan {p['stock']}"
                     )
                     return
 
             total = sum(i["precio"] * i["cantidad"] for i in self.items_carrito)
-            crear_venta(list(self.items_carrito), cid, pago)
+            try:
+                v = crear_venta(list(self.items_carrito), cid, pago)
+            except ValueError as ex:
+                self.mostrar_alerta(str(ex))
+                return
             self.items_carrito.clear()
             self.actualizar_carrito()
             self.cargar_opciones()
-            self.mostrar_alerta(f"Cobrado ${total:,} — {pago}")
+            etiquetas_pago = {
+                "efectivo": "Efectivo",
+                "transferencia": "Transferencia",
+                "fiado": "Fiado",
+            }
+
+            def _deshacer(e=None):
+                try:
+                    deshacer_venta(v["id"])
+                    self.cargar_opciones()
+                    self.actualizar_carrito()
+                    self.mostrar_alerta("Venta deshecha")
+                except Exception as ex:
+                    print(f"Error deshacer_venta: {ex}")
+
+            aviso(
+                self.pagina,
+                f"Cobrado {moneda(total)} — {etiquetas_pago.get(pago, pago)}",
+                texto_accion="Deshacer",
+                al_accion=_deshacer,
+            )
         except Exception as ex:
             print(f"Error cobrar_carrito: {ex}")
             self.mostrar_alerta(f"Error al cobrar: {ex}")
@@ -350,6 +461,6 @@ class PantallaCaja(Screen):
 
     def mostrar_alerta(self, texto):
         try:
-            feedback(self.pagina, texto)
+            aviso(self.pagina, texto)
         except Exception as ex:
             print(f"Error mostrar_alerta: {ex}")

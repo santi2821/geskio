@@ -1,0 +1,53 @@
+/* GesKio — página: funciones (detalle de cada módulo) */
+
+.cab-pagina { padding: 72px 0 48px; }
+.cab-pagina .cab { margin-bottom: 0; }
+
+/* bloque de módulo: mock + texto alternando (los pares traen el mock primero en el DOM) */
+.modulo {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 56px; align-items: center;
+  padding: 64px 0;
+}
+.modulo + .modulo { border-top: 1px solid var(--border); }
+.modulo .eyebrow { margin-bottom: 12px; }
+.modulo h2 { font-size: clamp(1.5rem, 3vw, 1.9rem); }
+.modulo > div > p { color: var(--text-soft); margin-bottom: 22px; max-width: 52ch; }
+.modulo-mock .mock { min-height: 320px; }
+
+/* sección doble: lo que no hace + requisitos */
+.limites { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.limites .card { padding: 24px; }
+.limites h3 { font-size: 1.02rem; margin-bottom: 12px; }
+.limites p { font-size: .92rem; color: var(--text-soft); margin-bottom: 10px; }
+
+/* lista de puntos con check */
+.puntos { list-style: none; display: grid; gap: 12px; }
+.puntos li { display: flex; gap: 12px; align-items: flex-start; font-size: .95rem; color: var(--text-soft); }
+.puntos svg { flex: none; width: 20px; height: 20px; color: var(--success); margin-top: 2px; }
+.puntos strong { color: var(--text); font-weight: 600; }
+
+/* tabla antes / con GesKio */
+.antes { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); }
+.antes-fila {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.antes-fila:last-child { border-bottom: none; }
+.antes-fila > div { padding: 18px 24px; font-size: .95rem; }
+.antes-fila .antes-col { color: var(--text-muted); border-right: 1px solid var(--border); }
+.antes-fila .ahora-col { color: var(--text); display: flex; gap: 10px; align-items: center; }
+.antes-fila .ahora-col svg { flex: none; color: var(--success); }
+.antes-fila.cabecera-antes > div {
+  font-size: .78rem; text-transform: uppercase; letter-spacing: .07em;
+  font-weight: 700; padding-block: 12px;
+}
+.antes-fila.cabecera-antes .antes-col { color: var(--text-muted); }
+.antes-fila.cabecera-antes .ahora-col { color: var(--accent-text); }
+
+@media (max-width: 860px) {
+  .modulo { grid-template-columns: 1fr; gap: 36px; padding: 48px 0; }
+  .limites { grid-template-columns: 1fr; }
+  .antes-fila { grid-template-columns: 1fr; }
+  .antes-fila .antes-col { border-right: none; border-bottom: 1px dashed var(--border); }
+}

@@ -2,19 +2,19 @@
 
 ## Purpose
 
-Paperpillar-anchored shell (`app/main.py`): sidebar + topbar + content slot with an adapter that renders any existing `Screen` control unchanged. Closes V2-D6 (collapse rule) and V2-D1 (shell-first migration). Zero logic change; `app/datos.py` FROZEN.
+Desktop shell (`app/main.py`): branded sidebar + contextual topbar + content slot. The sidebar groups work areas and keeps Ajustes at the bottom. Appearance controls stay in Ajustes so theme configuration remains together. The shell adapts to the available window size. Its visual identity is formal and task-oriented: compact GesKio wordmark, neutral work surfaces, no marketing claim or decorative logo tile.
 
 ## Requirements
 
 ### Requirement: Shell Geometry
 
-The system MUST render a `Shell` as an `ft.Row`: sidebar + content column. The sidebar MUST be 240px expanded and 64px as an icon rail when collapsed; the topbar MUST be 56px high. Dimensions MUST resolve to `theme.py` shell constants (`SHELL_SIDEBAR_W`, `SHELL_RAIL_W`, `SHELL_TOPBAR_H`) — no literals in `main.py`.
+The system MUST render a `Marco` as an `ft.Row`: sidebar + content column. The sidebar MUST be 240px expanded and 64px as an icon rail when collapsed; the topbar MUST be 56px high. Dimensions MUST resolve to shell constants in `theme.py`.
 
 #### Scenario: Default boot at 1100x700
 
 - GIVEN the app boots at the 1100x700 default window size
 - WHEN the Shell renders
-- THEN the sidebar is the 64px icon rail (labels hidden, icons kept) and content width is ~990px
+- THEN the sidebar is expanded with labels and the content adapts to the remaining width
 
 #### Scenario: Expanded shell above breakpoint
 
@@ -24,18 +24,18 @@ The system MUST render a `Shell` as an `ft.Row`: sidebar + content column. The s
 
 ### Requirement: Responsive Collapse Rule
 
-The Shell MUST collapse to the rail when `page.window.width <= SHELL_BREAKPOINT_W (1280)` OR `page.window.height <= SHELL_BREAKPOINT_H (760)`, and MUST expand when both thresholds are exceeded. The resize driver MUST be `page.window.on_event` (`WindowEventType.RESIZED`) reading `page.window.width/height`.
+The shell MUST collapse to the rail when `page.window.width <= RUPTURA_ANCHO (1024)` OR `page.window.height <= RUPTURA_ALTO (600)`, and MUST expand when both thresholds are exceeded. The resize driver MUST be `page.window.on_event` reading `page.window.width/height`.
 
 #### Scenario: Shrink below breakpoint collapses
 
 - GIVEN the shell is expanded at 1400x900
-- WHEN the window resizes to 1200x800
+- WHEN the window resizes to 1000x800
 - THEN the sidebar collapses to the 64px rail
 
 #### Scenario: Grow past both thresholds expands
 
-- GIVEN the shell is collapsed at 1100x700
-- WHEN the window resizes to 1300x800
+- GIVEN the shell is collapsed at 1000x800
+- WHEN the window resizes to 1100x700
 - THEN the sidebar expands to 240px
 
 ### Requirement: Manual Collapse Fallback
@@ -50,7 +50,7 @@ The topbar MUST provide a manual toggle that switches the sidebar between rail a
 
 ### Requirement: Adapter Renders Screens Unchanged
 
-The Shell MUST provide a thin adapter that renders any `Screen` control unchanged in the content slot. Unmigrated v1 screens MUST remain renderable inside the new shell so per-slice revert restores the prior state.
+The shell MUST render every existing `Pantalla` in its content slot and preserve screen state where the screen owns it (for example, Chat messages and Dashboard's selected period).
 
 #### Scenario: Unmigrated screen loads in shell
 
@@ -60,16 +60,26 @@ The Shell MUST provide a thin adapter that renders any `Screen` control unchange
 
 ### Requirement: Navigation Contract
 
-`mostrar(key)` MUST be replaced by `shell.navigate(key)`. The topbar MUST show the active screen title, the mode (theme) toggle, and the brand `Dropdown` moved from the v1 toolbar. Navigation MUST NOT add search or user-menu features. Screens MUST keep the `Screen`/`invalidate()` contract.
+`Marco.navegar(key)` MUST update the active sidebar item, the topbar's current section, and the screen content together. The sidebar MUST show the GesKio brand in expanded and compact states; Ajustes stays visually separated at the bottom. Appearance controls remain in Ajustes. Screens MUST keep the `Pantalla`/`invalidate()` contract.
 
 #### Scenario: Navigate updates rail and content
 
 - GIVEN the shell is booted with nav items
-- WHEN `shell.navigate('stock')` is invoked
+- WHEN `Marco.navegar('stock')` is invoked
 - THEN the rail highlights `stock` and the content slot renders the stock screen
 
-#### Scenario: No new topbar features
+#### Scenario: Topbar stays focused
 
 - GIVEN the topbar implementation
 - WHEN reviewed
-- THEN it contains only title, mode toggle, brand Dropdown, and manual collapse toggle (no search box, no user menu)
+- THEN it shows the current section, date, and manual collapse toggle without adding search or user-menu features
+
+### Requirement: Formal Product Hierarchy
+
+The shell MUST use a compact typographic wordmark without a colored monogram tile or marketing subtitle. The topbar identifies the current navigation section; each screen content header MAY show a distinct task title and descriptor, but MUST NOT repeat the same screen label as its prominent title. Selection and primary action use the brand role sparingly; neutral surfaces MUST be used for workspace structure.
+
+#### Scenario: Screen context is not duplicated
+
+- GIVEN a screen is active
+- WHEN its shell and content header are reviewed together
+- THEN the topbar names the section and the content header names the task without repeating the same prominent label

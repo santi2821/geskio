@@ -1,0 +1,79 @@
+/* GesKio — página: home */
+
+/* ---------- Hero ---------- */
+.hero { position: relative; padding: 96px 0 84px; overflow: hidden; }
+.hero-nube {
+  position: absolute; border-radius: 50%; filter: blur(70px);
+  pointer-events: none; z-index: -1; opacity: .8;
+}
+.hero-nube-a {
+  width: 460px; height: 460px; top: -140px; right: -100px;
+  background: var(--accent-soft); animation: nube-a 14s ease-in-out infinite;
+}
+.hero-nube-b {
+  width: 380px; height: 380px; bottom: -120px; left: -120px;
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  animation: nube-b 18s ease-in-out infinite;
+}
+.hero-grilla {
+  display: grid; grid-template-columns: 1.05fr 1fr;
+  gap: 56px; align-items: center;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: .8rem; font-weight: 600; color: var(--accent-text);
+  background: var(--accent-soft); border-radius: var(--radius-pill);
+  padding: 7px 14px; margin-bottom: 20px;
+}
+.hero-tag .punto-estado { animation: pulso 2.4s ease-in-out infinite; }
+.hero h1 { font-size: clamp(2.3rem, 5.6vw, 3.6rem); margin-bottom: 18px; }
+.hero .bajada { font-size: 1.12rem; margin-bottom: 28px; max-width: 46ch; }
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.hero-chico { font-size: .82rem; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.hero-chico span { display: inline-flex; align-items: center; gap: 6px; }
+.hero-chico svg { color: var(--success); }
+
+.hero-mock .mock { animation: flotar 7s ease-in-out infinite; }
+
+/* ---------- Funciones ---------- */
+.funciones .card { padding: 24px; }
+.funciones .card p { margin-bottom: 14px; }
+.card-link {
+  font-size: .88rem; font-weight: 600; color: var(--accent-text);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.card-link:hover { text-decoration: underline; }
+
+/* ---------- Pasos ---------- */
+.pasos-grilla {
+  position: relative; z-index: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.paso { position: relative; padding-top: 8px; }
+.paso-num {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--grad-accent); color: var(--on-accent);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  box-shadow: var(--glow); margin-bottom: 18px;
+}
+.paso h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.paso p { font-size: .92rem; color: var(--text-soft); }
+.pasos-linea {
+  position: absolute; top: 30px; left: 60px; right: 60px;
+  height: 2px; background: linear-gradient(90deg, var(--accent-soft), var(--border), var(--accent-soft));
+  z-index: -1;
+}
+
+/* ---------- Próximamente ---------- */
+.prox .card .chip { margin-bottom: 14px; }
+.prox .card h3 { margin-bottom: 8px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .hero-grilla { grid-template-columns: 1fr; gap: 48px; }
+  .pasos-grilla { grid-template-columns: 1fr; gap: 36px; }
+  .pasos-linea { display: none; }
+}
+@media (max-width: 640px) {
+  .hero { padding: 72px 0 64px; }
+}

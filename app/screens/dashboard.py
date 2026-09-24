@@ -3,287 +3,316 @@ from datetime import date, timedelta
 
 import flet as ft
 from datos import cli_por_id, cuentas, productos, stats, ventas
-from screen_base import Screen
+from screen_base import Pantalla
 from theme import (
-    BORDER_WIDTH,
+    ANCHO_BORDE,
     FS_12,
+    FS_13,
     FS_14,
     ICON_MD,
     SP_4,
     SP_8,
     SP_12,
-    app_colors,
-    role_color,
+    colores,
+    color_rol,
 )
 from widgets import (
-    AppStatCard,
-    Calendar,
-    PageHeader,
-    SalesBars,
-    Section,
+    tarjeta_stat,
+    Calendario,
+    tarjeta_focal,
+    encabezado,
+    barras_ventas,
+    seccion,
+    grilla_stats,
+    moneda,
 )
 
 
-def ventas_del_dia(ventas_list, fecha_iso: str) -> list:
-    """View-side filter: ventas entries for one ISO day."""
-    return [v for v in (ventas_list or []) if v.get("fecha") == fecha_iso]
+def ventas_del_dia(lista_ventas, fecha_iso: str) -> list:
+    # ventas de un dia ISO
+    return [v for v in (lista_ventas or []) if v.get("fecha") == fecha_iso]
 
 
-def totales_ultimos_7_dias(ventas_list, today: date) -> list:
-    """View-side aggregate: totals for the last 7 days ending today."""
-    totals: dict[str, float] = {}
-    for v in ventas_list or []:
-        totals[v.get("fecha", "")] = totals.get(v.get("fecha", ""), 0) + (
+def totales_ultimos_7_dias(lista_ventas, hoy: date) -> list:
+    # totales por dia de los ultimos 7 dias (hoy incluido)
+    totales: dict[str, float] = {}
+    for v in lista_ventas or []:
+        totales[v.get("fecha", "")] = totales.get(v.get("fecha", ""), 0) + (
             v.get("total", 0) or 0
         )
-    series = []
+    serie = []
     for i in range(6, -1, -1):
-        day = today - timedelta(days=i)
-        iso = day.isoformat()
-        series.append((iso, totals.get(iso, 0)))
-    return series
+        dia = hoy - timedelta(days=i)
+        iso = dia.isoformat()
+        serie.append((iso, totales.get(iso, 0)))
+    return serie
 
 
-def totales_mes(ventas_list, year: int, month: int) -> dict:
-    """View-side aggregate: per-day totals for one calendar month."""
-    prefix = f"{year:04d}-{month:02d}-"
-    totals: dict[int, float] = {}
-    for v in ventas_list or []:
+def totales_mes(lista_ventas, anio: int, mes: int) -> dict:
+    # totales por dia para el mes del calendario
+    prefijo = f"{anio:04d}-{mes:02d}-"
+    totales: dict[int, float] = {}
+    for v in lista_ventas or []:
         fecha = v.get("fecha", "")
-        if fecha.startswith(prefix):
+        if fecha.startswith(prefijo):
             try:
-                day = int(fecha[8:10])
+                dia = int(fecha[8:10])
             except (ValueError, IndexError):
                 continue
-            totals[day] = totals.get(day, 0) + (v.get("total", 0) or 0)
-    return totals
+            totales[dia] = totales.get(dia, 0) + (v.get("total", 0) or 0)
+    return totales
 
 
-class PantallaDashboard(Screen):
+class PantallaDashboard(Pantalla):
     def __init__(self, page: ft.Page):
         super().__init__(page, "Dashboard")
-        self.cal_view = "week"
+        self.vista = "week"
+        self.al_navegar = None
 
-    def _serie_calendario(self, view: str) -> ft.Control:
-        if view == "day":
+    def _ir_a(self, destino: str) -> None:
+        if callable(self.al_navegar):
+            self.al_navegar(destino)
+
+    def _serie_calendario(self, vista: str) -> ft.Control:
+        if vista == "day":
             return self._contenido_dia()
-        if view == "month":
+        if vista == "month":
             return self._contenido_mes()
         return self._contenido_semana()
 
     def _contenido_dia(self) -> ft.Control:
-        palette = app_colors.get()
-        today_iso = date.today().isoformat()
-        entries = ventas_del_dia(ventas, today_iso)
-        if not entries:
-            return ft.Text("Sin ventas hoy", size=FS_14, color=palette.text_soft)
-        rows: list[ft.Control] = []
-        for v in entries:
+        paleta = colores.get()
+        hoy_iso = date.today().isoformat()
+        entradas = ventas_del_dia(ventas, hoy_iso)
+        if not entradas:
+            return ft.Text("Sin ventas hoy", size=FS_14, color=paleta.text_soft)
+        filas: list[ft.Control] = []
+        for v in entradas:
             cli = cli_por_id(v.get("cliente_id", ""))
             nombre = cli["nombre"] if cli else "Mostrador"
-            detalle = f"${v.get('total', 0):,.0f} - {nombre} - {v.get('pago', '')}"
-            rows.append(
+            detalle = f"{moneda(v.get('total', 0))} - {nombre} - {v.get('pago', '')}"
+            filas.append(
                 ft.Row(
                     [
                         ft.Icon(
                             ft.Icons.RECEIPT_LONG,
-                            color=palette.text_soft,
+                            color=paleta.text_soft,
                             size=ICON_MD,
                         ),
-                        ft.Text(detalle, size=FS_14, color=palette.text),
+                        ft.Text(detalle, size=FS_14, color=paleta.text),
                     ],
                     spacing=SP_8,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 )
             )
-        return ft.Column(rows, spacing=SP_8)
+        return ft.Column(filas, spacing=SP_8)
 
     def _contenido_semana(self) -> ft.Control:
-        series = totales_ultimos_7_dias(ventas, date.today())
-        return SalesBars(series, today_iso=date.today().isoformat())
+        serie = totales_ultimos_7_dias(ventas, date.today())
+        return barras_ventas(serie, hoy_iso=date.today().isoformat())
 
     def _contenido_mes(self) -> ft.Control:
-        palette = app_colors.get()
-        today = date.today()
-        totals = totales_mes(ventas, today.year, today.month)
+        paleta = colores.get()
+        hoy = date.today()
+        totales = totales_mes(ventas, hoy.year, hoy.month)
         try:
-            num_days = pycal.monthrange(today.year, today.month)[1]
+            num_dias = pycal.monthrange(hoy.year, hoy.month)[1]
         except Exception:
-            num_days = 30
-        today_iso = today.isoformat()
-        cells: list[ft.Control] = []
-        for day in range(1, num_days + 1):
-            iso = f"{today.year:04d}-{today.month:02d}-{day:02d}"
-            total = totals.get(day, 0)
-            is_today = iso == today_iso
-            day_color = palette.on_accent_soft if is_today else palette.text_muted
-            total_color = palette.on_accent_soft if is_today else palette.text
-            total_text = f"${total:,.0f}" if total else "-"
-            cells.append(
+            num_dias = 30
+        hoy_iso = hoy.isoformat()
+        celdas: list[ft.Control] = []
+        for dia in range(1, num_dias + 1):
+            iso = f"{hoy.year:04d}-{hoy.month:02d}-{dia:02d}"
+            total = totales.get(dia, 0)
+            es_hoy = iso == hoy_iso
+            color_dia = paleta.on_accent_soft if es_hoy else paleta.text_muted
+            color_total = paleta.on_accent_soft if es_hoy else paleta.text
+            texto_total = moneda(total) if total else "-"
+            celdas.append(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(str(day), size=FS_12, color=day_color),
-                            ft.Text(total_text, size=FS_12, color=total_color),
+                            ft.Text(str(dia), size=FS_12, color=color_dia),
+                            ft.Text(texto_total, size=FS_12, color=color_total),
                         ],
                         spacing=SP_4,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                     padding=SP_8,
                     alignment=ft.Alignment.CENTER,
-                    bgcolor=palette.accent_soft if is_today else palette.surface,
+                    bgcolor=paleta.accent_soft if es_hoy else paleta.surface,
                     border=ft.Border.all(
-                        BORDER_WIDTH,
-                        palette.primary if is_today else palette.border,
+                        ANCHO_BORDE,
+                        paleta.primary if es_hoy else paleta.border,
                     ),
                     border_radius=ft.BorderRadius.all(SP_4),
                     col={"xs": 4, "sm": 3, "md": 2},
                 )
             )
-        return ft.ResponsiveRow(cells, spacing=SP_8, run_spacing=SP_8)
+        return ft.ResponsiveRow(celdas, spacing=SP_8, run_spacing=SP_8)
 
-    def actualizar(self):
-        try:
-            s = stats()
-
-            self.texto_hoy.value = f"${s['hoy']:,.0f}"
-            self.texto_mes.value = f"${s['mes']:,.0f}"
-            self.texto_ganancia.value = f"${s['ganancia']:,.0f}"
-            self.texto_deben.value = f"${s['deben']:,.0f}"
-
-            palette = app_colors.get()
-            danger = role_color(palette, "deben")
-            success = role_color(palette, "paid")
-
-            alertas = []
-            for p in productos:
-                if p["stock"] <= p["minimo"]:
-                    alertas.append(
-                        ft.Row(
-                            [
-                                ft.Icon(
-                                    ft.Icons.TRENDING_DOWN,
-                                    color=danger,
-                                    size=ICON_MD,
-                                ),
-                                ft.Text(
-                                    f"{p['nombre']}: stock {p['stock']} (min {p['minimo']})",
-                                    size=FS_14,
-                                    color=palette.text,
-                                ),
-                            ],
-                            spacing=SP_8,
-                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        )
-                    )
-            for c in cuentas:
-                pendiente = c["total"] - c["pagado"]
-                if pendiente > 0:
-                    cli = cli_por_id(c["cliente_id"])
-                    alertas.append(
-                        ft.Row(
-                            [
-                                ft.Icon(
-                                    ft.Icons.PAID,
-                                    color=danger,
-                                    size=ICON_MD,
-                                ),
-                                ft.Text(
-                                    f"{cli['nombre'] if cli else '?'} debe ${pendiente:,}",
-                                    size=FS_14,
-                                    color=palette.text,
-                                ),
-                            ],
-                            spacing=SP_8,
-                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        )
-                    )
-            if not alertas:
+    def _armar_alertas(self) -> ft.Column:
+        paleta = colores.get()
+        peligro = color_rol(paleta, "deben")
+        ok = color_rol(paleta, "paid")
+        alertas = []
+        for p in productos:
+            if p["stock"] <= p["minimo"]:
                 alertas.append(
                     ft.Row(
                         [
                             ft.Icon(
-                                ft.Icons.CHECK_CIRCLE,
-                                color=success,
+                                ft.Icons.INVENTORY_2,
+                                color=peligro,
                                 size=ICON_MD,
                             ),
                             ft.Text(
-                                "Todo en orden",
+                                f"{p['nombre']}: stock {p['stock']} (mínimo {p['minimo']})",
                                 size=FS_14,
-                                color=palette.text,
+                                color=paleta.text,
                             ),
                         ],
                         spacing=SP_8,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     )
                 )
-            self.lista_alertas.controls = alertas
-            try:
-                self.calendar.refresh()
-            except Exception:
-                pass
-        except Exception as ex:
-            print(f"Error actualizar dashboard: {ex}")
-        self.pagina.update()
+        for c in cuentas:
+            pendiente = c["total"] - c["pagado"]
+            if pendiente > 0:
+                cli = cli_por_id(c["cliente_id"])
+                alertas.append(
+                    ft.Row(
+                        [
+                            ft.Icon(
+                                ft.Icons.ACCOUNT_BALANCE_WALLET,
+                                color=peligro,
+                                size=ICON_MD,
+                            ),
+                            ft.Text(
+                                f"{cli['nombre'] if cli else '?'} debe {moneda(pendiente)}",
+                                size=FS_14,
+                                color=paleta.text,
+                            ),
+                        ],
+                        spacing=SP_8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    )
+                )
+        if not alertas:
+            return ft.Column(
+                [
+                    ft.Row(
+                        [
+                            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ok, size=ICON_MD),
+                            ft.Text("Todo en orden", size=FS_14, color=paleta.text),
+                        ],
+                        spacing=SP_8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    )
+                ],
+                spacing=SP_8,
+            )
 
-    @staticmethod
-    def _value_of(card: ft.Container) -> ft.Text:
-        return card.content.controls[1].controls[1]
+        total_alertas = len(alertas)
+        visibles = alertas[:4]
+        resumen = ft.Text(
+            f"{total_alertas} alertas" + (f" · mostrando {len(visibles)}" if total_alertas > len(visibles) else ""),
+            size=FS_13,
+            color=paleta.text_muted,
+        )
+        accesos = ft.Row(
+            [
+                ft.TextButton(
+                    "Ver stock",
+                    icon=ft.Icons.INVENTORY_2,
+                    on_click=lambda _: self._ir_a("stock"),
+                ),
+                ft.TextButton(
+                    "Ver fiado",
+                    icon=ft.Icons.ACCOUNT_BALANCE_WALLET,
+                    on_click=lambda _: self._ir_a("fiado"),
+                ),
+            ],
+            spacing=SP_4,
+            wrap=True,
+        )
+        return ft.Column([resumen, *visibles, accesos], spacing=SP_8)
 
     def build(self):
-        card_hoy = AppStatCard("Hoy", "$0", role="accent_text", icon=ft.Icons.TODAY)
-        card_mes = AppStatCard("Mes", "$0", role="info", icon=ft.Icons.CALENDAR_MONTH)
-        card_gan = AppStatCard(
-            "Ganancia", "$0", role="warning", icon=ft.Icons.TRENDING_UP
+        resumen = stats()
+        focal_hoy = tarjeta_focal(
+            "Hoy", moneda(resumen["hoy"]), rol="text", icono=ft.Icons.TODAY
         )
-        card_deben = AppStatCard(
-            "Deben", "$0", role="danger", icon=ft.Icons.RECEIPT_LONG
+        tarjeta_mes = tarjeta_stat(
+            "Ventas del mes",
+            moneda(resumen["mes"]),
+            rol="accent_text",
+            icono=ft.Icons.CALENDAR_MONTH,
         )
-        for card in (card_hoy, card_mes, card_gan, card_deben):
-            try:
-                card.col = {"xs": 12, "sm": 6, "md": 3}
-            except Exception:
-                pass
+        tarjeta_ganancia = tarjeta_stat(
+            "Ganancia estimada del mes",
+            moneda(resumen["ganancia"]),
+            rol="success" if resumen["ganancia"] >= 0 else "danger_text",
+            icono=ft.Icons.TRENDING_UP,
+        )
+        tarjeta_deben = tarjeta_stat(
+            "Por cobrar",
+            moneda(resumen["deben"]),
+            rol="danger_text",
+            icono=ft.Icons.RECEIPT_LONG,
+        )
 
-        self.texto_hoy = self._value_of(card_hoy)
-        self.texto_mes = self._value_of(card_mes)
-        self.texto_ganancia = self._value_of(card_gan)
-        self.texto_deben = self._value_of(card_deben)
-
-        self.lista_alertas = ft.Column(spacing=SP_8)
-        alert_section = Section("Alertas", self.lista_alertas)
+        seccion_alertas = seccion("Alertas", self._armar_alertas())
         try:
-            alert_section.col = {"xs": 12, "md": 4}
+            seccion_alertas.col = {"xs": 12, "xl": 4}
         except Exception:
             pass
-        self.calendar = Calendar(
-            get_series=self._serie_calendario,
-            today=date.today().isoformat(),
-            view=self.cal_view,
+        self.calendario = Calendario(
+            obtener_serie=self._serie_calendario,
+            hoy=date.today().isoformat(),
+            vista=self.vista,
+            al_cambiar=self._fijar_vista,
         )
         try:
-            self.calendar.col = {"xs": 12, "md": 8}
+            self.calendario.col = {"xs": 12, "xl": 8}
         except Exception:
             pass
-        stats_row = ft.ResponsiveRow(
-            [card_hoy, card_mes, card_gan, card_deben],
+        fila_stats = grilla_stats(
+            focal=focal_hoy, tarjetas=[tarjeta_mes, tarjeta_ganancia, tarjeta_deben]
+        )
+        fila_contenido = ft.ResponsiveRow(
+            [self.calendario, seccion_alertas],
             spacing=SP_12,
             run_spacing=SP_12,
-        )
-        content_row = ft.ResponsiveRow(
-            [self.calendar, alert_section], spacing=SP_12, run_spacing=SP_12
+            breakpoints={
+                "xs": 0,
+                "sm": 576,
+                "md": 768,
+                "lg": 992,
+                "xl": 1200,
+                "xxl": 1400,
+            },
         )
 
         return ft.Column(
             [
-                PageHeader(
-                    "Dashboard",
-                    on_refresh=lambda _: self.actualizar(),
+                encabezado(
+                    "Resumen de ventas",
+                    al_refrescar=lambda _: self.actualizar(),
+                    descripcion="Un vistazo a ventas, margen y pendientes del negocio.",
                 ),
-                stats_row,
-                content_row,
+                fila_stats,
+                ft.Text(
+                    "Calculada con costos vigentes; un cambio de costo puede ajustar meses anteriores.",
+                    size=FS_12,
+                    color=colores.get().text_muted,
+                ),
+                fila_contenido,
             ],
             spacing=SP_12,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
+
+    def _fijar_vista(self, vista: str) -> None:
+        self.vista = vista

@@ -1,10 +1,4 @@
-"""GesKio shell entry (slice-a): Paperpillar Shell + adapter, zero screen edits.
-
-Boot is 1100x700 so the shell starts on the icon rail (collapse when the
-window is at or below the shell breakpoints from theme.py). Resize follows
-page.window.on_event (WindowEventType.RESIZED); availability is
-OS-dependent, so the topbar manual toggle is mandatory and always works.
-"""
+"""Punto de entrada del marco + pantallas de GesKio."""
 
 import flet as ft
 from screens.ajustes import PantallaAjustes
@@ -14,30 +8,28 @@ from screens.clientes import PantallaClientes
 from screens.dashboard import PantallaDashboard
 from screens.fiado import PantallaFiado
 from screens.stock import PantallaStock
-from theme import app_colors
-from widgets import Shell
-
-BRAND_OPTIONS = (("rojo", "Rojo"), ("verde", "Verde"))
+from theme import colores
+from widgets import Marco
 
 
 def main(page: ft.Page):
-    app_colors.load_from_store(page)
-    app_colors.apply_to_page(page)
+    colores.load_from_store(page)
+    colores.apply_to_page(page)
     page.title = "GesKio"
     page.window.width = 1100
     page.window.height = 700
     page.padding = 0
 
-    nav_items = [
+    items_nav = [
         ("dash", ft.Icons.DASHBOARD, "Dashboard"),
         ("caja", ft.Icons.POINT_OF_SALE, "Caja"),
         ("stock", ft.Icons.INVENTORY_2, "Stock"),
         ("clientes", ft.Icons.PEOPLE, "Clientes"),
         ("fiado", ft.Icons.RECEIPT_LONG, "Fiado"),
-        ("chat", ft.Icons.SMART_TOY, "Chat IA"),
+        ("chat", ft.Icons.SMART_TOY, "Chat"),
         ("ajustes", ft.Icons.SETTINGS, "Ajustes"),
     ]
-    screens = {
+    pantallas = {
         "dash": PantallaDashboard(page),
         "caja": PantallaCaja(page),
         "stock": PantallaStock(page),
@@ -47,16 +39,17 @@ def main(page: ft.Page):
         "ajustes": PantallaAjustes(page),
     }
 
-    shell = Shell(
+    marco = Marco(
         page,
-        nav_items,
-        screens,
-        active_key="dash",
-        brand_options=BRAND_OPTIONS,
+        items_nav,
+        pantallas,
+        clave_activa="dash",
     )
-    page.add(shell)
-    screens["ajustes"].on_appearance = shell.apply_and_rebuild
-    shell.navigate("dash")
+    page.add(marco)
+    pantallas["dash"].al_navegar = marco.navegar
+    pantallas["ajustes"].al_apariencia = marco.aplicar_y_rearmar
+    marco.navegar("dash")
 
 
-ft.app(target=main)
+if __name__ == "__main__":
+    ft.run(main)
