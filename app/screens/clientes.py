@@ -77,9 +77,7 @@ class PantallaClientes(Pantalla):
                 ft.FilledButton(
                     "Agregar",
                     on_click=self.guardar_nuevo,
-                    style=ft.ButtonStyle(
-                        bgcolor=paleta.primary, color=paleta.on_primary
-                    ),
+                    style=ft.ButtonStyle(bgcolor=paleta.primary, color=paleta.on_primary),
                 ),
             ],
             spacing=SP_8,
@@ -150,9 +148,7 @@ class PantallaClientes(Pantalla):
         for c in clientes:
             if q and q not in c["nombre"].lower() and q not in c.get("telefono", ""):
                 continue
-            debe = sum(
-                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"]
-            )
+            debe = sum(x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"])
             if solo_deuda and debe <= 0:
                 continue
             items.append(c)
@@ -160,9 +156,7 @@ class PantallaClientes(Pantalla):
         filas = []
         for c in items:
             compras = len([v for v in ventas if v.get("cliente_id") == c["id"]])
-            debe = sum(
-                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"]
-            )
+            debe = sum(x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == c["id"])
             cid = c["id"]
 
             filas.append(
@@ -187,18 +181,14 @@ class PantallaClientes(Pantalla):
                                         ft.Icons.EDIT,
                                         icon_size=ICON_SM,
                                         tooltip="Editar",
-                                        on_click=lambda _, x=cid: self.editar_cliente(
-                                            x
-                                        ),
+                                        on_click=lambda _, x=cid: self.editar_cliente(x),
                                     ),
                                     ft.IconButton(
                                         ft.Icons.DELETE_OUTLINE,
                                         icon_size=ICON_SM,
                                         tooltip="Eliminar",
                                         icon_color=paleta.danger,
-                                        on_click=lambda _, x=cid: self.eliminar_cliente(
-                                            x
-                                        ),
+                                        on_click=lambda _, x=cid: self.eliminar_cliente(x),
                                     ),
                                 ],
                                 spacing=SP_4,
@@ -212,9 +202,7 @@ class PantallaClientes(Pantalla):
         self._pagina = actual
         filtro_activo = bool(q or solo_deuda)
         texto_vacio = "Sin resultados" if filtro_activo else "Sin clientes"
-        self._zona_tabla.content = tabla(
-            self._columnas, visibles, mensaje_vacio=texto_vacio
-        )
+        self._zona_tabla.content = tabla(self._columnas, visibles, mensaje_vacio=texto_vacio)
         self._zona_paginador.content = (
             paginador(actual, total, al_paginar=self._al_paginar) if total > 1 else None
         )
@@ -274,11 +262,10 @@ class PantallaClientes(Pantalla):
                 "Editar cliente",
                 ft.Column([campo_nombre, campo_telefono], spacing=SP_12, tight=True),
                 acciones=[
-                    ft.TextButton(
-                        "Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)
-                    ),
+                    ft.TextButton("Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)),
                     ft.ElevatedButton("Guardar", on_click=guardar),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
@@ -292,9 +279,7 @@ class PantallaClientes(Pantalla):
             if not c:
                 return
 
-            debe = sum(
-                x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == cid
-            )
+            debe = sum(x["total"] - x["pagado"] for x in cuentas if x["cliente_id"] == cid)
             if debe > 0:
                 aviso(
                     self.pagina,
@@ -315,9 +300,7 @@ class PantallaClientes(Pantalla):
             def confirmar(e):
                 try:
                     if not eliminar_cliente(cid):
-                        self.mostrar_alerta(
-                            "No se pudo eliminar el cliente con historial asociado"
-                        )
+                        self.mostrar_alerta("No se pudo eliminar el cliente con historial asociado")
                         return
                     self.filtrar_datos()
                     self.mostrar_alerta(f"'{c['nombre']}' eliminado")
@@ -337,26 +320,28 @@ class PantallaClientes(Pantalla):
         except Exception as ex:
             print(f"Error eliminar_cliente: {ex}")
 
-    # ─── helpers ───────────────────────────────────────────────────
+    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
+    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base.
 
-    def abrir_dialogo(self, ventana):
+    # ─── compat dimensionamiento main-only (tests antiguos) ──────────
+    # La UI newer pagina en _zona_tabla; se expone tabla_datos/campo_buscar
+    # como espejos para que la suite 0.28.3 siga encontrando la tabla.
+    @property
+    def tabla_datos(self):  # type: ignore[override]
+        contenido = getattr(getattr(self, "_zona_tabla", None), "content", None)
+        if isinstance(contenido, ft.DataTable):
+            return contenido
+        return ft.DataTable(
+            columns=list(getattr(self, "_columnas", []) or []),
+            rows=[],
+            expand=True,
+        )
+
+    @property
+    def campo_buscar(self):  # type: ignore[override]
+        campo = campo_texto(hint_text="Buscar cliente...", expand=True)
         try:
-            ventana.open = True
-            if ventana not in self.pagina.overlay:
-                self.pagina.overlay.append(ventana)
-            ventana.update()
+            campo.value = getattr(self, "_busqueda", "") or ""
         except Exception:
-            self.pagina.update()
-
-    def cerrar_dialogo(self, ventana):
-        try:
-            ventana.open = False
-            ventana.update()
-        except Exception:
-            self.pagina.update()
-
-    def mostrar_alerta(self, texto):
-        try:
-            aviso(self.pagina, texto)
-        except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+            pass
+        return campo

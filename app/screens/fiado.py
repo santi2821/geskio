@@ -197,12 +197,8 @@ class PantallaFiado(Pantalla):
         pagina = int(getattr(self, "_pagina", 1) or 1)
         visibles, actual, total = paginar(filas, pagina)
         self._pagina = actual
-        texto_vacio = (
-            "Sin deudas pendientes" if solo_pendientes else "Sin cuentas registradas"
-        )
-        self._zona_tabla.content = tabla(
-            self._columnas, visibles, mensaje_vacio=texto_vacio
-        )
+        texto_vacio = "Sin deudas pendientes" if solo_pendientes else "Sin cuentas registradas"
+        self._zona_tabla.content = tabla(self._columnas, visibles, mensaje_vacio=texto_vacio)
         self._zona_paginador.content = (
             paginador(actual, total, al_paginar=self._al_paginar) if total > 1 else None
         )
@@ -233,9 +229,7 @@ class PantallaFiado(Pantalla):
             def confirmar(e):
                 try:
                     try:
-                        monto = float(
-                            (leer_texto(campo_monto, e) or "").replace(",", ".") or 0
-                        )
+                        monto = float((leer_texto(campo_monto, e) or "").replace(",", ".") or 0)
                     except (TypeError, ValueError):
                         aviso(self.pagina, "Monto inválido", rol="warning")
                         return
@@ -253,9 +247,7 @@ class PantallaFiado(Pantalla):
                     pagar_fiado(ccid, monto)
                     self.cerrar_dialogo(ventana)
                     self.cargar_cuentas()
-                    self.mostrar_alerta(
-                        f"Pago de {moneda(monto)} registrado a {nombre}"
-                    )
+                    self.mostrar_alerta(f"Pago de {moneda(monto)} registrado a {nombre}")
                 except Exception as ex:
                     print(f"Error confirmar pago: {ex}")
                     aviso(
@@ -275,9 +267,7 @@ class PantallaFiado(Pantalla):
                     tight=True,
                 ),
                 acciones=[
-                    ft.TextButton(
-                        "Cancelar", on_click=lambda _: self.cerrar_dialogo(ventana)
-                    ),
+                    ft.TextButton("Cancelar", on_click=lambda _: self.cerrar_dialogo(ventana)),
                     ft.FilledButton(
                         "Pagar",
                         on_click=confirmar,
@@ -287,31 +277,25 @@ class PantallaFiado(Pantalla):
                         ),
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error abrir_pago: {ex}")
 
-    # ─── helpers ───────────────────────────────────────────────────
+    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
+    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base.
 
-    def abrir_dialogo(self, ventana):
-        try:
-            ventana.open = True
-            if ventana not in self.pagina.overlay:
-                self.pagina.overlay.append(ventana)
-            ventana.update()
-        except Exception:
-            self.pagina.update()
-
-    def cerrar_dialogo(self, ventana):
-        try:
-            ventana.open = False
-            ventana.update()
-        except Exception:
-            self.pagina.update()
-
-    def mostrar_alerta(self, texto):
-        try:
-            aviso(self.pagina, texto, rol="success")
-        except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+    # ─── compat dimensionamiento main-only (tests antiguos) ──────────
+    # La UI newer pagina en _zona_tabla; se expone tabla_datos como espejo
+    # DataTable para que la suite 0.28.3 siga encontrando la tabla.
+    @property
+    def tabla_datos(self):  # type: ignore[override]
+        contenido = getattr(getattr(self, "_zona_tabla", None), "content", None)
+        if isinstance(contenido, ft.DataTable):
+            return contenido
+        return ft.DataTable(
+            columns=list(getattr(self, "_columnas", []) or []),
+            rows=[],
+            expand=True,
+        )

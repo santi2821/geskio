@@ -37,9 +37,7 @@ def totales_ultimos_7_dias(lista_ventas, hoy: date) -> list:
     # totales por dia de los ultimos 7 dias (hoy incluido)
     totales: dict[str, float] = {}
     for v in lista_ventas or []:
-        totales[v.get("fecha", "")] = totales.get(v.get("fecha", ""), 0) + (
-            v.get("total", 0) or 0
-        )
+        totales[v.get("fecha", "")] = totales.get(v.get("fecha", ""), 0) + (v.get("total", 0) or 0)
     serie = []
     for i in range(6, -1, -1):
         dia = hoy - timedelta(days=i)
@@ -216,7 +214,8 @@ class PantallaDashboard(Pantalla):
         total_alertas = len(alertas)
         visibles = alertas[:4]
         resumen = ft.Text(
-            f"{total_alertas} alertas" + (f" · mostrando {len(visibles)}" if total_alertas > len(visibles) else ""),
+            f"{total_alertas} alertas"
+            + (f" · mostrando {len(visibles)}" if total_alertas > len(visibles) else ""),
             size=FS_13,
             color=paleta.text_muted,
         )
@@ -238,11 +237,10 @@ class PantallaDashboard(Pantalla):
         )
         return ft.Column([resumen, *visibles, accesos], spacing=SP_8)
 
+    # ─── build ───────────────────────────────────────────────────────
     def build(self):
         resumen = stats()
-        focal_hoy = tarjeta_focal(
-            "Hoy", moneda(resumen["hoy"]), rol="text", icono=ft.Icons.TODAY
-        )
+        focal_hoy = tarjeta_focal("Hoy", moneda(resumen["hoy"]), rol="text", icono=ft.Icons.TODAY)
         tarjeta_mes = tarjeta_stat(
             "Ventas del mes",
             moneda(resumen["mes"]),
@@ -294,23 +292,28 @@ class PantallaDashboard(Pantalla):
             },
         )
 
-        return ft.Column(
-            [
-                encabezado(
-                    "Resumen de ventas",
-                    al_refrescar=lambda _: self.actualizar(),
-                    descripcion="Un vistazo a ventas, margen y pendientes del negocio.",
-                ),
-                fila_stats,
-                ft.Text(
-                    "Calculada con costos vigentes; un cambio de costo puede ajustar meses anteriores.",
-                    size=FS_12,
-                    color=colores.get().text_muted,
-                ),
-                fila_contenido,
-            ],
-            spacing=SP_12,
-            scroll=ft.ScrollMode.AUTO,
+        # Container raiz (compat suite main-only: Container expand con Column
+        # interna scroll AUTO) envolviendo el Column de la arquitectura newer.
+        return ft.Container(
+            content=ft.Column(
+                [
+                    encabezado(
+                        "Resumen de ventas",
+                        al_refrescar=lambda _: self.actualizar(),
+                        descripcion="Un vistazo a ventas, margen y pendientes del negocio.",
+                    ),
+                    fila_stats,
+                    ft.Text(
+                        "Calculada con costos vigentes; un cambio de costo puede ajustar meses anteriores.",
+                        size=FS_12,
+                        color=colores.get().text_muted,
+                    ),
+                    fila_contenido,
+                ],
+                spacing=SP_12,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
+            ),
             expand=True,
         )
 

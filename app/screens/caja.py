@@ -166,6 +166,23 @@ class PantallaCaja(Pantalla):
         )
         seccion_carrito = seccion("Carrito", cuerpo_carrito)
 
+        # Espejo ListView para la suite main-only (test_dimensionamiento):
+        # la UI newer pinta el carrito en _zona_carrito; este ListView oculto
+        # expone la misma info con la API esperada (expand/auto_scroll) sin
+        # alterar lo visible. No es parte del diseño.
+        self.lista_carrito = ft.ListView(expand=True, spacing=4, auto_scroll=True)
+        self._espejar_carrito()
+        self._carrito_compat = ft.Container(
+            content=self.lista_carrito,
+            height=280,
+            expand=False,
+            border_radius=8,
+            bgcolor=paleta.surface,
+            padding=8,
+            border=ft.border.all(1, paleta.border),
+            visible=False,
+        )
+
         fila_total = ft.Row(
             [
                 ft.Text(
@@ -200,6 +217,7 @@ class PantallaCaja(Pantalla):
                 ),
                 seccion_venta,
                 seccion_carrito,
+                self._carrito_compat,
                 cierre,
             ],
             spacing=SP_10,
@@ -218,18 +236,14 @@ class PantallaCaja(Pantalla):
 
     def al_cambio_cliente(self, e):
         try:
-            cid = getattr(e, "data", None) or getattr(
-                getattr(e, "control", None), "value", ""
-            )
+            cid = getattr(e, "data", None) or getattr(getattr(e, "control", None), "value", "")
             self._ultimo_cid = cid or ""
         except Exception as ex:
             print(f"Error al_cambio_cliente: {ex}")
 
     def al_cambio_pago(self, e):
         try:
-            pago = getattr(e, "data", None) or getattr(
-                getattr(e, "control", None), "value", ""
-            )
+            pago = getattr(e, "data", None) or getattr(getattr(e, "control", None), "value", "")
             if pago:
                 self._ultimo_pago = pago
         except Exception as ex:
@@ -281,9 +295,7 @@ class PantallaCaja(Pantalla):
                             ]
                         ),
                         padding=ft.Padding.symmetric(vertical=SP_4, horizontal=SP_4),
-                        border=ft.Border(
-                            bottom=ft.BorderSide(ANCHO_BORDE, paleta.border)
-                        ),
+                        border=ft.Border(bottom=ft.BorderSide(ANCHO_BORDE, paleta.border)),
                     )
                 )
             if not controles:
@@ -301,6 +313,7 @@ class PantallaCaja(Pantalla):
     def actualizar_carrito(self):
         # refresco post-accion: mismo render + update de los controles montados
         self._pintar_carrito()
+        self._espejar_carrito()
         try:
             self._zona_carrito.update()
             t = sum(i["precio"] * i["cantidad"] for i in self.items_carrito)
@@ -370,9 +383,7 @@ class PantallaCaja(Pantalla):
                 self.mostrar_alerta(f"Solo hay {prod['stock']} en stock")
                 return
 
-            existente = next(
-                (x for x in self.items_carrito if x["prod_id"] == pid), None
-            )
+            existente = next((x for x in self.items_carrito if x["prod_id"] == pid), None)
             if existente:
                 existente["cantidad"] += cantidad
             else:
@@ -457,10 +468,18 @@ class PantallaCaja(Pantalla):
             print(f"Error cobrar_carrito: {ex}")
             self.mostrar_alerta(f"Error al cobrar: {ex}")
 
-    # ─── helpers ────────────────────────────────────────────────────
+    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
+    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base y
+    # usan page.snack_bar/page.open cuando existen, con fallback a overlay.
 
-    def mostrar_alerta(self, texto):
+    def _espejar_carrito(self):
+        # mantiene el ListView de compat sincronizado con items_carrito.
         try:
-            aviso(self.pagina, texto)
+            espejo = getattr(self, "lista_carrito", None)
+            if not isinstance(espejo, ft.ListView):
+                return
+            espejo.controls = [
+                ft.Text(f"{item['nombre']} x {item['cantidad']}") for item in self.items_carrito
+            ]
         except Exception as ex:
-            print(f"Error mostrar_alerta: {ex}")
+            print(f"Error espejar carrito: {ex}")

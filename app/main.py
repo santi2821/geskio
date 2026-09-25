@@ -7,6 +7,7 @@ from screens.chat import PantallaChat
 from screens.clientes import PantallaClientes
 from screens.dashboard import PantallaDashboard
 from screens.fiado import PantallaFiado
+from screens.proveedores import PantallaProveedores
 from screens.stock import PantallaStock
 from theme import colores
 from widgets import Marco
@@ -25,6 +26,7 @@ def main(page: ft.Page):
         ("caja", ft.Icons.POINT_OF_SALE, "Caja"),
         ("stock", ft.Icons.INVENTORY_2, "Stock"),
         ("clientes", ft.Icons.PEOPLE, "Clientes"),
+        ("proveedores", ft.Icons.LOCAL_SHIPPING, "Proveedores"),
         ("fiado", ft.Icons.RECEIPT_LONG, "Fiado"),
         ("chat", ft.Icons.SMART_TOY, "Chat"),
         ("ajustes", ft.Icons.SETTINGS, "Ajustes"),
@@ -34,6 +36,7 @@ def main(page: ft.Page):
         "caja": PantallaCaja(page),
         "stock": PantallaStock(page),
         "clientes": PantallaClientes(page),
+        "proveedores": PantallaProveedores(page),
         "fiado": PantallaFiado(page),
         "chat": PantallaChat(page),
         "ajustes": PantallaAjustes(page),

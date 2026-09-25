@@ -101,9 +101,7 @@ def leer_texto(campo, evento=None) -> str:
         return ""
 
 
-def tarjeta(
-    contenido: ft.Control, padding: int = SP_20, radio: int = R_MD
-) -> ft.Container:
+def tarjeta(contenido: ft.Control, padding: int = SP_20, radio: int = R_MD) -> ft.Container:
     paleta = colores.get()
     return ft.Container(
         content=contenido,
@@ -160,16 +158,18 @@ def tarjeta_stat(
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-        ft.Text(
-            valor,
-            size=VALOR_STAT_FS,
-            weight=ft.FontWeight.W_600,
-            color=(
-                paleta.danger_text
-                if rol in {"danger", "danger_text"}
-                else paleta.success if rol == "success" else paleta.text
-            ),
-        ),
+                ft.Text(
+                    valor,
+                    size=VALOR_STAT_FS,
+                    weight=ft.FontWeight.W_600,
+                    color=(
+                        paleta.danger_text
+                        if rol in {"danger", "danger_text"}
+                        else paleta.success
+                        if rol == "success"
+                        else paleta.text
+                    ),
+                ),
             ],
             spacing=SP_8,
         ),
@@ -286,9 +286,7 @@ def tarjeta_focal(
         content=ft.Column(
             [
                 ft.Row(fila, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                ft.Text(
-                    valor, size=VALOR_FOCAL_FS, weight=ft.FontWeight.BOLD, color=color
-                ),
+                ft.Text(valor, size=VALOR_FOCAL_FS, weight=ft.FontWeight.BOLD, color=color),
             ],
             spacing=SP_4,
         ),
@@ -311,9 +309,7 @@ def seccion(titulo: str, contenido: ft.Control) -> ft.Container:
     return ft.Container(
         content=ft.Column(
             [
-                ft.Text(
-                    titulo, size=FS_16, weight=ft.FontWeight.W_600, color=paleta.text
-                ),
+                ft.Text(titulo, size=FS_16, weight=ft.FontWeight.W_600, color=paleta.text),
                 contenido,
             ],
             spacing=SP_12,
@@ -433,11 +429,7 @@ def encabezado(
     bloque_titulo = ft.Column(
         [
             ft.Text(titulo, size=FS_24, weight=ft.FontWeight.W_600, color=paleta.text),
-            *(
-                [ft.Text(descripcion, size=FS_14, color=paleta.text_muted)]
-                if descripcion
-                else []
-            ),
+            *([ft.Text(descripcion, size=FS_14, color=paleta.text_muted)] if descripcion else []),
         ],
         spacing=SP_4,
         tight=True,
@@ -459,6 +451,7 @@ def encabezado(
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=SP_12,
         wrap=True,
+        scroll=ft.ScrollMode.AUTO,
     )
 
 
@@ -748,9 +741,7 @@ def en_rail_para_tamano(ancho, alto) -> bool:
 class MenuLateral(ft.Container):
     # barra lateral: 240px expandida, 64px rail de iconos colapsada
 
-    def __init__(
-        self, items_nav, clave_activa: str, al_navegar=None, colapsado: bool = False
-    ):
+    def __init__(self, items_nav, clave_activa: str, al_navegar=None, colapsado: bool = False):
         super().__init__()
         self.items_nav = list(items_nav)
         self.clave_activa = clave_activa
@@ -806,7 +797,9 @@ class MenuLateral(ft.Container):
             )
         else:
             marca = ft.Container(
-                content=ft.Text("GesKio", size=FS_20, weight=ft.FontWeight.W_600, color=paleta.text),
+                content=ft.Text(
+                    "GesKio", size=FS_20, weight=ft.FontWeight.W_600, color=paleta.text
+                ),
                 padding=ft.Padding.only(left=SP_8, top=SP_8, bottom=SP_8),
             )
         self.botones = {}
