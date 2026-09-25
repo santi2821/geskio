@@ -1,125 +1,71 @@
-﻿<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/GesKio-gesti%C3%B3n%20de%20negocio-22c55e?style=for-the-badge&logo=store&logoColor=white">
-    <img alt="GesKio" src="https://img.shields.io/badge/GesKio-gesti%C3%B3n%20de%20negocio-22c55e?style=for-the-badge&logo=store&logoColor=white">
-  </picture>
-</p>
-
 # GesKio
 
-**App de gestión de negocio para emprendedores + Landing promocional.** CRUD de productos, ventas, clientes, caja, fiado, stock y chat integrado. App Flet multiplataforma con landing page web.
+Gestor de ventas, inventario y cuentas para pequeños comercios, hecho con Python y Flet. Incluye una aplicación de escritorio multiplataforma y una landing estática.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
-![Flet](https://img.shields.io/badge/Flet-0.28.3-00B4AB?logo=flutter&logoColor=white)
+> Prototipo en evolución. Los datos de ejemplo se guardan como JSON en el perfil local del usuario; todavía no hay una base de datos multiusuario ni sincronización entre dispositivos.
 
-## Modules
+## Funciones
 
-| Module | Descripcion |
-|---|---|
-| Dashboard | KPIs + Gráficos (Bar/Line/Pie) + Calendario |
-| Stock | Gestión de productos, DataTable scrolleable, chips estado |
-| Caja | Registro de ventas, carrito ListView auto_scroll |
-| Clientes | CRUD con búsqueda, historial de compras |
-| Proveedores | CRUD completo (nombre, teléfono, email, rubro), DataTable + dialogs 0.28.3 |
-| Fiado | Cuenta corriente, filtros, badges días, pagos |
-| Chat IA | Burbujas premium con avatar, timestamp, ListView auto_scroll, input filled 24 |
-| Calendario | DatePicker + mini calendario mensual + ventas por día |
-| Gráficos | BarChart (7 días), PieChart (stock), LineChart (ganancia 6 meses) |
-| Personalización | Theme claro/oscuro (page.theme_mode) + client_storage + toggle premium |
+- Panel con ventas, calendario y gráficos.
+- Caja, productos, clientes, proveedores y cuentas corrientes.
+- Apariencia clara y oscura, con ajustes de marca.
+- Chat opcional con OpenRouter. Antes de enviar una consulta, la app muestra qué resumen comercial compartirá.
 
-## Novedades Flet 0.28.3 (Premium)
+## Requisitos
 
-### Proveedores
-- Nueva screen `app/screens/proveedores.py` + helpers en `datos.py` (`proveedores`, `crear_proveedor`, `actualizar_proveedor`, `eliminar_proveedor`, `prov_por_id`)
-- CRUD completo con DataTable, filtros multi-campo, dialogs con `page.open/close` (sin `overlay.append`) y SnackBar vía `page.snack_bar`
-- Integrada al nav premium (sidebar 240px, activo border-left 3px green)
+- Python 3.11 o posterior.
+- Windows, macOS o Linux para la aplicación Flet.
 
-### Calendario
-- `PantallaDashboard` integra `ft.DatePicker` + calendario mensual custom (navegación mes, indicador ventas, selección día)
-- Lista ventas del día seleccionado con total y chips de pago, altura limitada scrolleable
+## Ejecutar la aplicación
 
-### Gráficos (Flet 0.28.3)
-- `ft.BarChart` ventas últimos 7 días, `ft.PieChart` stock por estado (ok/bajo/agotado), `ft.LineChart` ganancia 6 meses
-- Helpers `ventas_por_dia`, `stock_stats`, `ventas_por_mes`, `ganancia_por_mes` en `datos.py`, datos reales
-
-### Personalización
-- Sidebar premium + AppBar con toggle tema claro/oscuro (`page.theme_mode` + `page.client_storage`)
-- Tokens Figma `#f8fafc`, `#16a34a`, `#0f172a`, `#e2e8f0`, border_radius 16, cards con shadow
-
-### Chat Premium (QA Final)
-- Burbujas con `CircleAvatar` inicial, timestamp `HH:MM`, `padding 14/10`, `border_radius 16`, `bgcolor white/#dcfce7/#f1f5f9`
-- `ListView auto_scroll expand bgcolor white border 1 #e2e8f0`, `TextField filled True border_radius 24 hint "Preguntale..."`, `FilledButton` circular send
-- Header premium con subtítulo y badge "En vivo", `mostrar_alerta` heredado (SnackBar, no overlay)
-
-## Tech Stack
-
-| Capa | Tecnologia |
-|---|---|
-| App | Python 3.11 + Flet 0.28.3 (`flet[all]==0.28.3`) |
-| Landing | HTML5, CSS3, JavaScript |
-| Persistencia | Memoria + helpers (SQLite opcional) |
-| Tests | pytest 8.3.4, 37 tests verdes |
-
-## Quick Start (Flet 0.28.3)
+Desde la raíz del repositorio:
 
 ```bash
-# venv ya incluido en .venv
+python -m venv .venv
+```
+
+Activa el entorno y luego instala las dependencias:
+
+```bash
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# macOS / Linux
 source .venv/bin/activate
-.venv/bin/python -c "import flet.version; print(flet.version.version)" # -> 0.28.3
-.venv/bin/python -m pytest -q -v   # 37 passed
-.venv/bin/python -m py_compile app/main.py app/datos.py app/screen_base.py app/screens/*.py
-.venv/bin/flet run app/main.py     # requiere display
-# alternativa sin display (CI)
-.venv/bin/python -m pytest -q
+
+pip install -r requirements.txt
+python app/main.py
 ```
+
+La landing estática se encuentra en `landing/`. Ábrela con un servidor local para que funcionen sus recursos:
 
 ```bash
-cd app
-pip install "flet[all]==0.28.3"
-flet run main.py
+python -m http.server 8080 --directory landing
 ```
 
-La landing se abre con `landing/index.html` en cualquier navegador.
+## Chat con OpenRouter
 
-## Verificación QA (Flet 0.28.3)
+El chat necesita `OPENROUTER_API_KEY` y pide autorización antes de enviar datos. La configuración opcional del modelo y las instrucciones para iniciar la app están en [`docs/openrouter-local.md`](docs/openrouter-local.md). La consulta puede incluir el texto escrito, hasta ocho mensajes previos y un resumen de nombres y saldos de clientes, productos, precios, stock y ventas agregadas. No se envían teléfonos, identificadores ni el archivo JSON completo. Revisa los cargos y límites de tu cuenta de OpenRouter.
+
+## Desarrollo
+
+Las dependencias de la aplicación y las herramientas de desarrollo están en `requirements.txt`. La suite se puede ejecutar con:
 
 ```bash
-python -m py_compile app/main.py app/datos.py app/screen_base.py app/screens/*.py
-.venv/bin/python -m pytest -q -v  # esperado 23+ tests verdes (actual 37)
-grep -rn "overlay.append" app/  # debe ser 0
-grep -rn "AlertDialog" app/ | grep "page.open"  # uso correcto vía abrir_dialogo/page.open
+python -m pytest -q
 ```
 
-## Project Structure
+## Estructura
 
-```
-geskio/
-├── app/
-│   ├── main.py         # Entry point + sidebar premium + theme toggle
-│   ├── datos.py        # Datos + proveedores + helpers gráficos
-│   ├── screen_base.py  # Screen base (mostrar_alerta SnackBar, abrir/cerrar Dialog 0.28.3)
-│   └── screens/
-│       ├── dashboard.py   # KPIs + Bar/Pie/LineChart + calendario + alertas
-│       ├── caja.py        # Caja con ListView auto_scroll
-│       ├── stock.py       # Stock DataTable scroll AUTO
-│       ├── clientes.py
-│       ├── proveedores.py
-│       ├── fiado.py
-│       └── chat.py        # Chat premium (ListView, burbujas 16, input 24, avatar)
-├── tests/
-│   ├── test_datos.py
-│   ├── test_screens.py
-│   ├── test_proveedores.py
-│   ├── test_chat.py            # build, burbujas 16, input 24, enviar_mensaje mocks
-│   └── test_dimensionamiento.py # expand True + scroll AUTO
-├── landing/
-│   ├── index.html
-│   ├── styles.css
-│   └── script.js
-└── README.md
+```text
+app/                 Aplicación Flet y funciones de negocio
+app/jev/             Adaptador experimental para decisiones tipadas
+docs/                Configuración y notas del proyecto
+landing/             Sitio estático de presentación
+openspec/            Especificaciones y cambios del producto
+tests/               Pruebas unitarias y de interfaz
 ```
 
-## License
+## Licencia
 
-[MIT](LICENSE) © 2026 Santino Avila
+[MIT](LICENSE)
