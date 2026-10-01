@@ -24,6 +24,8 @@ from widgets import (
     paginar,
     leer_texto,
     sincronizar_texto,
+    selector,
+    sincronizar_combo,
 )
 
 
@@ -60,7 +62,6 @@ class PantallaFiado(Pantalla):
         self._zona_tabla = ft.Container(expand=True)
         self._zona_paginador = ft.Container()
 
-        # el build renderiza los datos actuales: entran montados con la pantalla
         self._cargar_cuentas()
 
         return ft.Column(
@@ -79,7 +80,6 @@ class PantallaFiado(Pantalla):
             expand=True,
         )
 
-    # ─── busqueda + paginador ───────────────────────────────────────
 
     def _al_buscar(self, texto):
         self._busqueda = texto or ""
@@ -113,7 +113,6 @@ class PantallaFiado(Pantalla):
         self.cargar_cuentas()
 
     def _cargar_cuentas(self):
-        # arma la tabla de cuentas en las zonas, sin update
         paleta = colores.get()
         color_pagado = color_rol(paleta, "paid")
         color_pendiente = color_rol(paleta, "due")
@@ -176,19 +175,26 @@ class PantallaFiado(Pantalla):
                         ),
                         ft.DataCell(ft.Text(f"{dias}d")),
                         ft.DataCell(
-                            ft.FilledButton(
-                                "Pagar",
-                                on_click=lambda _, x=ccid: self.abrir_pago(x),
-                                style=ft.ButtonStyle(
-                                    bgcolor=paleta.primary,
-                                    color=paleta.on_primary,
-                                ),
-                            )
-                            if pendiente > 0
-                            else ft.Icon(
-                                ft.Icons.CHECK,
-                                color=color_pagado,
-                                size=ICON_SM,
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        ft.Icons.HISTORY,
+                                        tooltip="Ver historial de abonos",
+                                        on_click=lambda _, x=ccid: self.ver_abonos(x),
+                                    ),
+                                    ft.FilledButton(
+                                        "Pagar",
+                                        on_click=lambda _, x=ccid: self.abrir_pago(x),
+                                        style=ft.ButtonStyle(
+                                            bgcolor=paleta.primary,
+                                            color=paleta.on_primary,
+                                        ),
+                                    )
+                                    if pendiente > 0
+                                    else ft.Icon(ft.Icons.CHECK, color=color_pagado, size=ICON_SM),
+                                ],
+                                spacing=SP_4,
+                                scroll=ft.ScrollMode.AUTO,
                             )
                         ),
                     ]
@@ -204,7 +210,6 @@ class PantallaFiado(Pantalla):
         )
 
     def cargar_cuentas(self):
-        # refresco post-accion: mismo render + update de las zonas montadas
         self._cargar_cuentas()
         try:
             self._zona_tabla.update()
@@ -225,6 +230,16 @@ class PantallaFiado(Pantalla):
                 label="Monto $", value=str(deuda), keyboard_type=ft.KeyboardType.NUMBER
             )
             sincronizar_texto(campo_monto)
+            combo_medio = selector(
+                label="Medio de pago",
+                value="efectivo",
+                options=[
+                    ft.dropdown.Option("efectivo", "Efectivo"),
+                    ft.dropdown.Option("transferencia", "Transferencia"),
+                ],
+                expand=True,
+            )
+            sincronizar_combo(combo_medio)
 
             def confirmar(e):
                 try:
@@ -244,7 +259,7 @@ class PantallaFiado(Pantalla):
                         )
                         return
                     monto = min(monto, deuda)
-                    pagar_fiado(ccid, monto)
+                    pagar_fiado(ccid, monto, combo_medio.value or "efectivo")
                     self.cerrar_dialogo(ventana)
                     self.cargar_cuentas()
                     self.mostrar_alerta(f"Pago de {moneda(monto)} registrado a {nombre}")
@@ -262,6 +277,7 @@ class PantallaFiado(Pantalla):
                     [
                         ft.Text(f"Debe {moneda(deuda)} de {moneda(c['total'])}"),
                         campo_monto,
+                        combo_medio,
                     ],
                     spacing=SP_12,
                     tight=True,
@@ -277,20 +293,54 @@ class PantallaFiado(Pantalla):
                         ),
                     ),
                 ],
-                actions_alignment=ft.MainAxisAlignment.END,
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error abrir_pago: {ex}")
 
-    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
-    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base.
+    def ver_abonos(self, ccid):
+        cuenta = next((fila for fila in cuentas if fila["id"] == ccid), None)
+        if not cuenta:
+            return
+        cli = cli_por_id(cuenta["cliente_id"])
+        nombre = cli["nombre"] if cli else "Cliente"
+        paleta = colores.get()
+        lineas = []
+        heredado = cuenta.get("pagado_sin_detalle", 0)
+        if heredado:
+            lineas.append(
+                ft.Text(
+                    f"{moneda(heredado)} ya figuraban pagados; la copia anterior no guardaba fecha ni medio.",
+                    color=paleta.text_muted,
+                )
+            )
+        for abono in sorted(cuenta.get("abonos", []), key=lambda fila: (fila["fecha"], fila["id"]), reverse=True):
+            medio = "Efectivo" if abono["medio_pago"] == "efectivo" else "Transferencia"
+            lineas.append(
+                ft.Row(
+                    [
+                        ft.Text(f"{abono['fecha']} · {medio}", expand=True),
+                        ft.Text(moneda(abono["monto"]), weight=ft.FontWeight.BOLD),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                )
+            )
+        if not lineas:
+            lineas.append(ft.Text("Todavía no hay abonos registrados."))
+        ventana = dialogo(
+            f"Abonos de {nombre}",
+            ft.Container(
+                content=ft.Column(lineas, spacing=SP_8, scroll=ft.ScrollMode.AUTO),
+                width=440,
+                height=320,
+            ),
+            acciones=[ft.TextButton("Cerrar", on_click=lambda _: self.cerrar_dialogo(ventana))],
+        )
+        self.abrir_dialogo(ventana)
 
-    # ─── compat dimensionamiento main-only (tests antiguos) ──────────
-    # La UI newer pagina en _zona_tabla; se expone tabla_datos como espejo
-    # DataTable para que la suite 0.28.3 siga encontrando la tabla.
+
     @property
-    def tabla_datos(self):  # type: ignore[override]
+    def tabla_datos(self):
         contenido = getattr(getattr(self, "_zona_tabla", None), "content", None)
         if isinstance(contenido, ft.DataTable):
             return contenido

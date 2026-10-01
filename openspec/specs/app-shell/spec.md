@@ -24,7 +24,7 @@ The system MUST render a `Marco` as an `ft.Row`: sidebar + content column. The s
 
 ### Requirement: Responsive Collapse Rule
 
-The shell MUST collapse to the rail when `page.window.width <= RUPTURA_ANCHO (1024)` OR `page.window.height <= RUPTURA_ALTO (600)`, and MUST expand when both thresholds are exceeded. The resize driver MUST be `page.window.on_event` reading `page.window.width/height`.
+The shell MUST collapse to the rail when the live page width is `<= RUPTURA_ANCHO (1024)` OR the page height is `<= RUPTURA_ALTO (600)`, and MUST expand when both thresholds are exceeded. Web and native page resizing MUST use `page.on_resize` event dimensions; `page.window.on_event` remains the native-window fallback. Initial sizing MUST prefer `page.width/page.height` and fall back to window dimensions when page dimensions are unavailable. The compact topbar MUST hide the long date at widths `<=600`.
 
 #### Scenario: Shrink below breakpoint collapses
 
@@ -37,6 +37,12 @@ The shell MUST collapse to the rail when `page.window.width <= RUPTURA_ANCHO (10
 - GIVEN the shell is collapsed at 1000x800
 - WHEN the window resizes to 1100x700
 - THEN the sidebar expands to 240px
+
+#### Scenario: Browser width is read at startup and resize
+
+- GIVEN a web page starts narrow or receives a resize event
+- WHEN its current width crosses 1024 logical pixels and its height exceeds 600
+- THEN the sidebar changes between rail and expanded states, and the date returns above 600px
 
 ### Requirement: Manual Collapse Fallback
 
@@ -72,7 +78,7 @@ The shell MUST render every existing `Pantalla` in its content slot and preserve
 
 - GIVEN the topbar implementation
 - WHEN reviewed
-- THEN it shows the current section, date, and manual collapse toggle without adding search or user-menu features
+- THEN it shows the current section and manual collapse toggle; the date appears when space allows and is hidden at compact widths
 
 ### Requirement: Formal Product Hierarchy
 

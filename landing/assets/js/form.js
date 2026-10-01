@@ -1,4 +1,3 @@
-// GesKio — formulario de contacto: valida y arma un mail real (no hay backend todavía)
 document.addEventListener('DOMContentLoaded', () => {
   var form = document.getElementById('form');
   var aviso = document.getElementById('aviso');

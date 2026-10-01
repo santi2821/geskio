@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Compose `app/screens/dashboard.py` with a focal sales hierarchy and a view-only calendar. Summary metrics use the domain's `stats()` result; the calendar groups sales by their ISO date. Until sales carry historical cost snapshots, the monthly profit figure is explicitly an estimate based on current catalog costs.
+Compose `app/screens/dashboard.py` with a focal sales hierarchy and a view-only calendar. Summary metrics use the domain's `stats()` result; the calendar groups sales by their ISO date. Margin is calculated from the cost saved on each sale. Migrated legacy sales without a recorded cost are excluded and counted; their costs are never guessed from the current catalog.
 
 ## Requirements
 
@@ -18,13 +18,13 @@ The dashboard MUST present one visually dominant focal stat **"Hoy"** on a neutr
 
 ### Requirement: Secondary Stat Grid
 
-The dashboard MUST render the secondary trio (Mes, Ganancia estimada del mes, Deben) in a `StatGrid` (`ft.ResponsiveRow`) with consistent typography. Neutral values are default; success and danger use semantic color according to the estimate sign. Secondary cards MUST NOT use the focal treatment (2px border). The estimated-gain label MUST explain that current costs can change past-period estimates until sale-time cost snapshots are implemented.
+The dashboard MUST render the secondary trio (Ventas del mes, Margen registrado del mes, Por cobrar) through `grilla_stats()` and its `ft.ResponsiveRow` with consistent typography. Neutral values are default; success and danger use semantic color according to the registered margin sign. Secondary cards MUST NOT use the focal treatment (2px border). The explanatory text MUST state that the margin uses sale-time costs or report how many legacy sales without costs were excluded.
 
 #### Scenario: Trio renders without focal treatment
 
-- GIVEN the secondary stats render in the StatGrid
+- GIVEN the secondary stats render through `grilla_stats()`
 - WHEN each card is inspected
-- THEN it uses consistent stat typography, semantic success/danger color only where relevant, and no focal leading edge
+- THEN the labels are "Ventas del mes", "Margen registrado del mes" and "Por cobrar"; it uses consistent stat typography, semantic success/danger color only where relevant, and no focal leading edge
 
 ### Requirement: View-Only Calendar
 

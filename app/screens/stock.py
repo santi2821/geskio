@@ -51,7 +51,6 @@ class PantallaStock(Pantalla):
             ft.DataColumn(ft.Text("Mínimo")),
             ft.DataColumn(ft.Text("Acciones")),
         ]
-        # zonas tipo Container: refrescar = cambiar .content + update()
         self._zona_tabla = ft.Container(expand=True)
         self._zona_paginador = ft.Container()
         self._chip_bajo = ft.Switch(
@@ -115,7 +114,6 @@ class PantallaStock(Pantalla):
             on_click=lambda _: self.abrir_dialogo(self._dialogo_nuevo),
         )
 
-        # el build renderiza los datos actuales: entran montados con la pantalla
         self._cargar_tabla()
 
         return ft.Column(
@@ -152,7 +150,6 @@ class PantallaStock(Pantalla):
         )
         self.cerrar_dialogo(self._dialogo_nuevo)
 
-    # ─── busqueda + paginador ───────────────────────────────────────
 
     def _al_buscar(self, texto):
         self._busqueda = texto or ""
@@ -160,7 +157,6 @@ class PantallaStock(Pantalla):
         self.filtrar_datos()
 
     def _al_filtro_bajo(self, e=None):
-        # el .value del widget llega viejo; el estado nuevo viene en el evento
         valor = self._solo_bajo
         try:
             dato = getattr(e, "data", None)
@@ -185,10 +181,8 @@ class PantallaStock(Pantalla):
             self._pagina = 1
         self.filtrar_datos()
 
-    # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
     def _cargar_tabla(self):
-        # arma la tabla filtrada en las zonas, sin update
         paleta = colores.get()
         color_bajo = color_rol(paleta, "danger_text")
         q = (getattr(self, "_busqueda", "") or "").lower()
@@ -260,7 +254,6 @@ class PantallaStock(Pantalla):
         )
 
     def filtrar_datos(self):
-        # refresco post-accion: mismo render + update de las zonas montadas
         self._cargar_tabla()
         try:
             self._zona_tabla.update()
@@ -268,7 +261,6 @@ class PantallaStock(Pantalla):
         except Exception:
             self.rearmar()
 
-    # ─── nuevo producto ─────────────────────────────────────────────
 
     def guardar_nuevo(self, e=None):
         campos = {
@@ -337,7 +329,6 @@ class PantallaStock(Pantalla):
         except Exception as ex:
             print(f"Error guardar_nuevo: {ex}")
 
-    # ─── editar producto ────────────────────────────────────────────
 
     def editar_producto(self, pid):
         try:
@@ -420,15 +411,13 @@ class PantallaStock(Pantalla):
                 ),
                 acciones=[
                     ft.TextButton("Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)),
-                    ft.ElevatedButton("Guardar", on_click=guardar),
+                    ft.FilledButton("Guardar", on_click=guardar),
                 ],
-                actions_alignment=ft.MainAxisAlignment.END,
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error editar_producto: {ex}")
 
-    # ─── ajustar stock (port main-only a arquitectura 0.84) ──────────
 
     def ajustar_stock_dialog(self, pid):
         try:
@@ -440,15 +429,20 @@ class PantallaStock(Pantalla):
                 f"Stock actual: {p['stock']}", size=16, weight=ft.FontWeight.BOLD
             )
             campo = campo_texto(label="Cantidad", value="1", keyboard_type=ft.KeyboardType.NUMBER)
+            campo_motivo = campo_texto(
+                label="Motivo",
+                hint_text="Reposición, merma o corrección...",
+            )
             sincronizar_texto(campo)
+            sincronizar_texto(campo_motivo)
 
             def aplicar(cantidad):
                 try:
-                    ajustar_stock(pid, cantidad)
+                    ajustar_stock(pid, cantidad, (campo_motivo.value or "").strip())
                     texto_actual.value = f"Stock actual: {p['stock']}"
                     campo.value = "1"
                     self.filtrar_datos()
-                    self.pagina.update()
+                    self.mostrar_alerta(f"Stock de {p['nombre']} actualizado")
                 except ValueError as ex:
                     self.mostrar_alerta(str(ex) or f"Solo hay {p['stock']} en stock")
                 except Exception as ex:
@@ -463,7 +457,7 @@ class PantallaStock(Pantalla):
                         return
                     if cantidad == 0:
                         return
-                    ajustar_stock(pid, cantidad)
+                    ajustar_stock(pid, cantidad, (campo_motivo.value or "").strip())
                     self.cerrar_dialogo(ventana)
                     self.filtrar_datos()
                     self.mostrar_alerta(f"Stock de {p['nombre']} actualizado")
@@ -477,13 +471,14 @@ class PantallaStock(Pantalla):
                 ft.Column(
                     [
                         texto_actual,
+                        campo_motivo,
                         ft.Row(
                             [
-                                ft.ElevatedButton("-10", on_click=lambda e: aplicar(-10)),
-                                ft.ElevatedButton("-1", on_click=lambda e: aplicar(-1)),
+                                ft.OutlinedButton("-10", on_click=lambda e: aplicar(-10)),
+                                ft.OutlinedButton("-1", on_click=lambda e: aplicar(-1)),
                                 campo,
-                                ft.ElevatedButton("+1", on_click=lambda e: aplicar(1)),
-                                ft.ElevatedButton("+10", on_click=lambda e: aplicar(10)),
+                                ft.OutlinedButton("+1", on_click=lambda e: aplicar(1)),
+                                ft.OutlinedButton("+10", on_click=lambda e: aplicar(10)),
                             ],
                             spacing=SP_8,
                             scroll=ft.ScrollMode.AUTO,
@@ -494,14 +489,13 @@ class PantallaStock(Pantalla):
                 ),
                 acciones=[
                     ft.TextButton("Cerrar", on_click=lambda e: self.cerrar_dialogo(ventana)),
-                    ft.ElevatedButton("Aplicar y cerrar", on_click=confirmar),
+                    ft.FilledButton("Aplicar y cerrar", on_click=confirmar),
                 ],
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error ajustar_stock_dialog: {ex}")
 
-    # ─── eliminar ───────────────────────────────────────────────────
 
     def eliminar_producto(self, pid):
         try:
@@ -529,7 +523,6 @@ class PantallaStock(Pantalla):
         except Exception as ex:
             print(f"Error eliminar_producto: {ex}")
 
-    # ─── helpers (heredados de Screen, mantienen compatibilidad) ───
 
     def _limpiar_errores(self, campos, feedback=None):
         for campo in campos.values():
@@ -582,17 +575,12 @@ class PantallaStock(Pantalla):
             except Exception:
                 pass
 
-    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
-    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base.
-    # Se conservan _limpiar_errores/_marcar_error propios del formulario newer.
 
-    # ─── compat dimensionamiento main-only (tests antiguos) ──────────
-    # La UI newer pagina la tabla en _zona_tabla; se expone tabla_datos como
-    # espejo DataTable y campo_buscar para que la suite 0.28.3 siga pasando.
     @property
-    def tabla_datos(self):  # type: ignore[override]
+    def tabla_datos(self):
         contenido = getattr(getattr(self, "_zona_tabla", None), "content", None)
         if isinstance(contenido, ft.DataTable):
+            contenido.expand = True
             return contenido
         espejo = ft.DataTable(
             columns=list(getattr(self, "_columnas", []) or []),
@@ -602,7 +590,7 @@ class PantallaStock(Pantalla):
         return espejo
 
     @property
-    def campo_buscar(self):  # type: ignore[override]
+    def campo_buscar(self):
         campo = campo_texto(hint_text="Buscar producto...", expand=True)
         try:
             campo.value = getattr(self, "_busqueda", "") or ""

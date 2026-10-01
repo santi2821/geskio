@@ -1,4 +1,3 @@
-// GesKio — aparición de elementos al hacer scroll
 document.addEventListener('DOMContentLoaded', () => {
   var items = document.querySelectorAll('.reveal');
   if (!items.length) return;

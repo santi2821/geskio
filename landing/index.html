@@ -22,7 +22,6 @@
   <link rel="stylesheet" href="assets/css/pages/home.css">
   <script>document.documentElement.classList.add('js');</script>
   <script>
-    // leo el tema guardado o el del sistema, antes de pintar
     (function () {
       var saved = null;
       try { saved = localStorage.getItem('geskio-theme'); } catch (e) {}
@@ -60,7 +59,6 @@
   </header>
 
   <main id="contenido">
-    <!-- ============ HERO ============ -->
     <section class="hero">
       <div class="hero-nube hero-nube-a"></div>
       <div class="hero-nube hero-nube-b"></div>
@@ -111,7 +109,6 @@
       </div>
     </section>
 
-    <!-- ============ FUNCIONES ============ -->
     <section class="seccion funciones" id="funciones" data-spy>
       <div class="wrap">
         <div class="cab">
@@ -160,7 +157,6 @@
       </div>
     </section>
 
-    <!-- ============ CÓMO FUNCIONA ============ -->
     <section class="seccion seccion-soft" id="como-funciona" data-spy>
       <div class="wrap">
         <div class="cab">
@@ -188,19 +184,18 @@
       </div>
     </section>
 
-    <!-- ============ PRÓXIMAMENTE ============ -->
     <section class="seccion prox">
       <div class="wrap">
         <div class="cab">
-          <span class="eyebrow reveal">Próximamente</span>
-          <h2 class="reveal" style="--d:.05s">Lo que viene</h2>
-          <p class="bajada reveal" style="--d:.1s">Estos son planes propuestos, sin fecha fija ni proveedor de IA elegido. Si alguna prioridad te sirve, nombrala al pedir la prueba.</p>
+          <span class="eyebrow reveal">Estado del proyecto</span>
+          <h2 class="reveal" style="--d:.05s">Qué podés probar y qué viene</h2>
+          <p class="bajada reveal" style="--d:.1s">El asistente de solo lectura ya está disponible en la demo. Voz, sugerencias y gráficos siguen como propuestas sin fecha de lanzamiento.</p>
         </div>
         <div class="card-grilla">
           <article class="card reveal">
-            <span class="chip chip-activa">Plan propuesto</span>
+            <span class="chip chip-activa">Disponible en la demo</span>
             <h3>Asistente con IA</h3>
-            <p>JEV está en planificación. La primera etapa propuesta es un chat de solo lectura que responda sobre los datos locales, indique período y origen, y pida precisión cuando una consulta sea ambigua. El proveedor de IA todavía está por decidir.</p>
+            <p>Sin configurar una clave, responde con consultas sencillas que se procesan localmente. Con OpenRouter configurado, pide consentimiento antes de enviar la pregunta, hasta ocho mensajes previos y un resumen comercial. Es de solo lectura; OpenRouter puede aplicar cargos.</p>
           </article>
           <article class="card reveal" style="--d:.06s">
             <span class="chip chip-activa">Plan propuesto</span>
@@ -221,7 +216,6 @@
       </div>
     </section>
 
-    <!-- ============ FAQ ============ -->
     <section class="seccion seccion-soft" id="faq" data-spy>
       <div class="wrap">
         <div class="cab">
@@ -230,11 +224,11 @@
         <div class="faq">
           <div class="faq-item reveal">
             <button class="faq-pregunta" aria-expanded="false"><span>¿Necesito internet para usarla?</span><span class="faq-icono" aria-hidden="true"></span></button>
-            <div class="faq-respuesta"><p>No. La demo guarda sus datos en un archivo JSON local y los carga al volver a iniciar. Todavía no tiene respaldo automático ni recuperación guiada; usá datos de prueba, no registros reales.</p></div>
+            <div class="faq-respuesta"><p>La gestión y el chat local funcionan sin internet. El modo OpenRouter del asistente sí necesita conexión y una clave configurada. Los datos siguen guardándose en un archivo local JSON.</p></div>
           </div>
           <div class="faq-item reveal" style="--d:.04s">
             <button class="faq-pregunta" aria-expanded="false"><span>¿Mis datos se suben a alguna nube?</span><span class="faq-icono" aria-hidden="true"></span></button>
-            <div class="faq-respuesta"><p>Los registros de la demo se guardan en JSON en esta computadora. No hay un proveedor de IA conectado todavía; privacidad y envío de datos se decidirán antes de implementar esa integración.</p></div>
+            <div class="faq-respuesta"><p>Los registros se guardan en JSON en esta computadora y no se sincronizan con una nube. Si se configura OpenRouter, el asistente solo envía la consulta y el resumen indicado después de que aceptes; revisá sus condiciones y posibles cargos.</p></div>
           </div>
           <div class="faq-item reveal" style="--d:.08s">
             <button class="faq-pregunta" aria-expanded="false"><span>¿En qué computadoras funciona?</span><span class="faq-icono" aria-hidden="true"></span></button>
@@ -246,7 +240,7 @@
           </div>
           <div class="faq-item reveal" style="--d:.16s">
             <button class="faq-pregunta" aria-expanded="false"><span>¿Qué pasa si se rompe la compu?</span><span class="faq-icono" aria-hidden="true"></span></button>
-            <div class="faq-respuesta"><p>La demo todavía no trae una copia de seguridad automática ni una guía de recuperación. El archivo JSON está en el almacenamiento local de la app; seguí usando datos de prueba.</p></div>
+            <div class="faq-respuesta"><p>En Ajustes podés crear una copia JSON y restaurarla después de revisar el resumen. Restaurar reemplaza los datos actuales; la demo no crea copias automáticas ni copias en la nube. Usá datos de prueba y guardá las copias aparte.</p></div>
           </div>
           <div class="faq-item reveal" style="--d:.2s">
             <button class="faq-pregunta" aria-expanded="false"><span>¿Se puede cambiar el color?</span><span class="faq-icono" aria-hidden="true"></span></button>
@@ -260,7 +254,6 @@
       </div>
     </section>
 
-    <!-- ============ CTA ============ -->
     <section class="seccion cta">
       <div class="wrap">
         <div class="cta-caja reveal">
@@ -280,7 +273,7 @@
       <div class="pie-grilla">
         <div>
           <p class="pie-logo">GesKio</p>
-        <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. Los planes de IA siguen en evaluación.</p>
+          <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. El asistente local y el uso opcional de OpenRouter se explican en la demo.</p>
         </div>
         <div>
           <h4>Producto</h4>
@@ -300,7 +293,7 @@
       </div>
       <div class="pie-base">
         <p>© <span id="anio"></span> GesKio — gestión para tu kiosco.</p>
-        <p>Hecho en Argentina. IA y voz: planes propuestos, sin proveedor elegido ni fecha de implementación.</p>
+        <p>Hecho en Argentina. El chat ofrece modo local y OpenRouter opcional; voz y sugerencias siguen en evaluación.</p>
       </div>
     </div>
   </footer>

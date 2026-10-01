@@ -22,10 +22,6 @@ class Pantalla(ft.Container):
         self.rearmar()
 
     def rearmar(self):
-        # en Flet 0.84 page.update() no baja al arbol interno de la pantalla;
-        # re-asignar content (prop de la pantalla) y update() es lo que repinta.
-        # build() debe renderizar con los datos actuales, sin updates internos
-        # (el montaje los envia todos juntos).
         self.content = self.build()
         self.armado = True
         try:
@@ -33,10 +29,9 @@ class Pantalla(ft.Container):
         except Exception:
             self.pagina.update()
 
-    def build(self):  # type: ignore[override]
+    def build(self):
         return ft.Text(self.titulo)
 
-    # ─── helpers (Flet 0.84 runtime + compat 0.28.3/Mock) ───────────────
     def mostrar_alerta(self, texto: str):
         """SnackBar compatible: usa page.snack_bar/page.open si existen
         (tests Mock + 0.28.3); si no, overlay.append (runtime Flet 0.84)."""
@@ -47,7 +42,7 @@ class Pantalla(ft.Container):
                 show_close_icon=True,
             )
             try:
-                self.pagina.snack_bar = sb  # type: ignore[attr-defined]
+                self.pagina.snack_bar = sb
                 sb.open = True
                 self.pagina.update()
                 return
@@ -55,7 +50,7 @@ class Pantalla(ft.Container):
                 pass
             try:
                 if hasattr(self.pagina, "open"):
-                    self.pagina.open(sb)  # type: ignore[attr-defined]
+                    self.pagina.open(sb)
                     return
             except Exception:
                 pass
@@ -73,7 +68,7 @@ class Pantalla(ft.Container):
         try:
             try:
                 if hasattr(self.pagina, "close"):
-                    self.pagina.close(dialogo)  # type: ignore[attr-defined]
+                    self.pagina.close(dialogo)
                     return
                 raise AttributeError("sin page.close")
             except Exception:
@@ -93,7 +88,7 @@ class Pantalla(ft.Container):
                 dialogo.open = False
             try:
                 if hasattr(self.pagina, "open"):
-                    self.pagina.open(dialogo)  # type: ignore[attr-defined]
+                    self.pagina.open(dialogo)
                     return
                 raise AttributeError("sin page.open")
             except Exception:
@@ -111,7 +106,4 @@ class Pantalla(ft.Container):
             print(f"Error abrir dialogo: {ex}")
 
 
-# Alias de compatibilidad: el merge integro pantallas main-only que importan
-# `Screen`, mientras la arquitectura newer (Flet 0.84 + Marco) usa `Pantalla`.
-# Ambas son la misma clase para mantener coherentes ambas suites de tests.
 Screen = Pantalla

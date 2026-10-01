@@ -1,9 +1,7 @@
-/* GesKio — página: funciones (detalle de cada módulo) */
 
 .cab-pagina { padding: 72px 0 48px; }
 .cab-pagina .cab { margin-bottom: 0; }
 
-/* bloque de módulo: mock + texto alternando (los pares traen el mock primero en el DOM) */
 .modulo {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 56px; align-items: center;
@@ -15,19 +13,16 @@
 .modulo > div > p { color: var(--text-soft); margin-bottom: 22px; max-width: 52ch; }
 .modulo-mock .mock { min-height: 320px; }
 
-/* sección doble: lo que no hace + requisitos */
 .limites { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .limites .card { padding: 24px; }
 .limites h3 { font-size: 1.02rem; margin-bottom: 12px; }
 .limites p { font-size: .92rem; color: var(--text-soft); margin-bottom: 10px; }
 
-/* lista de puntos con check */
 .puntos { list-style: none; display: grid; gap: 12px; }
 .puntos li { display: flex; gap: 12px; align-items: flex-start; font-size: .95rem; color: var(--text-soft); }
 .puntos svg { flex: none; width: 20px; height: 20px; color: var(--success); margin-top: 2px; }
 .puntos strong { color: var(--text); font-weight: 600; }
 
-/* tabla antes / con GesKio */
 .antes { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); }
 .antes-fila {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0;

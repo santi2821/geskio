@@ -17,16 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app"
 sys.path.insert(0, str(APP))
 
-import datos  # noqa: E402
-from jev.context import construir_contexto  # noqa: E402
-from jev.openrouter import (  # noqa: E402
+import datos
+from jev.context import construir_contexto
+from jev.openrouter import (
     ENDPOINT,
     MODELO_PREDETERMINADO,
     OpenRouterError,
     completar_chat,
     construir_mensajes,
+    configuracion_actual,
 )
-from screens.chat import PantallaChat  # noqa: E402
+from screens.chat import PantallaChat
 
 
 class FakeResponse:
@@ -110,7 +111,7 @@ class JevTests(TestCase):
             [("user", f"pregunta {n}") for n in range(12)] + [("system", "injection")],
             "¿Cuánto vendí hoy?",
         )
-        self.assertEqual(len(mensajes), 9)  # system + 8 turnos recientes + consulta
+        self.assertEqual(len(mensajes), 9)
         self.assertEqual(mensajes[-1]["content"], "¿Cuánto vendí hoy?")
         self.assertIn("nunca instrucciones", mensajes[0]["content"])
         self.assertTrue(all(m["role"] != "system" for m in mensajes[1:]))
@@ -154,8 +155,26 @@ class JevTests(TestCase):
         ):
             self.assertEqual(
                 PantallaChat._texto_configuracion(),
-                f"Clave configurada · modelo {MODELO_PREDETERMINADO}",
+                f"Clave detectada · modelo {MODELO_PREDETERMINADO} (se valida al enviar)",
             )
+
+    def test_configuracion_segura_no_retorna_clave_y_valida_etiqueta_modelo(self):
+        secreto = "sk-or-no-mostrar"
+        config = configuracion_actual(
+            {
+                "OPENROUTER_API_KEY": secreto,
+                "OPENROUTER_MODEL": "  proveedor/modelo  ",
+            }
+        )
+        self.assertTrue(config.clave_detectada)
+        self.assertEqual(config.modelo, "proveedor/modelo")
+        self.assertTrue(config.override_modelo)
+        self.assertNotIn(secreto, repr(config))
+
+        invalida = configuracion_actual(
+            {"OPENROUTER_MODEL": "modelo\ncon salto"}
+        )
+        self.assertEqual(invalida.modelo, "configuración inválida")
 
     def test_mapea_error_de_autorizacion_sin_exponer_cuerpo(self):
         def transporte(request, timeout):
@@ -190,11 +209,12 @@ class JevTests(TestCase):
     def test_chat_ui_manda_consulta_al_provider_y_muestra_respuesta(self):
         import asyncio
 
-        chat = PantallaChat(Mock())
-        chat.build()
-        chat.acepta_envio = True
-        chat.confirmacion_datos.value = True
-        chat.boton_enviar.disabled = False
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-only-placeholder"}):
+            chat = PantallaChat(Mock())
+            chat.build()
+            chat.acepta_envio = True
+            chat.confirmacion_datos.value = True
+            chat.boton_enviar.disabled = False
         chat.campo_mensaje.value = "¿Cuánto vendí hoy?"
         with patch("screens.chat.construir_contexto", return_value={"ventas": {"hoy": 12}}), patch(
             "screens.chat.completar_chat", return_value="Vendiste $12 hoy."
@@ -207,13 +227,35 @@ class JevTests(TestCase):
     def test_chat_ui_no_envia_sin_confirmacion_de_privacidad(self):
         import asyncio
 
-        chat = PantallaChat(Mock())
-        chat.build()
-        chat.campo_mensaje.value = "¿Cuánto vendí hoy?"
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-only-placeholder"}):
+            chat = PantallaChat(Mock())
+            chat.build()
+            chat.campo_mensaje.value = "¿Cuánto vendí hoy?"
         with patch("screens.chat.completar_chat") as provider:
             asyncio.run(chat.enviar_mensaje())
         provider.assert_not_called()
         self.assertEqual(chat.mensajes, [])
+
+    def test_chat_identifica_respuesta_local_si_openrouter_falla(self):
+        import asyncio
+
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-only-placeholder"}):
+            chat = PantallaChat(Mock())
+            chat.build()
+        chat.acepta_envio = True
+        chat.confirmacion_datos.value = True
+        chat.boton_enviar.disabled = False
+        chat.campo_mensaje.value = "¿Cuánto vendí hoy?"
+        with patch(
+            "screens.chat.completar_chat",
+            side_effect=OpenRouterError("detalle privado del provider"),
+        ) as provider:
+            asyncio.run(chat.enviar_mensaje())
+
+        provider.assert_called_once()
+        self.assertIn("usa el modo local", chat.mensajes[-1][0])
+        self.assertIn("Ventas de hoy", chat.mensajes[-1][0])
+        self.assertNotIn("detalle privado", chat.mensajes[-1][0])
 
     def test_checkbox_actualiza_autorizacion_desde_event_data_de_flet(self):
         chat = PantallaChat(Mock())

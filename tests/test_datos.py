@@ -32,7 +32,6 @@ def test_crear_producto():
     p = crear_producto("Test Prod", 100, 200, stock=5, minimo=2)
     assert p["id"] in [x["id"] for x in productos]
     assert p["nombre"] == "Test Prod"
-    # cleanup
     productos.remove(p)
     assert len(productos) == n
 
@@ -44,15 +43,13 @@ def test_ajustar_stock():
     assert p["stock"] == orig + 5
     ajustar_stock(p["id"], -5)
     assert p["stock"] == orig
-    # la arquitectura newer valida: rechaza ajustes que dejen stock negativo
-    # (antes se clampaba a 0; ahora es ValueError y el stock no cambia)
     try:
         ajustar_stock(p["id"], -(orig + 9999))
         assert False, "debió rechazar el ajuste que deja stock negativo"
     except ValueError:
         pass
     assert p["stock"] == orig
-    p["stock"] = orig  # restore
+    p["stock"] = orig
 
 
 def test_crear_venta_descuenta_stock():
@@ -62,18 +59,14 @@ def test_crear_venta_descuenta_stock():
         [{"prod_id": p["id"], "nombre": p["nombre"], "cantidad": 1, "precio": p["precio"]}]
     )
     assert p["stock"] == max(0, orig - 1)
-    # cleanup
     ventas.remove(v)
     p["stock"] = orig
 
 
 def test_eliminar_producto_con_venta():
-    # p1 tiene venta asociada (creada en datos.py)
     assert eliminar_producto("p1") is False
-    # crear producto sin ventas y borrar
     p = crear_producto("Borrable", 10, 20, stock=1)
     assert eliminar_producto(p["id"]) is True
-    # ya borrado
     assert eliminar_producto(p["id"]) is False
 
 
@@ -87,7 +80,6 @@ def test_stats():
 
 
 def test_fiado():
-    # crear venta fiada
     p = productos[5]
     orig_stock = p["stock"]
     v = crear_venta(
@@ -101,7 +93,6 @@ def test_fiado():
     pendiente = c["total"] - c["pagado"]
     pagar_fiado(c["id"], pendiente)
     assert c["pagado"] == c["total"]
-    # cleanup
     ventas.remove(v)
     cuentas.remove(c)
     p["stock"] = orig_stock

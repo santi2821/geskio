@@ -2,13 +2,25 @@
 
 import asyncio
 import os
+import unicodedata
 from datetime import date, datetime, timedelta
 
 import flet as ft
 from screen_base import Pantalla
-from datos import stats, productos, cuentas, clientes, ventas, cli_por_id, margen
+from datos import (
+    stats,
+    productos,
+    cuentas,
+    clientes,
+    ventas,
+    cli_por_id,
+    margen,
+    ganancia_registrada,
+)
 from jev.context import construir_contexto
-from jev.openrouter import MODELO_PREDETERMINADO, OpenRouterError, completar_chat
+from jev.contract import JevIntent, Periodo
+from jev.fake import clasificar as clasificar_consulta_local
+from jev.openrouter import OpenRouterError, completar_chat, configuracion_actual
 from theme import (
     ANCHO_BORDE,
     ALTO_DIVISOR,
@@ -25,19 +37,6 @@ from widgets import (
     sincronizar_texto,
 )
 
-# Paleta local para las burbujas premium (coherente con Figma + tests main-only).
-COLORS = {
-    "primary": "#16a34a",
-    "primary_bg": "#dcfce7",
-    "bg": "#f8fafc",
-    "surface": "#ffffff",
-    "text": "#0f172a",
-    "muted": "#64748b",
-    "border": "#e2e8f0",
-    "assistant_bg": "#f1f5f9",
-    "user_bg": "#dcfce7",
-}
-
 RADIUS_BUBBLE = 16
 RADIUS_CONTAINER = 16
 RADIUS_INPUT = 24
@@ -45,14 +44,34 @@ RADIUS_INPUT = 24
 
 def respuesta_local(texto: str) -> str:
     """Responde solo a intents simples; no es IA ni reemplaza un informe."""
-    minus = (texto or "").strip().lower()
-    if "ganancia" in minus and ("mes" in minus or "histor" in minus or "confiable" in minus):
-        return (
-            "La ganancia histórica todavía no es confiable: las ventas no guardan "
-            "el costo vigente al momento de cobrarlas."
-        )
+    consulta = (texto or "").strip().lower()
+    minus = "".join(
+        caracter
+        for caracter in unicodedata.normalize("NFD", consulta)
+        if not unicodedata.combining(caracter)
+    )
+    decision = clasificar_consulta_local(texto)
+    if decision.aclaracion:
+        return decision.aclaracion
 
-    if "debe" in minus or "fiado" in minus:
+    if decision.intent == JevIntent.GANANCIA_REGISTRADA:
+        es_historico = decision.periodo == Periodo.HISTORIAL
+        if es_historico:
+            periodo = ventas
+            etiqueta = "todo el historial"
+        else:
+            mes = date.today().strftime("%Y-%m")
+            periodo = [venta for venta in ventas if venta.get("fecha", "").startswith(mes)]
+            etiqueta = "este mes"
+        ganancia, sin_costo = ganancia_registrada(periodo)
+        respuesta = f"Margen registrado de {etiqueta}: {moneda(ganancia)}."
+        if sin_costo:
+            respuesta += (
+                f" Se excluyen {sin_costo} venta(s) sin costo histórico registrado."
+            )
+        return respuesta
+
+    if decision.intent == JevIntent.FIADO:
         acumulado = {}
         for cuenta in cuentas:
             pendiente = cuenta["total"] - cuenta["pagado"]
@@ -72,7 +91,7 @@ def respuesta_local(texto: str) -> str:
             for cid, pendiente in ordenadas
         )
 
-    if "margen" in minus or "ganancia" in minus:
+    if decision.intent == JevIntent.MARGEN_CATALOGO:
         invertido = any(palabra in minus for palabra in ("bajo", "peor", "menor", "mal"))
         ordenados = sorted(
             productos,
@@ -86,11 +105,11 @@ def respuesta_local(texto: str) -> str:
         intro = "Peores 5 por margen actual:" if invertido else "Top 5 por margen actual:"
         return intro + ("\n" + "\n".join(lineas) if lineas else "\nNo hay productos cargados.")
 
-    if "stock" in minus:
+    if decision.intent == JevIntent.STOCK:
         lineas = [f"{p['nombre']}: {p['stock']}u" for p in productos if p["stock"] <= p["minimo"]]
         return "Stock bajo:\n" + "\n".join(lineas) if lineas else "Todo con stock suficiente."
 
-    if "resumen" in minus:
+    if decision.intent == JevIntent.RESUMEN:
         resumen = stats()
         return (
             f"Resumen — ventas de hoy: {moneda(resumen['hoy'])}; "
@@ -98,12 +117,12 @@ def respuesta_local(texto: str) -> str:
             f"por cobrar: {moneda(resumen['deben'])}."
         )
 
-    if any(palabra in minus for palabra in ("venta", "vend", "hoy", "mes", "semana")):
-        if "hoy" in minus:
+    if decision.intent == JevIntent.VENTAS:
+        if decision.periodo == Periodo.HOY:
             return f"Ventas de hoy: {moneda(stats()['hoy'])}."
-        if "mes" in minus:
+        if decision.periodo == Periodo.MES:
             return f"Ventas del mes: {moneda(stats()['mes'])}."
-        if "semana" in minus:
+        if decision.periodo == Periodo.ULTIMOS_7_DIAS:
             desde = date.today() - timedelta(days=6)
             total = sum(
                 venta["total"]
@@ -113,7 +132,7 @@ def respuesta_local(texto: str) -> str:
             return f"Ventas de los últimos 7 días (incluido hoy): {moneda(total)}."
         return "¿Qué periodo querés consultar: hoy, últimos 7 días o este mes?"
 
-    if "cliente" in minus:
+    if decision.intent == JevIntent.CLIENTES:
         nombres = [cliente["nombre"] for cliente in clientes]
         return (
             f"Tus clientes ({len(nombres)}): " + ", ".join(nombres)
@@ -133,7 +152,8 @@ class PantallaChat(Pantalla):
 
     def build(self):
         paleta = colores.get()
-        # ── Input premium (main-only) con sync 0.84 ──
+        self._paleta = paleta
+        self._usa_openrouter = bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
         self.campo_mensaje = ft.TextField(
             hint_text="Preguntale a tu negocio...",
             expand=True,
@@ -143,17 +163,13 @@ class PantallaChat(Pantalla):
         )
         sincronizar_texto(self.campo_mensaje)
 
-        # ── ListView mensajes premium (main-only) ──
         self.contenedor_mensajes = ft.ListView(
             expand=True,
             spacing=10,
             auto_scroll=True,
-            padding=ft.padding.all(8),
+            padding=ft.Padding.all(8),
         )
-        # Compat: la arquitectura newer usaba _zona_chat; es el mismo ListView.
         self._zona_chat = self.contenedor_mensajes
-        # Mensaje inicial solo visual (no entra a self.mensajes para no romper
-        # el historial que usa OpenRouter ni los tests de privacidad).
         self._agregar_fila("Preguntame sobre tu negocio. Ej: cuanto vendi hoy?, que margen tengo?")
 
         self.confirmacion_datos = ft.Checkbox(
@@ -162,20 +178,28 @@ class PantallaChat(Pantalla):
                 "del chat durante esta sesión."
             ),
             value=self.acepta_envio,
+            visible=self._usa_openrouter,
             on_change=self._al_cambiar_autorizacion,
         )
+        self.boton_borrar = ft.IconButton(
+            icon=ft.Icons.DELETE_OUTLINE,
+            tooltip="Borrar conversación",
+            disabled=self.enviando,
+            on_click=self.borrar_conversacion,
+        )
 
-        # ── Botón circular (main-only) con gate de privacidad (newer) ──
         try:
             self.boton_enviar = ft.FilledButton(
-                content=ft.Icon(ft.Icons.SEND_ROUNDED, color="white", size=18),
+                content=ft.Icon(ft.Icons.SEND_ROUNDED, color=paleta.on_primary, size=18),
                 style=ft.ButtonStyle(
                     shape=ft.CircleBorder(),
-                    bgcolor=COLORS["primary"],
+                    bgcolor=paleta.primary,
+                    color=paleta.on_primary,
                     padding=12,
                 ),
+                tooltip="Enviar consulta",
                 on_click=self.enviar_mensaje,
-                disabled=True,
+                disabled=self._usa_openrouter and not self.acepta_envio,
             )
         except Exception:
             self.boton_enviar = ft.FilledButton(
@@ -186,17 +210,16 @@ class PantallaChat(Pantalla):
                     ],
                     spacing=8,
                 ),
-                style=ft.ButtonStyle(bgcolor=COLORS["primary"], color="white"),
+                style=ft.ButtonStyle(bgcolor=paleta.primary, color=paleta.on_primary),
                 on_click=self.enviar_mensaje,
-                disabled=True,
+                disabled=self._usa_openrouter and not self.acepta_envio,
             )
 
-        # ── Header premium (main-only): primera fila del Column ──
         avatar_ia_header = ft.Container(
-            content=ft.Icon(ft.Icons.SMART_TOY, color="white", size=18),
+            content=ft.Icon(ft.Icons.SMART_TOY, color=paleta.on_primary, size=18),
             width=36,
             height=36,
-            bgcolor=COLORS["primary"],
+            bgcolor=paleta.primary,
             border_radius=10,
             alignment=ft.Alignment.CENTER,
         )
@@ -206,26 +229,30 @@ class PantallaChat(Pantalla):
                 ft.Column(
                     [
                         ft.Text(
-                            "Chat IA", size=18, weight=ft.FontWeight.BOLD, color=COLORS["text"]
+                            "Asistente", size=18, weight=ft.FontWeight.BOLD, color=paleta.text
                         ),
                         ft.Text(
-                            "Responde con tus datos reales • GesKio Assistant",
+                            "Consultas de solo lectura sobre esta demo",
                             size=12,
-                            color=COLORS["muted"],
+                            color=paleta.text_muted,
                         ),
                     ],
                     spacing=2,
                     expand=True,
                     tight=True,
                 ),
+                self.boton_borrar,
                 ft.Container(
                     content=ft.Text(
-                        "En vivo", size=10, weight=ft.FontWeight.BOLD, color=COLORS["primary"]
+                        "OpenRouter" if self._usa_openrouter else "Local",
+                        size=10,
+                        weight=ft.FontWeight.BOLD,
+                        color=paleta.on_accent_soft,
                     ),
-                    bgcolor=COLORS["primary_bg"],
-                    padding=ft.padding.symmetric(horizontal=10, vertical=6),
+                    bgcolor=paleta.accent_soft,
+                    padding=ft.Padding.symmetric(horizontal=10, vertical=6),
                     border_radius=20,
-                    border=ft.border.all(1, "#bbf7d0"),
+                    border=ft.Border.all(1, paleta.border),
                 ),
             ],
             spacing=12,
@@ -233,17 +260,17 @@ class PantallaChat(Pantalla):
         )
         header_container = ft.Container(
             content=header,
-            padding=ft.padding.symmetric(horizontal=16, vertical=12),
-            bgcolor=COLORS["surface"],
-            border=ft.border.all(1, COLORS["border"]),
+            padding=ft.Padding.symmetric(horizontal=16, vertical=12),
+            bgcolor=paleta.surface,
+            border=ft.Border.all(1, paleta.border),
             border_radius=RADIUS_CONTAINER,
         )
 
         mensajes_container = ft.Container(
             content=self.contenedor_mensajes,
             expand=True,
-            bgcolor="white",
-            border=ft.border.all(1, COLORS["border"]),
+            bgcolor=paleta.surface,
+            border=ft.Border.all(1, paleta.border),
             border_radius=RADIUS_CONTAINER,
             padding=14,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
@@ -256,7 +283,7 @@ class PantallaChat(Pantalla):
         )
         input_container = ft.Container(
             content=input_row,
-            padding=ft.padding.symmetric(horizontal=4, vertical=4),
+            padding=ft.Padding.symmetric(horizontal=4, vertical=4),
             bgcolor="transparent",
         )
 
@@ -269,10 +296,16 @@ class PantallaChat(Pantalla):
                     color=paleta.text_muted,
                 ),
                 ft.Text(
-                    "Cada consulta y hasta 8 mensajes previos pueden acompañar un resumen con nombres y saldos de "
-                    "clientes, productos/precios/stock y ventas agregadas. Se excluyen teléfonos, IDs y el JSON "
-                    "completo. Podés retirar el permiso desmarcando la casilla; OpenRouter puede aplicar cargos. "
-                    "El Chat no modifica datos y el historial se borra al cerrar.",
+                    (
+                        "Al aceptar, cada consulta y hasta 8 mensajes previos pueden acompañar un resumen con nombres "
+                        "y saldos de clientes, productos/precios/stock y ventas agregadas. Se excluyen teléfonos, IDs "
+                        "y el JSON completo. Podés retirar el permiso desmarcando la casilla; OpenRouter puede aplicar "
+                        "cargos. El chat no modifica datos y podés borrar la conversación cuando quieras."
+                        if self._usa_openrouter
+                        else "Modo local: la consulta se procesa dentro de GesKio y no se envía por internet. "
+                        "Usa respuestas sencillas, no una IA generativa; no modifica datos y podés borrar la conversación "
+                        "cuando quieras."
+                    ),
                     size=FS_13,
                     color=paleta.text_muted,
                 ),
@@ -286,40 +319,37 @@ class PantallaChat(Pantalla):
 
     @staticmethod
     def _texto_configuracion() -> str:
-        if os.environ.get("OPENROUTER_API_KEY", "").strip():
-            modelo = os.environ.get("OPENROUTER_MODEL", "").strip() or MODELO_PREDETERMINADO
-            return f"Clave configurada · modelo {modelo}"
-        return (
-            "Falta configurar OPENROUTER_API_KEY en el entorno antes de usar el chat. "
-            "La clave no se guarda en el JSON de GesKio."
-        )
+        return configuracion_actual().etiqueta
 
     def _agregar_fila(self, texto, es_usuario=False):
         """Solo pinta la burbuja premium en el ListView (sin tocar el historial)."""
         try:
+            paleta = getattr(self, "_paleta", colores.get())
             hora = datetime.now().strftime("%H:%M")
             inicial = "T" if es_usuario else "IA"
-            avatar_bg = COLORS["primary"] if es_usuario else "#0f172a"
-            bubble_bg = COLORS["user_bg"] if es_usuario else COLORS["assistant_bg"]
+            avatar_bg = paleta.primary if es_usuario else paleta.text
+            avatar_fg = paleta.on_primary if es_usuario else paleta.surface
+            bubble_bg = paleta.accent_soft if es_usuario else paleta.surface
+            bubble_text = paleta.on_accent_soft if es_usuario else paleta.text
             bubble_border = None
             if not es_usuario:
-                bubble_border = ft.border.all(1, COLORS["border"])
+                bubble_border = ft.Border.all(1, paleta.border)
 
             avatar = ft.CircleAvatar(
-                content=ft.Text(inicial, color="white", weight=ft.FontWeight.BOLD, size=11),
+                content=ft.Text(inicial, color=avatar_fg, weight=ft.FontWeight.BOLD, size=11),
                 bgcolor=avatar_bg,
                 radius=16,
             )
             bubble = ft.Container(
                 content=ft.Column(
                     [
-                        ft.Text(texto, size=14, color=COLORS["text"], selectable=True),
-                        ft.Text(hora, size=10, color=COLORS["muted"]),
+                        ft.Text(texto, size=14, color=bubble_text, selectable=True),
+                        ft.Text(hora, size=10, color=bubble_text),
                     ],
                     spacing=4,
                     tight=True,
                 ),
-                padding=ft.padding.symmetric(horizontal=14, vertical=10),
+                padding=ft.Padding.symmetric(horizontal=14, vertical=10),
                 border_radius=RADIUS_BUBBLE,
                 bgcolor=bubble_bg,
                 border=bubble_border,
@@ -346,8 +376,26 @@ class PantallaChat(Pantalla):
         except Exception as ex:
             print(f"Error agregar fila chat: {ex}")
 
+    def borrar_conversacion(self, e=None):
+        """Borra el historial efímero sin tocar los datos del negocio."""
+        if self.enviando:
+            return
+        self.mensajes.clear()
+        self.contenedor_mensajes.controls = []
+        if hasattr(self, "campo_mensaje"):
+            self.campo_mensaje.value = ""
+            self.campo_mensaje.error_text = None
+        self._agregar_fila(
+            "Conversación borrada. Preguntame sobre ventas, stock o cuentas."
+        )
+        try:
+            self.pagina.update()
+            if hasattr(self, "campo_mensaje"):
+                self.campo_mensaje.update()
+        except Exception:
+            pass
+
     def _pintar_chat(self):
-        # Reconcilia el ListView con el historial (patrón 0.84: re-montar + update).
         try:
             self.contenedor_mensajes.controls = []
             for texto, es_usuario in self.mensajes:
@@ -362,7 +410,6 @@ class PantallaChat(Pantalla):
             print(f"Error pintar chat: {ex}")
 
     def agregar_mensaje(self, texto=None, es_usuario=False, text=None, is_user=None):
-        # Firma dual: newer (texto, es_usuario) y main-only (text, is_user).
         try:
             if texto is None:
                 texto = text if text is not None else ""
@@ -398,7 +445,7 @@ class PantallaChat(Pantalla):
         texto = (leer_texto(self.campo_mensaje, e) or "").strip()
         if not texto:
             return
-        if not self.acepta_envio:
+        if self._usa_openrouter and not self.acepta_envio:
             self.campo_mensaje.error_text = (
                 "Confirmá el envío de datos a OpenRouter antes de enviar."
             )
@@ -417,24 +464,31 @@ class PantallaChat(Pantalla):
         self.campo_mensaje.value = ""
         self.campo_mensaje.disabled = True
         self.boton_enviar.disabled = True
+        self.boton_borrar.disabled = True
         try:
             self.campo_mensaje.update()
             self.boton_enviar.update()
+            self.boton_borrar.update()
         except Exception:
             pass
         self._pintar_chat()
 
         try:
-            contexto = construir_contexto()
-            respuesta = await asyncio.to_thread(completar_chat, contexto, historial, texto)
+            if self._usa_openrouter:
+                contexto = construir_contexto()
+                respuesta = await asyncio.to_thread(completar_chat, contexto, historial, texto)
+            else:
+                respuesta = await asyncio.to_thread(respuesta_local, texto)
             self.agregar_mensaje(respuesta, False)
             self.mensajes = self.mensajes[-80:]
         except OpenRouterError:
-            # Sin clave o con error del provider: fallback local con datos
-            # reales en vez de dejar el chat mudo. No se registra el cuerpo
-            # del error: algunas librerías incluyen datos del request.
             try:
-                self.agregar_mensaje(respuesta_local(texto), False)
+                respuesta = respuesta_local(texto)
+                self.agregar_mensaje(
+                    "No se pudo contactar con OpenRouter; esta respuesta usa el modo local.\n\n"
+                    + respuesta,
+                    False,
+                )
                 self.mensajes = self.mensajes[-80:]
             except Exception:
                 self.agregar_mensaje(
@@ -446,9 +500,11 @@ class PantallaChat(Pantalla):
             self.enviando = False
             self.campo_mensaje.disabled = False
             self.boton_enviar.disabled = not self.acepta_envio
+            self.boton_borrar.disabled = False
             self._pintar_chat()
             try:
                 self.campo_mensaje.update()
                 self.boton_enviar.update()
+                self.boton_borrar.update()
             except Exception:
                 pass

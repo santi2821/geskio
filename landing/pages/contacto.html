@@ -19,7 +19,6 @@
   <link rel="stylesheet" href="../assets/css/pages/contacto.css">
   <script>document.documentElement.classList.add('js');</script>
   <script>
-    // leo el tema guardado o el del sistema, antes de pintar
     (function () {
       var saved = null;
       try { saved = localStorage.getItem('geskio-theme'); } catch (e) {}
@@ -60,7 +59,7 @@
     <section class="cab-pagina">
       <div class="wrap cab">
         <h1 class="reveal">Probalo en tu negocio</h1>
-        <p class="bajada reveal" style="--d:.05s">Pedí una demo de escritorio y recorré sus funciones con datos de ejemplo. Esta versión no conserva los cambios al cerrar la app.</p>
+        <p class="bajada reveal" style="--d:.05s">Pedí una demo de escritorio y recorré sus funciones con datos de ejemplo. Los cambios se guardan en esta computadora y siguen al volver a abrirla.</p>
       </div>
     </section>
 
@@ -93,7 +92,7 @@
             <span class="card-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1.73-2l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
             <div>
               <h3>Qué recibís</h3>
-              <p>Una demo para Windows con datos de ejemplo, persistidos en JSON local. Todavía no tiene una copia de seguridad ni un proceso de recuperación; no la uses como único registro de ventas reales.</p>
+              <p>Una demo para Windows con datos de ejemplo guardados en JSON local. Desde Ajustes podés crear y restaurar una copia manual; no hay sincronización ni respaldo automático. Usá datos ficticios y guardá tus copias aparte.</p>
             </div>
           </div>
           <div class="contacto-dato reveal" style="--d:.15s">
@@ -107,7 +106,6 @@
       </div>
     </section>
 
-    <!-- ============ FAQ ============ -->
     <section class="seccion seccion-soft">
       <div class="wrap">
         <div class="cab">
@@ -126,7 +124,6 @@
       </div>
     </section>
 
-    <!-- ============ CTA ============ -->
     <section class="seccion cta" style="padding-top:0">
       <div class="wrap">
         <div class="cta-caja reveal">
@@ -146,7 +143,7 @@
       <div class="pie-grilla">
         <div>
           <p class="pie-logo">GesKio</p>
-          <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. Los planes de IA siguen en evaluación.</p>
+          <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. El chat local y el uso opcional de OpenRouter se explican en la demo.</p>
         </div>
         <div>
           <h4>Producto</h4>

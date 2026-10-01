@@ -17,25 +17,37 @@ SP_16 = 16
 SP_20 = 20
 SP_24 = 24
 
-R_SM = 8   # botones y elementos compactos
-R_MD = 10  # campos, tablas, diálogos y tarjetas de trabajo
-R_LG = 16  # paneles mayores y marco de contenido
+ACENTOS_PREDETERMINADOS = (
+    ("#c81e1e", "Rojo"),
+    ("#166534", "Verde"),
+    ("#2563eb", "Azul"),
+    ("#7c3aed", "Violeta"),
+    ("#ea580c", "Naranja"),
+    ("#0d9488", "Turquesa"),
+)
+
+R_SM = 8
+R_MD = 10
+R_LG = 16
 R_PILL = 999
 
 ANCHO_BORDE = 1
 ALTO_DIVISOR = 12
 DURACION_AVISO_MS = 4000
 
-# breakpoints bajos para que 1100x700 arranque expandido
 LATERAL_ANCHO = 240
 RAIL_ANCHO = 64
 SUPERIOR_ALTO = 56
 RUPTURA_ANCHO = 1024
 RUPTURA_ALTO = 600
+ANCHO_TOPBAR_COMPACTO = 600
 FOCO_BORDE = 2
 CONTENIDO_PADDING = SP_20
 CALENDARIO_GAP = SP_8
 CALENDARIO_CELDA_GAP = SP_4
+CARRITO_ALTO_MIN = 88
+CARRITO_ALTO_POR_ITEM = 72
+CARRITO_ALTO_MAX = 240
 
 ICON_SM = 18
 ICON_MD = 24
@@ -52,7 +64,6 @@ FS_28 = 28
 FS_30 = 30
 FS_36 = 36
 
-# reusan la escala probada, sin tamanios nuevos
 VALOR_FOCAL_FS = FS_30
 VALOR_STAT_FS = FS_24
 
@@ -117,7 +128,6 @@ def _adjust_until(accent: str, against: str, target: float, step: float) -> str:
 
 
 def resolver_acento(paleta: TemaPaleta, acento: str) -> TemaPaleta:
-    # deriva toda la familia del primario desde un acento a medida
     is_light = _luminance(paleta.bg) > 0.5
     if is_light:
         ground = _adjust_until(acento, "#ffffff", 4.5, -1)
@@ -277,13 +287,11 @@ _ROLE_ALIASES = {
 
 
 def color_rol(paleta: TemaPaleta, rol: str) -> str:
-    # resuelve un rol semantico (o alias del dashboard) a un hex
     key = _ROLE_ALIASES.get(rol, rol)
     return getattr(paleta, key)
 
 
 def a_tema_flet(paleta: TemaPaleta) -> ft.Theme:
-    # arma el ft.Theme de Flet desde una paleta
     estilo_boton = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=R_SM),
     )
@@ -347,7 +355,6 @@ def _write_key(page: ft.Page, key: str, value: str) -> None:
 
 
 class Tema:
-    # paleta por marca x modo, mas acento personalizado
 
     THEMES: dict[str, tuple[TemaPaleta, TemaPaleta]] = {
         "rojo": (ROJO_CLARO, ROJO_OSCURO),
@@ -356,7 +363,6 @@ class Tema:
     DEFAULT_THEME = "rojo"
     DEFAULT_MODE = "light"
     VALID_MODES = ("light", "dark")
-    # misma clave que usa el landing en localStorage
     MODE_KEY = "geskio-theme"
     BRAND_KEY = "geskio-brand"
     ACCENT_KEY = "geskio-accent"
@@ -427,7 +433,6 @@ class Tema:
         _write_key(page, self.ACCENT_KEY, self.accent_override or "")
 
     def apply_to_page(self, page: ft.Page) -> TemaPaleta:
-        # aplica tema claro/oscuro y modo a la page; quien llama hace update
         light, dark = self.THEMES[self.theme_name]
         if self.accent_override:
             light = resolver_acento(light, self.accent_override)

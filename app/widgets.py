@@ -9,6 +9,7 @@ import flet as ft
 from theme import (
     ALTO_DIVISOR,
     ANCHO_BORDE,
+    ANCHO_TOPBAR_COMPACTO,
     CALENDARIO_CELDA_GAP,
     CALENDARIO_GAP,
     CONTENIDO_PADDING,
@@ -49,7 +50,6 @@ from theme import (
 
 
 def sincronizar_texto(campo: ft.TextField) -> ft.TextField:
-    # Flet 0.84 solo manda el texto al server si el campo tiene on_change
     def _sync(e):
         data = getattr(e, "data", None)
         if data is not None:
@@ -66,7 +66,6 @@ def sincronizar_texto(campo: ft.TextField) -> ft.TextField:
 
 
 def moneda(valor) -> str:
-    # es-AR: puntos de miles, sin decimales, negativos "-$1.800"
     try:
         numero = int(round(float(valor)))
     except (TypeError, ValueError, OverflowError):
@@ -76,7 +75,6 @@ def moneda(valor) -> str:
 
 
 def sincronizar_combo(combo: ft.Dropdown) -> ft.Dropdown:
-    # Flet 0.84: igual que el texto, el combo no refresca .value sin listener
     anterior = combo.on_select
 
     def _sync(e):
@@ -91,7 +89,6 @@ def sincronizar_combo(combo: ft.Dropdown) -> ft.Dropdown:
 
 
 def leer_texto(campo, evento=None) -> str:
-    # lee lo mas fresco: el dato del evento si trae, si no el del campo
     dato = getattr(evento, "data", None)
     if isinstance(dato, str) and dato:
         return dato
@@ -143,9 +140,7 @@ def tarjeta_stat(
     rol: str = "info",
     icono=None,
 ) -> ft.Container:
-    # metrica compacta: etiqueta y valor primero, icono secundario
     paleta = colores.get()
-    # valores neutros por defecto; solo estados financieros destacan por color
     return tarjeta(
         ft.Column(
             [
@@ -179,7 +174,6 @@ def tarjeta_stat(
 
 
 def fecha_actual_es(hoy=None) -> str:
-    # fecha de la barra superior: 'jueves, 10 de septiembre'
     dias = [
         "lunes",
         "martes",
@@ -213,7 +207,6 @@ _BARRA_ANCHO = 28
 
 
 def barras_ventas(serie, hoy_iso=None) -> ft.Control:
-    # barras a mano porque ft.BarChart no existe en Flet 0.84
     paleta = colores.get()
     try:
         pico = max((t or 0) for _, t in (serie or []))
@@ -274,7 +267,6 @@ def tarjeta_focal(
     rol: str = "accent_text",
     icono=None,
 ) -> ft.Container:
-    # metrica protagonista: valor grande con borde del acento
     paleta = colores.get()
     color = color_rol(paleta, rol)
     fila: list[ft.Control] = [
@@ -304,7 +296,6 @@ def tarjeta_focal(
 
 
 def seccion(titulo: str, contenido: ft.Control) -> ft.Container:
-    # tarjeta con titulo
     paleta = colores.get()
     return ft.Container(
         content=ft.Column(
@@ -322,7 +313,6 @@ def seccion(titulo: str, contenido: ft.Control) -> ft.Container:
 
 
 def grilla_stats(focal: ft.Control, tarjetas: list[ft.Control]) -> ft.Column:
-    # la focal arriba, el resto en fila responsive
     items = list(tarjetas)
     for item in items:
         try:
@@ -334,7 +324,6 @@ def grilla_stats(focal: ft.Control, tarjetas: list[ft.Control]) -> ft.Column:
 
 
 class Calendario(ft.Container):
-    # solo lectura sobre la serie de ventas (dia/semana/mes)
 
     VIEWS = ("day", "week", "month")
 
@@ -424,7 +413,6 @@ def encabezado(
     al_refrescar=None,
     descripcion: str | None = None,
 ) -> ft.Row:
-    # encabezado de cada pantalla
     paleta = colores.get()
     bloque_titulo = ft.Column(
         [
@@ -462,7 +450,6 @@ _TABLA_FILA_MAX = SP_24 + SP_12
 
 
 def paginar(filas, pagina, por_pagina=FILAS_POR_PAGINA):
-    # corta la lista ya filtrada; devuelve (recorte, actual, total)
     try:
         por_pag = max(1, int(por_pagina or FILAS_POR_PAGINA))
     except (TypeError, ValueError):
@@ -478,7 +465,6 @@ def paginar(filas, pagina, por_pagina=FILAS_POR_PAGINA):
 
 
 def barra_busqueda(al_buscar=None, chips=(), acciones=(), pista="Buscar...") -> ft.Row:
-    # buscador + filtros + acciones; el filtro lo resuelve la pantalla
     paleta = colores.get()
     buscador = campo_texto(
         hint_text=pista,
@@ -515,7 +501,6 @@ def barra_busqueda(al_buscar=None, chips=(), acciones=(), pista="Buscar...") -> 
 
 
 def paginador(pagina, paginas, al_paginar=None) -> ft.Control:
-    # prev/next con 'n de m'; si hay una sola pagina, no se dibuja
     paleta = colores.get()
     try:
         total = max(1, int(paginas or 1))
@@ -571,7 +556,6 @@ def tabla(
     icono_vacio=ft.Icons.INBOX,
     por_pagina: int = FILAS_POR_PAGINA,
 ) -> ft.Control:
-    # tabla densa con estado vacio; la paginacion la hace la pantalla
     paleta = colores.get()
     if not filas:
         return ft.Container(
@@ -644,7 +628,19 @@ def confirmar_eliminar(
     estado: dict = {}
 
     def cerrar(_):
-        estado["ventana"].open = False
+        ventana = estado["ventana"]
+        try:
+            cerrar_pagina = getattr(pagina, "close", None)
+            if callable(cerrar_pagina):
+                cerrar_pagina(ventana)
+                return
+        except Exception:
+            pass
+        ventana.open = False
+        try:
+            ventana.update()
+        except Exception:
+            pass
         pagina.update()
 
     def confirmar(evento):
@@ -670,15 +666,27 @@ def confirmar_eliminar(
         acciones=acciones,
     )
     estado["ventana"] = ventana
-    pagina.overlay.append(ventana)
+    try:
+        abrir_pagina = getattr(pagina, "open", None)
+        if callable(abrir_pagina):
+            abrir_pagina(ventana)
+            return
+    except Exception:
+        pass
+    overlay = getattr(pagina, "overlay", None)
+    if overlay is not None and ventana not in overlay:
+        overlay.append(ventana)
     ventana.open = True
+    try:
+        ventana.update()
+    except Exception:
+        pass
     pagina.update()
 
 
 def aviso(
     pagina: ft.Page, texto: str, rol: str = "info", texto_accion=None, al_accion=None
 ) -> None:
-    # SnackBar con rol (success/danger/warning/info) y accion opcional
     paleta = colores.get()
     fondos = {
         "success": paleta.success,
@@ -729,7 +737,6 @@ def burbuja_chat(texto: str, es_usuario: bool) -> ft.Row:
 
 
 def en_rail_para_tamano(ancho, alto) -> bool:
-    # rail si ancho<=1024 o alto<=600 (a 1100x700 arranca expandido)
     try:
         a = float(ancho)
         l = float(alto)
@@ -739,7 +746,6 @@ def en_rail_para_tamano(ancho, alto) -> bool:
 
 
 class MenuLateral(ft.Container):
-    # barra lateral: 240px expandida, 64px rail de iconos colapsada
 
     def __init__(self, items_nav, clave_activa: str, al_navegar=None, colapsado: bool = False):
         super().__init__()
@@ -841,7 +847,6 @@ class MenuLateral(ft.Container):
         )
 
     def refrescar_marco(self) -> None:
-        # reaplica la paleta viva a la barra
         self._reconstruir()
         self._update_seguro()
 
@@ -873,12 +878,12 @@ class MenuLateral(ft.Container):
 
 
 class BarraSuperior(ft.Container):
-    # barra de contexto con navegación y fecha, sin acciones duplicadas
 
     def __init__(self, al_colapsar=None):
         super().__init__()
         self.titulo_activo = ft.Text("GesKio", size=FS_16, weight=ft.FontWeight.W_600)
         self.texto_fecha = ft.Text(fecha_actual_es(), size=FS_14)
+        self.icono_fecha = ft.Icon(ft.Icons.CALENDAR_TODAY, size=ICON_SM)
         self.boton_menu = ft.IconButton(
             icon=ft.Icons.MENU,
             tooltip="Contraer/expandir barra lateral",
@@ -891,7 +896,7 @@ class BarraSuperior(ft.Container):
                 self.boton_menu,
                 self.titulo_activo,
                 ft.Container(expand=True),
-                ft.Icon(ft.Icons.CALENDAR_TODAY, size=ICON_SM),
+                self.icono_fecha,
                 self.texto_fecha,
             ],
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -921,9 +926,22 @@ class BarraSuperior(ft.Container):
         except Exception:
             pass
 
+    def fijar_compacta(self, compacta: bool) -> None:
+        mostrar_fecha = not compacta
+        if (
+            self.icono_fecha.visible == mostrar_fecha
+            and self.texto_fecha.visible == mostrar_fecha
+        ):
+            return
+        self.icono_fecha.visible = mostrar_fecha
+        self.texto_fecha.visible = mostrar_fecha
+        try:
+            self.update()
+        except Exception:
+            pass
+
 
 class Marco(ft.Row):
-    # casco: lateral | superior + pantallas. La hamburguesa siempre funciona
 
     def __init__(
         self,
@@ -963,6 +981,10 @@ class Marco(ft.Row):
         self._conectar_resize()
 
     def _leer_tamano(self):
+        ancho = getattr(self.pagina, "width", None)
+        alto = getattr(self.pagina, "height", None)
+        if ancho is not None and alto is not None:
+            return ancho, alto
         try:
             return self.pagina.window.width, self.pagina.window.height
         except Exception:
@@ -975,6 +997,23 @@ class Marco(ft.Row):
         return en_rail_para_tamano(ancho, alto)
 
     def _conectar_resize(self) -> None:
+        ancho, alto = self._leer_tamano()
+        if ancho is not None and alto is not None:
+            self._aplicar_ruptura(ancho, alto)
+        try:
+            anterior = self.pagina.on_resize
+
+            def _al_resize(evento):
+                self._aplicar_ruptura(
+                    getattr(evento, "width", None),
+                    getattr(evento, "height", None),
+                )
+                if callable(anterior):
+                    anterior(evento)
+
+            self.pagina.on_resize = _al_resize
+        except Exception:
+            pass
         try:
             self.pagina.window.on_event = self._al_evento_ventana
         except Exception:
@@ -992,10 +1031,12 @@ class Marco(ft.Row):
         if nombre in ("resized", "resize", "none", ""):
             self._aplicar_ruptura()
 
-    def _aplicar_ruptura(self) -> None:
-        ancho, alto = self._leer_tamano()
+    def _aplicar_ruptura(self, ancho=None, alto=None) -> None:
+        if ancho is None or alto is None:
+            ancho, alto = self._leer_tamano()
         if ancho is None or alto is None:
             return
+        self.superior.fijar_compacta(float(ancho) <= ANCHO_TOPBAR_COMPACTO)
         colapsado = en_rail_para_tamano(ancho, alto)
         if colapsado != self.colapsado:
             self.colapsado = colapsado
@@ -1038,7 +1079,6 @@ class Marco(ft.Row):
         self._update_seguro()
 
     def refrescar_marco(self) -> None:
-        # reaplica la paleta viva al casco
         try:
             self.superior.refrescar()
             self.area.bgcolor = colores.get().bg_soft

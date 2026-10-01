@@ -11,7 +11,7 @@ Este ciclo reemplaza la propuesta visual del ciclo 4 (tile de marca, claim, fond
 - Mostrar un título de pantalla prominente una vez: barra superior como contexto y contenido con título de tarea, descripción y acciones, sin duplicar el nombre de navegación.
 - Marca como wordmark GesKio compacto, sin tile ni claim comercial. La marca nunca compite con Caja, el total o Cobrar.
 - No usar sombras, degradados, ilustraciones ni colores decorativos. Claro/oscuro comparten los mismos roles semánticos.
-- Identificar los datos locales de demo con discreción en el lugar pertinente; no insinuar sincronización, respaldo ni aptitud para datos reales.
+- Identificar los datos locales de demo; no insinuar sincronización, respaldo automático ni aptitud para datos reales. La app ofrece copias manuales.
 
 Aceptación visual: revisar Caja sin perder total ni Cobrar; Dashboard con cifras contextualizadas y sin grandes huecos inútiles; ventanas 1100×700, amplia y compacta; contraste claro/oscuro; recorrido por teclado y significado de color no dependiente únicamente del tono. Los anchos compactos, tema oscuro y teclado requieren validación manual posterior antes de declarar cobertura completa.
 
@@ -43,7 +43,7 @@ La app es Flet de escritorio, no una app de macOS. Se mantienen convenciones de 
 
 ## Decisiones de datos propuestas
 
-- **Persistencia de la demo:** JSON local, seleccionado por el usuario. Un archivo versionado conserva productos, clientes, ventas y cuentas de fiado. La ruta predeterminada es la carpeta de datos del usuario; `GESKIO_DATA_FILE` permite elegir otra ubicación. Se escribe a un temporal en la misma carpeta y después se reemplaza el archivo para evitar dejar un JSON parcial. Si la carga detecta un archivo dañado o una versión desconocida, la app falla de forma explícita y no inicia con datos de ejemplo ni sobrescribe el archivo. Las semillas se crean solo cuando el archivo todavía no existe. No asumir sincronización simultánea entre equipos ni usar esto como protección suficiente para información comercial real.
+- **Persistencia de la demo:** JSON local, seleccionado por el usuario. Un archivo versionado conserva productos, clientes, ventas y cuentas de fiado. La ruta predeterminada es la carpeta de datos del usuario; `GESKIO_DATA_FILE` permite elegir otra ubicación. Se escribe a un temporal en la misma carpeta y después se reemplaza el archivo para evitar dejar un JSON parcial. Si la carga detecta un archivo dañado o una versión desconocida, la app falla de forma explícita y no inicia con datos de ejemplo ni sobrescribe el archivo. Las semillas se crean solo cuando el archivo todavía no existe. Ajustes permite exportar y restaurar manualmente copias JSON validadas de hasta 16 MB; la restauración reemplaza los datos y exige confirmación. No asumir sincronización simultánea ni respaldo automático entre equipos, ni usar esto como protección suficiente para información comercial real.
 - **Historial:** almacenar nombre, costo unitario y precio unitario en la línea de venta al cobrar; una modificación futura de producto no cambia ventas cerradas.
 - **Relaciones:** no eliminar clientes con ventas o saldos históricos; ofrecer archivar o conservar una referencia histórica.
 - **Reglas:** validar límites y consistencia en funciones de dominio, y dar mensajes editables/accionables en UI.
@@ -55,8 +55,11 @@ Chat Flet -> OpenRouter /api/v1/chat/completions -> GPT-6 Luna -> respuesta en p
    |             consulta + contexto permitido
    +-- GesKio: consultas de solo lectura y métricas deterministas
 
-Futuro clasificador -> OpenRouter /api/alpha/decisions -> TypeSafe Jev -> Choice/Score/Noul tipado
-                          intención/datos acotados
+Fallback local -> FakeJev determinista -> contrato Jev tipado -> consulta allowlisted
+                   | sin periodo/confianza baja: pedir aclaración
+
+Futuro opcional -> OpenRouter /api/alpha/decisions -> TypeSafe Jev -> Choice/Score/Noul tipado
+                    solo tras evaluación local con consultas anonimizadas
 ```
 
 - OpenRouter es el provider aprobado por el usuario el 2026-09-24. OPENROUTER_API_KEY y OPENROUTER_MODEL solo se leen del entorno del proceso; la clave no se guarda en el JSON del comercio, el chat ni los logs. Modelo de texto por defecto: `openai/gpt-6-luna` (slug concreto, no Auto Router), configurable por entorno.
@@ -64,9 +67,9 @@ Futuro clasificador -> OpenRouter /api/alpha/decisions -> TypeSafe Jev -> Choice
 - Antes del primer request de cada sesión, el usuario autoriza explícitamente compartir la consulta y un contexto allowlisted con agregados de ventas, totales diarios de 90 días, catálogo acotado y hasta 50 saldos por nombre de cliente. No se incluyen filas de ventas individuales, teléfonos, IDs ni el JSON completo. La interfaz avisa que puede haber cargos según provider/modelo.
 - Los datos del snapshot son datos, nunca instrucciones del sistema. No se ejecutan texto, código, comandos ni acciones. OpenRouter solo devuelve texto; Caja, Stock, Clientes y Fiado no exponen herramientas de escritura al modelo.
 - Jev de TypeSafe es un modelo System One de decisiones tipadas, no el modelo del Chat. Recibe `state` más preguntas `choice`, `score` o `noul` y no genera prosa. OpenRouter lo expone por `/api/alpha/decisions`, una superficie Alpha separada de Chat Completions; no conectar al flujo crítico sin comprobar acceso, estabilidad y evals locales.
-- Para respuestas con datos, el dominio es autoridad en números: futuras queries allowlisted calculan cifras localmente; el modelo conversacional las explica/pide aclaración. Jev podría clasificar intención y seleccionar una ruta cerrada si la evaluación de GesKio justifica el servicio; debe caer a aclaración/determinismo ante baja confianza.
+- Para respuestas con datos, el dominio es autoridad en números: las queries locales permitidas calculan cifras; el clasificador fake solo selecciona una ruta cerrada o pide aclaración. El Chat generativo las explica tras autorización. El provider TypeSafe Jev queda apagado hasta que la evaluación de preguntas anonimizadas demuestre valor.
 - El snapshot se limita a 18.000 caracteres y se reduce de forma determinista si es más grande; cada consulta acepta hasta 4.000 caracteres y el historial remoto usa hasta 8 mensajes anteriores acotados a 1.200 caracteres cada uno. El cuerpo de respuesta se limita a 512 KB. El historial UI vive en memoria durante la sesión y desaparece al cerrar la app.
-- Cada respuesta numérica debería indicar métrica, unidad, periodo y corte. Si el contexto no cubre el periodo pedido, el modelo debe declarar el límite. No se ofrece ganancia histórica: las ventas no guardan costo unitario al momento de la operación.
+- Cada respuesta numérica debería indicar métrica, unidad, periodo y corte. Si el contexto no cubre el periodo pedido, el modelo debe declarar el límite. Las ventas nuevas guardan el costo por línea al cobrar; las ventas migradas sin costo conocido se excluyen del margen registrado e informan esa limitación.
 - El flujo de borrador separa Speech-to-Text y estructuración desde texto del guardado. Jev no acepta audio ni genera texto arbitrario; un modelo de texto propone el borrador y Jev solo decide entre opciones/campos delimitados si aporta valor. El usuario revisa; `crear_producto()` es la única ruta que persiste y vuelve a validar.
 - Playground usa un modelo generativo para convertir una solicitud a una especificación declarativa de gráfico, validada contra DSL/queries permitidas. Jev es opcional para clasificar o escoger valores enumerados; ninguno puede ejecutar código arbitrario ni mutar productos, ventas, clientes o pagos.
 
@@ -74,9 +77,11 @@ Futuro clasificador -> OpenRouter /api/alpha/decisions -> TypeSafe Jev -> Choice
 
 La selección de OpenRouter y el Chat fueron aprobados por el usuario. La clave real todavía debe ser configurada por el usuario en el entorno local; nunca pedirla ni imprimirla en el chat. La aplicación sigue operativa si la variable no existe, mostrando ayuda. Errores de clave, saldo, cuota, red y respuesta tienen mensajes separados. GPT-6 Luna es el modelo normal predeterminado verificado en el catálogo de OpenRouter al 2026-09-24; precios y slugs cambian y se deben revalidar. Jev es una integración futura separada, con endpoint Alpha y acceso/estabilidad por confirmar. Antes de distribuir GesKio en web o escritorio a terceros se requiere una revisión específica del almacenamiento/proxy de la clave; una variable de entorno no convierte una clave empaquetada en secreto.
 
+La sección Asistente de Ajustes muestra únicamente si se detectó una clave y qué modelo se intentaría usar; nunca presenta el secreto ni lo guarda. La clave detectada no se considera válida hasta una solicitud consentida. Sin clave, se informa que el Chat opera en modo local; con clave, se explican el permiso por sesión y el resumen que puede salir al provider.
+
 ### Dependencias de producto para IA
 
-- El chat de margen depende de guardar costo/precio unitarios históricos y migrar JSON de manera segura; hoy el cálculo usa costo actual.
+- El margen histórico registrado usa el costo guardado por línea en las ventas nuevas. Las ventas migradas sin costo conservan ese valor como desconocido y se excluyen del cálculo, con aviso de cuántas quedaron afuera.
 - Las consultas por fecha requieren fijar qué significa “hoy/semana/mes”, zona horaria y moneda. El primer alcance usa fechas y moneda de la demo de forma explícita.
 - La voz depende de permiso de micrófono y un servicio/modelo Speech-to-Text: Jev actualmente evalúa texto/estado y no procesa audio. Debe poder probarse/editarse como borrador incluso cuando la transcripción falle o no esté disponible.
 - La sugerencia solo puede reutilizar datos existentes con procedencia; el costo, precio y stock quedan vacíos si no hay fuente confiable.

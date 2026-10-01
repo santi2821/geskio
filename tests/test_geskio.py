@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from copy import deepcopy
 from html.parser import HTMLParser
 from unittest.mock import Mock, patch
 
@@ -21,22 +22,22 @@ _IMPORT_DATA_DIR = tempfile.TemporaryDirectory(prefix="geskio-test-import-")
 _OLD_DATA_FILE = os.environ.get("GESKIO_DATA_FILE")
 os.environ["GESKIO_DATA_FILE"] = str(Path(_IMPORT_DATA_DIR.name) / "initial.json")
 
-import datos  # noqa: E402 - isolate the import-time demo seed above
-import flet as ft  # noqa: E402
-from screens.ajustes import PantallaAjustes  # noqa: E402
-from screens.caja import PantallaCaja  # noqa: E402
-from screens.chat import PantallaChat, respuesta_local  # noqa: E402
-from screens.clientes import PantallaClientes  # noqa: E402
-from screens.dashboard import (  # noqa: E402
+import datos
+import flet as ft
+from screens.ajustes import PantallaAjustes
+from screens.caja import PantallaCaja
+from screens.chat import PantallaChat, respuesta_local
+from screens.clientes import PantallaClientes
+from screens.dashboard import (
     PantallaDashboard,
     totales_mes,
     totales_ultimos_7_dias,
     ventas_del_dia,
 )
-from screens.fiado import PantallaFiado  # noqa: E402
-from screens.stock import PantallaStock  # noqa: E402
-from theme import colores  # noqa: E402
-from widgets import campo_texto, en_rail_para_tamano  # noqa: E402
+from screens.fiado import PantallaFiado
+from screens.stock import PantallaStock
+from theme import colores
+from widgets import campo_texto, en_rail_para_tamano
 
 if _OLD_DATA_FILE is None:
     os.environ.pop("GESKIO_DATA_FILE", None)
@@ -52,6 +53,7 @@ class DatosTests(unittest.TestCase):
         datos.clientes[:] = []
         datos.ventas[:] = []
         datos.cuentas[:] = []
+        datos.movimientos_stock[:] = []
         datos._PERSISTENCIA_ACTIVA = True
         self.producto = datos.crear_producto("Yerba", 100, 150, 8, 2)
         self.cliente = datos.crear_cliente(" Ana ", " 123 ")
@@ -131,11 +133,14 @@ class DatosTests(unittest.TestCase):
         self.assertEqual(datos.ventas[0]["id"], venta["id"])
 
     def test_stats_resume_ventas_deudas_ganancia_y_stock_bajo(self):
-        datos.crear_venta([self.item()], self.cliente["id"], "fiado")
+        venta = datos.crear_venta([self.item()], self.cliente["id"], "fiado")
         resumen = datos.stats()
         self.assertEqual(resumen["hoy"], 300)
         self.assertEqual(resumen["mes"], 300)
         self.assertEqual(resumen["ganancia"], 100)
+        self.assertEqual(venta["items"][0]["costo"], 100)
+        datos.actualizar_producto(self.producto["id"], "Yerba", 500, 150, 6, 2)
+        self.assertEqual(datos.stats()["ganancia"], 100)
         self.assertEqual(resumen["deben"], 300)
         self.assertNotIn(self.producto, resumen["stock_bajo"])
         datos.ajustar_stock(self.producto["id"], -6)
@@ -214,6 +219,88 @@ class DatosTests(unittest.TestCase):
         self.assertEqual(datos.RUTA_ARCHIVO_DATOS.read_bytes(), desconocido)
         self.assertNotEqual(original, desconocido)
 
+    def test_migracion_v1_preserva_venta_y_marca_costo_historico_desconocido(self):
+        venta = datos.crear_venta([self.item()], self.cliente["id"], "efectivo")
+        estado = json.loads(datos.RUTA_ARCHIVO_DATOS.read_text(encoding="utf-8"))
+        estado["version"] = 1
+        for venta_v1 in estado["ventas"]:
+            for item in venta_v1["items"]:
+                item.pop("costo", None)
+        datos.RUTA_ARCHIVO_DATOS.write_text(json.dumps(estado), encoding="utf-8")
+
+        self.assertTrue(datos._cargar_estado())
+        migrado = json.loads(datos.RUTA_ARCHIVO_DATOS.read_text(encoding="utf-8"))
+        self.assertEqual(migrado["version"], 3)
+        self.assertEqual(migrado["ventas"][0]["id"], venta["id"])
+        self.assertIsNone(migrado["ventas"][0]["items"][0]["costo"])
+        self.assertEqual(datos.stats()["ganancia"], 0)
+        self.assertEqual(datos.stats()["ventas_sin_costo"], 1)
+
+    def test_respaldo_exportar_validar_restaurar_y_mantener_referencias(self):
+        datos.crear_venta([self.item()], self.cliente["id"], "fiado")
+        ruta = Path(self.temp.name) / "geskio-respaldo.json"
+        lista_productos = datos.productos
+        datos.exportar_respaldo(ruta)
+        estado = datos.leer_respaldo_archivo(ruta)
+        self.assertEqual(estado["version"], 3)
+        self.assertEqual(len(estado["ventas"]), 1)
+        self.assertEqual(estado["ventas"][0]["items"][0]["costo"], 100)
+
+        datos.crear_producto("Temporal", 10, 20, 2, 1)
+        resumen = datos.restaurar_respaldo(estado)
+        self.assertIs(datos.productos, lista_productos)
+        self.assertEqual(resumen["productos"], 1)
+        self.assertEqual([p["nombre"] for p in datos.productos], ["Yerba"])
+        self.assertEqual(len(datos.ventas), 1)
+        self.assertTrue(datos._cargar_estado())
+        self.assertEqual(len(datos.cuentas), 1)
+
+    def test_respaldo_v1_migra_y_un_archivo_invalido_no_reemplaza_datos(self):
+        datos.crear_venta([self.item()], self.cliente["id"], "efectivo")
+        estado_v1 = {"version": 1, **deepcopy(datos._estado_actual())}
+        for venta in estado_v1["ventas"]:
+            for item in venta["items"]:
+                item.pop("costo", None)
+        migrado = datos.leer_respaldo(json.dumps(estado_v1).encode("utf-8"))
+        self.assertEqual(migrado["version"], 3)
+        self.assertIsNone(migrado["ventas"][0]["items"][0]["costo"])
+        antes = deepcopy(datos._estado_actual())
+        archivo_antes = datos.RUTA_ARCHIVO_DATOS.read_bytes()
+        for contenido in (b"{ roto", b'{"version":999}'):
+            with self.subTest(contenido=contenido), self.assertRaises(ValueError):
+                datos.leer_respaldo(contenido)
+            self.assertEqual(datos._estado_actual(), antes)
+            self.assertEqual(datos.RUTA_ARCHIVO_DATOS.read_bytes(), archivo_antes)
+
+    def test_respaldo_mantiene_limite_tanto_al_exportar_como_al_leer(self):
+        contenido = datos.serializar_respaldo()
+        ruta = Path(self.temp.name) / "demasiado-grande.json"
+        ruta.write_bytes(b"x" * (len(contenido) + 10))
+        with patch.object(datos, "MAX_BYTES_RESPALDO", len(contenido) - 1):
+            with self.assertRaisesRegex(ValueError, "copia supera"):
+                datos.serializar_respaldo()
+            with self.assertRaisesRegex(ValueError, "respaldo supera"):
+                datos.leer_respaldo_archivo(ruta)
+
+    def test_fallo_al_guardar_restauracion_no_muta_estado_ni_archivo(self):
+        datos.crear_venta([self.item()], self.cliente["id"], "efectivo")
+        respaldo = datos.leer_respaldo(datos.serializar_respaldo())
+        estado_antes = deepcopy(datos._estado_actual())
+        archivo_antes = datos.RUTA_ARCHIVO_DATOS.read_bytes()
+        with patch.object(datos, "_guardar_estado", side_effect=RuntimeError("disco")):
+            with self.assertRaisesRegex(RuntimeError, "disco"):
+                datos.restaurar_respaldo({
+                    "version": 3,
+                    "productos": [],
+                    "clientes": [],
+                    "proveedores": [],
+                    "ventas": [],
+                    "cuentas": [],
+                })
+        self.assertEqual(datos._estado_actual(), estado_antes)
+        self.assertEqual(datos.RUTA_ARCHIVO_DATOS.read_bytes(), archivo_antes)
+        self.assertEqual(len(respaldo["ventas"]), 1)
+
     def test_estado_se_recupera_en_un_proceso_nuevo(self):
         venta = datos.crear_venta([self.item()], self.cliente["id"], "efectivo")
         env = os.environ.copy()
@@ -258,7 +345,8 @@ class DatosTests(unittest.TestCase):
         self.assertIn("Ventas del mes:", respuesta_local("Ventas de este mes"))
         self.assertIn("últimos 7 días", respuesta_local("¿Cuánto vendí esta semana?"))
         self.assertIn("Qué periodo", respuesta_local("ventas"))
-        self.assertIn("ganancia histórica todavía no es confiable", respuesta_local("ganancia del mes"))
+        self.assertIn("Margen registrado de este mes", respuesta_local("ganancia del mes"))
+        self.assertIn("Margen registrado de todo el historial", respuesta_local("ganancia histórica"))
 
     def test_chat_agrega_deuda_por_cliente_y_ordena_el_mayor_saldo(self):
         otro = datos.crear_cliente("Beto")
@@ -320,7 +408,7 @@ class PantallasYProductoTests(unittest.TestCase):
         self.assertEqual(len(serie), 7)
         self.assertEqual(serie[-1], ("2026-09-24", 150))
 
-    def test_dashboard_etiqueta_la_ganancia_como_estimacion(self):
+    def test_dashboard_etiqueta_margen_registrado_y_sus_ventas_omitidas(self):
         def controles(control):
             yield control
             for hijo in getattr(control, "controls", []):
@@ -332,13 +420,13 @@ class PantallasYProductoTests(unittest.TestCase):
         for valor, rol in [(-25, colores.get().danger_text), (25, colores.get().success)]:
             with self.subTest(ganancia=valor), patch(
                 "screens.dashboard.stats",
-                return_value={"hoy": 0, "mes": 0, "ganancia": valor, "deben": 0, "stock_bajo": []},
+                return_value={"hoy": 0, "mes": 0, "ganancia": valor, "ventas_sin_costo": 2, "deben": 0, "stock_bajo": []},
             ):
                 arbol = PantallaDashboard(Mock()).build()
                 textos = [c for c in controles(arbol) if isinstance(c, ft.Text)]
                 valores = [c for c in textos if c.value == "-$25" or c.value == "$25"]
-                titulo = [c for c in textos if c.value == "Ganancia estimada del mes"]
-                nota = [c for c in textos if "costos vigentes" in str(c.value)]
+                titulo = [c for c in textos if c.value == "Margen registrado del mes"]
+                nota = [c for c in textos if "Excluye 2 ventas antiguas" in str(c.value)]
                 self.assertEqual(len(valores), 1)
                 self.assertEqual(valores[0].color, rol)
                 self.assertEqual(len(titulo), 1)
@@ -355,7 +443,10 @@ class LandingConsistencyTests(unittest.TestCase):
         self.assertNotIn("los cambios no se conservan al cerrar", texto.lower())
         self.assertNotIn("Tarjeta</span>", texto)
         self.assertNotIn("lo ves antes de guardar", texto.lower())
-        self.assertIn("proveedor de IA todavía está por decidir", home)
+        self.assertIn("OpenRouter", home)
+        self.assertIn("consentimiento", home)
+        self.assertIn("no hay respaldo automático", texto.lower())
+        self.assertNotIn("proveedor de IA todavía está por decidir", home)
         self.assertIn("no comprende todos los periodos", funciones)
 
     def test_radios_de_landing_coinciden_con_tokens_de_app(self):

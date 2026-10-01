@@ -1,6 +1,4 @@
-/* GesKio — componentes: botones, cards, forms, chips, faq, mocks */
 
-/* ---------- Botones ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--accent); color: var(--on-accent);
@@ -15,7 +13,6 @@
 .btn-todo { width: 100%; }
 .btn-lg { font-size: 1rem; padding: 14px 30px; }
 
-/* ---------- Cards ---------- */
 .card {
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   padding: 26px; background: var(--surface);
@@ -32,7 +29,6 @@
 
 .card-grilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
-/* ---------- Chips / badges ---------- */
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: .8rem; font-weight: 600; color: var(--text-soft);
@@ -44,7 +40,6 @@
 .punto-estado.alto { background: var(--warning); }
 .punto-estado.critico { background: var(--danger); }
 
-/* ---------- Formularios ---------- */
 form label { display: block; font-size: .85rem; font-weight: 600; margin: 16px 0 6px; }
 form label:first-of-type { margin-top: 0; }
 form input, form textarea {
@@ -63,7 +58,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 .aviso.error { color: var(--danger-text); }
 .form-privacidad { margin-top: 14px; font-size: .8rem; color: var(--text-muted); text-align: center; }
 
-/* ---------- FAQ ---------- */
 .faq { display: grid; gap: 12px; max-width: 720px; margin: 0 auto; }
 .faq-item { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); overflow: hidden; }
 .faq-pregunta {
@@ -83,7 +77,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 .faq-respuesta { max-height: 0; overflow: hidden; transition: max-height .35s var(--ease); }
 .faq-respuesta p { padding: 0 20px 18px; font-size: .92rem; color: var(--text-soft); }
 
-/* ---------- Mock de la app (dibujado con CSS) ---------- */
 .mock {
   border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
   background: var(--bg-elevated); overflow: hidden; box-shadow: var(--shadow-lg);
@@ -107,7 +100,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 .mock-num { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .mock-sub { font-size: .78rem; color: var(--text-soft); }
 
-/* filas tipo lista dentro del mock */
 .mock-fila {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -115,7 +107,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 }
 .mock-fila strong { color: var(--text); font-weight: 600; }
 
-/* gráfico de barras del mock */
 .mock-chart { display: flex; align-items: flex-end; gap: 6px; height: 74px; padding: 6px 4px 0; }
 .mock-chart i {
   flex: 1; border-radius: 5px 5px 2px 2px;
@@ -123,21 +114,17 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 }
 .mock-chart i.alta { background: var(--accent); }
 
-/* dos tarjetas numeradas juntas dentro del mock (dashboard) */
 .mock-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* barra de stock */
 .mock-barra { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; }
 .mock-barra i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
 
-/* burbuja de chat */
 .mock-chat { display: grid; gap: 8px; }
 .burbuja { max-width: 82%; padding: 9px 13px; border-radius: 14px; font-size: .8rem; line-height: 1.45; }
 .burbuja-user { justify-self: end; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 4px; }
 .burbuja-bot { justify-self: start; background: var(--bg-soft); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text-soft); }
 .burbuja-bot strong { color: var(--text); }
 
-/* toast de venta nueva dentro del mock */
 .mock-toast {
   display: flex; align-items: center; gap: 10px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -146,7 +133,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 }
 .mock-toast strong { color: var(--text); }
 
-/* aviso de stock bajo */
 .mock-alerta {
   display: flex; gap: 10px; align-items: center;
   border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
@@ -155,7 +141,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 }
 .mock-alerta strong { color: var(--text); }
 
-/* ---------- Banda CTA (compartida por las 3 páginas) ---------- */
 .cta { position: relative; overflow: hidden; }
 .cta-caja {
   position: relative; text-align: center; padding: 64px 32px;
@@ -177,7 +162,6 @@ form textarea { resize: vertical; margin-bottom: 18px; }
 .cta-caja::before { width: 300px; height: 300px; top: -160px; right: -80px; }
 .cta-caja::after { width: 220px; height: 220px; bottom: -130px; left: -60px; }
 
-/* ---------- Responsive componentes ---------- */
 @media (max-width: 960px) {
   .card-grilla { grid-template-columns: repeat(2, 1fr); }
 }

@@ -1,7 +1,10 @@
+from datetime import date
+
 import flet as ft
 import datos
 from screen_base import Pantalla
 from theme import (
+    ACENTOS_PREDETERMINADOS,
     ANCHO_BORDE,
     FS_14,
     R_MD,
@@ -12,19 +15,31 @@ from theme import (
     SP_12,
     colores,
 )
-from widgets import campo_texto, encabezado, seccion, aviso, sincronizar_texto
-
-ACENTOS = ("#c81e1e", "#166534", "#2563eb", "#7c3aed", "#ea580c", "#0d9488")
-
+from widgets import (
+    campo_texto,
+    encabezado,
+    seccion,
+    aviso,
+    sincronizar_texto,
+    dialogo,
+)
+from jev.openrouter import configuracion_actual
 
 class PantallaAjustes(Pantalla):
-    def __init__(self, page: ft.Page, al_apariencia=None):
+    def __init__(self, page: ft.Page, al_apariencia=None, al_restaurar=None):
         super().__init__(page, "Ajustes")
         self.al_apariencia = al_apariencia
+        self.al_restaurar = al_restaurar
         self._hex_value = ""
+        self._selector_archivos = ft.FilePicker()
+        self._selector_registrado = False
 
     def build(self):
         paleta = colores.get()
+        self._registrar_selector_archivos()
+        modo_comercio = (
+            "Datos de ejemplo" if datos.MODO_COMERCIO == "demo" else "Comercio vacío"
+        )
         self._seg_modo = ft.SegmentedButton(
             segments=[
                 ft.Segment(value="light", label=ft.Text("Claro")),
@@ -42,7 +57,7 @@ class PantallaAjustes(Pantalla):
             wrap=True,
         )
         muestras = ft.Row(
-            [self._muestra(h) for h in ACENTOS],
+            [self._muestra(hex, etiqueta) for hex, etiqueta in ACENTOS_PREDETERMINADOS],
             spacing=SP_8,
             wrap=True,
         )
@@ -129,12 +144,19 @@ class PantallaAjustes(Pantalla):
                         spacing=SP_10,
                     ),
                 ),
+                self._seccion_asistente(paleta),
                 seccion(
-                    "Datos de la demo",
+                    "Datos del comercio",
                     ft.Column(
                         [
                             ft.Text(
-                                "Los cambios se guardan automáticamente en este equipo.",
+                                f"Inicio elegido: {modo_comercio}.",
+                                size=FS_14,
+                                weight=ft.FontWeight.W_600,
+                                color=paleta.text,
+                            ),
+                            ft.Text(
+                                "Los datos y el historial se guardan en este equipo. No se sincronizan entre dispositivos.",
                                 size=FS_14,
                                 color=paleta.text,
                             ),
@@ -149,6 +171,27 @@ class PantallaAjustes(Pantalla):
                                 size=FS_14,
                                 color=paleta.text_muted,
                             ),
+                            ft.Text(
+                                "Una copia incluye productos, ventas, clientes, teléfonos y saldos. Guardala en un lugar privado.",
+                                size=FS_14,
+                                color=paleta.text_muted,
+                            ),
+                            ft.Row(
+                                [
+                                    ft.OutlinedButton(
+                                        "Crear copia",
+                                        icon=ft.Icons.DOWNLOAD,
+                                        on_click=self.crear_respaldo,
+                                    ),
+                                    ft.OutlinedButton(
+                                        "Restaurar copia",
+                                        icon=ft.Icons.UPLOAD_FILE,
+                                        on_click=self.seleccionar_respaldo,
+                                    ),
+                                ],
+                                spacing=SP_8,
+                                wrap=True,
+                            ),
                         ],
                         spacing=SP_8,
                     ),
@@ -158,6 +201,163 @@ class PantallaAjustes(Pantalla):
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         )
+
+    @staticmethod
+    def _seccion_asistente(paleta):
+        config = configuracion_actual()
+        if config.clave_detectada:
+            estado = (
+                f"Clave de OpenRouter detectada · modelo {config.modelo}. "
+                "La clave se valida al enviar una consulta autorizada."
+            )
+            privacidad = (
+                "Antes de cada sesión remota, el Chat pide permiso. Puede enviar la consulta, "
+                "hasta 8 mensajes previos y un resumen con nombres/saldos de clientes, catálogo "
+                "y ventas agregadas. Excluye teléfonos, IDs y el archivo JSON completo. El historial "
+                "del Chat es temporal. OpenRouter puede aplicar cargos por uso."
+            )
+        else:
+            estado = (
+                "Modo local · no se detecta OPENROUTER_API_KEY. Las consultas del Chat no se envían "
+                "por internet."
+            )
+            privacidad = (
+                f"Si habilitás OpenRouter en el entorno, GesKio usará {config.modelo} salvo que "
+                "definas OPENROUTER_MODEL. El permiso se solicita antes de cada sesión. La clave "
+                "no se muestra ni se guarda en los datos comerciales."
+            )
+        return seccion(
+            "Asistente",
+            ft.Column(
+                [
+                    ft.Text(
+                        estado,
+                        size=FS_14,
+                        weight=ft.FontWeight.W_600,
+                        color=paleta.text,
+                    ),
+                    ft.Text(privacidad, size=FS_14, color=paleta.text_muted),
+                ],
+                spacing=SP_8,
+            ),
+        )
+
+    def _registrar_selector_archivos(self):
+        if self._selector_registrado:
+            return
+        try:
+            servicios = self.pagina.services
+            if self._selector_archivos not in servicios:
+                servicios.append(self._selector_archivos)
+            self._selector_registrado = True
+        except Exception:
+            pass
+
+    async def crear_respaldo(self, e=None):
+        self._registrar_selector_archivos()
+        try:
+            contenido = datos.serializar_respaldo()
+            nombre = f"geskio-respaldo-{date.today().isoformat()}.json"
+            if bool(getattr(self.pagina, "web", False)):
+                await self._selector_archivos.save_file(
+                    dialog_title="Guardar copia de GesKio",
+                    file_name=nombre,
+                    file_type=ft.FilePickerFileType.CUSTOM,
+                    allowed_extensions=["json"],
+                    src_bytes=contenido,
+                )
+                aviso(self.pagina, "Se inició la descarga de la copia")
+                return
+            ruta = await self._selector_archivos.save_file(
+                dialog_title="Guardar copia de GesKio",
+                file_name=nombre,
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["json"],
+            )
+            if ruta:
+                datos.exportar_respaldo(ruta)
+                aviso(self.pagina, "Copia guardada")
+        except Exception as ex:
+            aviso(self.pagina, f"No se pudo crear la copia: {ex}", rol="danger")
+
+    async def seleccionar_respaldo(self, e=None):
+        self._registrar_selector_archivos()
+        try:
+            es_web = bool(getattr(self.pagina, "web", False))
+            archivos = await self._selector_archivos.pick_files(
+                dialog_title="Elegir copia de GesKio",
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["json"],
+                allow_multiple=False,
+                with_data=es_web,
+            )
+            if not archivos:
+                return
+            archivo = archivos[0]
+            if archivo.size > datos.MAX_BYTES_RESPALDO:
+                raise ValueError("El respaldo supera el límite de 16 MB")
+            if archivo.bytes is not None:
+                estado = datos.leer_respaldo(archivo.bytes)
+            elif archivo.path:
+                estado = datos.leer_respaldo_archivo(archivo.path)
+            else:
+                raise ValueError("No se pudo leer el archivo seleccionado")
+            self._confirmar_restauracion(estado)
+        except ValueError as ex:
+            aviso(self.pagina, str(ex), rol="danger")
+        except Exception as ex:
+            aviso(self.pagina, f"No se pudo abrir la copia: {ex}", rol="danger")
+
+    def _confirmar_restauracion(self, estado):
+        sin_costo = sum(
+            1
+            for venta in estado["ventas"]
+            if any(item.get("costo") is None for item in venta.get("items", []))
+        )
+        resumen = (
+            f"{len(estado['productos'])} productos · {len(estado['clientes'])} clientes · "
+            f"{len(estado['proveedores'])} proveedores · {len(estado['ventas'])} ventas · "
+            f"{len(estado['cuentas'])} cuentas por cobrar."
+        )
+        detalle = (
+            f"\n\n{sin_costo} venta(s) no tienen costo histórico registrado."
+            if sin_costo
+            else ""
+        )
+        texto = (
+            "Esta acción reemplaza todos los datos que están en esta computadora. "
+            "La copia no se combina con el estado actual.\n\n"
+            + resumen
+            + detalle
+        )
+        ventana = dialogo(
+            "Restaurar copia de GesKio",
+            ft.Text(texto, size=FS_14, color=colores.get().text),
+            acciones=[
+                ft.TextButton("Cancelar", on_click=lambda _: self.cerrar_dialogo(ventana)),
+                ft.FilledButton(
+                    "Reemplazar datos",
+                    icon=ft.Icons.UPLOAD_FILE,
+                    on_click=lambda _: self._aplicar_restauracion(ventana, estado),
+                ),
+            ],
+        )
+        self.abrir_dialogo(ventana)
+
+    def _aplicar_restauracion(self, ventana, estado):
+        try:
+            resumen = datos.restaurar_respaldo(estado)
+            self.cerrar_dialogo(ventana)
+            if callable(self.al_restaurar):
+                self.al_restaurar()
+            aviso(
+                self.pagina,
+                f"Copia restaurada · {resumen['productos']} productos, "
+                f"{resumen['proveedores']} proveedores y {resumen['ventas']} ventas",
+                rol="success",
+            )
+        except Exception as ex:
+            aviso(self.pagina, f"No se pudieron reemplazar los datos: {ex}", rol="danger")
 
     def _tarjeta_marca(self, nombre: str, etiqueta: str) -> ft.Container:
         paleta = colores.get()
@@ -180,17 +380,9 @@ class PantallaAjustes(Pantalla):
             ),
         )
 
-    def _muestra(self, hex: str) -> ft.IconButton:
+    def _muestra(self, hex: str, etiqueta: str) -> ft.IconButton:
         paleta = colores.get()
         activa = (colores.accent_override or "").lower() == hex.lower()
-        etiqueta = {
-            "#c81e1e": "Rojo",
-            "#166534": "Verde",
-            "#2563eb": "Azul",
-            "#7c3aed": "Violeta",
-            "#ea580c": "Naranja",
-            "#0d9488": "Turquesa",
-        }.get(hex.lower(), hex)
         return ft.IconButton(
             icon=ft.Icons.CIRCLE,
             icon_color=hex,

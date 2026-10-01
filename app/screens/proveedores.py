@@ -30,8 +30,6 @@ class PantallaProveedores(Pantalla):
             ft.DataColumn(ft.Text("Rubro")),
             ft.DataColumn(ft.Text("")),
         ]
-        # Tabla real (no espejo) para compat con la suite main-only:
-        # los tests leen s.tabla_datos.columns/.rows directamente.
         self.tabla_datos = ft.DataTable(
             columns=self._columnas,
             rows=[],
@@ -46,7 +44,6 @@ class PantallaProveedores(Pantalla):
         )
         self.campo_buscar = campo_texto(hint_text="Buscar proveedor...", expand=True)
         sincronizar_texto(self.campo_buscar)
-        # La barra newer avisa via on_change; se conecta al filtro view-side.
         self.campo_buscar.on_change = self._al_buscar_evento
 
         self.campo_nombre = campo_texto(label="Nombre", expand=True)
@@ -61,7 +58,6 @@ class PantallaProveedores(Pantalla):
             self.campo_rubro,
         ):
             sincronizar_texto(_campo)
-        # Re-conectar el filtro tras sincronizar (sincronizar_texto pisa on_change).
         self.campo_buscar.on_change = self._al_buscar_evento
 
         tabla_scroll = ft.Container(
@@ -90,7 +86,6 @@ class PantallaProveedores(Pantalla):
             scroll=ft.ScrollMode.AUTO,
         )
 
-        # El build renderiza los datos actuales: entran montados con la pantalla.
         self._cargar_filas()
 
         return ft.Column(
@@ -109,10 +104,8 @@ class PantallaProveedores(Pantalla):
             expand=True,
         )
 
-    # ─── filtro ───────────────────────────────────────────────────────
 
     def _al_buscar_evento(self, e=None):
-        # El .value del campo llega viejo en 0.84; el estado nuevo viene en el evento.
         dato = getattr(e, "data", None)
         if isinstance(dato, str):
             self._busqueda = dato
@@ -128,17 +121,7 @@ class PantallaProveedores(Pantalla):
         self.filtrar_datos()
 
     def _cargar_filas(self):
-        # Arma las filas filtradas en la tabla real, sin update.
         q = (getattr(self, "_busqueda", "") or "").lower()
-        # Compat tests: escriben s.campo_buscar.value y llaman filtrar_datos()
-        # sin pasar por el evento; el campo manda sobre el estado interno.
-        try:
-            valor_campo = (self.campo_buscar.value or "").lower()
-            if valor_campo != q:
-                q = valor_campo
-                self._busqueda = self.campo_buscar.value or ""
-        except Exception:
-            pass
         filas = []
         for pr in proveedores:
             if q:
@@ -191,7 +174,6 @@ class PantallaProveedores(Pantalla):
                 )
             )
         self.tabla_datos.rows = filas
-        # Deuda total informativa (usa moneda del kit newer).
         try:
             self._deuda_texto = moneda(
                 sum(p.get("deuda", 0) for p in proveedores if isinstance(p, dict))
@@ -205,7 +187,6 @@ class PantallaProveedores(Pantalla):
         except Exception as ex:
             print(f"Error en filtrar_datos proveedores: {ex}")
             return
-        # Refresco post-acción: update si está montado, rearmar si no.
         try:
             self.tabla_datos.update()
         except Exception:
@@ -214,7 +195,6 @@ class PantallaProveedores(Pantalla):
             except Exception:
                 pass
 
-    # ─── nuevo ───────────────────────────────────────────────────────
 
     def guardar_nuevo(self, e=None):
         try:
@@ -236,7 +216,6 @@ class PantallaProveedores(Pantalla):
         except Exception as ex:
             print(f"Error guardar_nuevo proveedor: {ex}")
 
-    # ─── editar ──────────────────────────────────────────────────────
 
     def editar_proveedor(self, pid):
         try:
@@ -277,14 +256,13 @@ class PantallaProveedores(Pantalla):
                     ft.TextButton(
                         "Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)
                     ),
-                    ft.ElevatedButton("Guardar", on_click=guardar),
+                    ft.FilledButton("Guardar", on_click=guardar),
                 ],
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error editar_proveedor: {ex}")
 
-    # ─── eliminar ────────────────────────────────────────────────────
 
     def eliminar_proveedor(self, pid):
         try:
@@ -309,7 +287,3 @@ class PantallaProveedores(Pantalla):
             )
         except Exception as ex:
             print(f"Error eliminar_proveedor: {ex}")
-
-    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
-    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base y
-    # usan page.snack_bar/page.open cuando existen, con fallback a overlay.

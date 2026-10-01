@@ -83,7 +83,6 @@ class PantallaClientes(Pantalla):
             spacing=SP_8,
         )
 
-        # el build renderiza los datos actuales: entran montados con la pantalla
         self._cargar_tabla()
 
         return ft.Column(
@@ -103,7 +102,6 @@ class PantallaClientes(Pantalla):
             expand=True,
         )
 
-    # ─── busqueda + paginador ───────────────────────────────────────
 
     def _al_buscar(self, texto):
         self._busqueda = texto or ""
@@ -136,10 +134,8 @@ class PantallaClientes(Pantalla):
             self._pagina = 1
         self.filtrar_datos()
 
-    # ─── filtro view-side: filtrar → ordenar → paginar ──────────────
 
     def _cargar_tabla(self):
-        # arma la tabla filtrada en las zonas, sin update
         paleta = colores.get()
         color_deuda = color_rol(paleta, "danger_text")
         q = (getattr(self, "_busqueda", "") or "").lower()
@@ -208,7 +204,6 @@ class PantallaClientes(Pantalla):
         )
 
     def filtrar_datos(self):
-        # refresco post-accion: mismo render + update de las zonas montadas
         self._cargar_tabla()
         try:
             self._zona_tabla.update()
@@ -216,7 +211,6 @@ class PantallaClientes(Pantalla):
         except Exception:
             self.rearmar()
 
-    # ─── nuevo ─────────────────────────────────────────────────────
 
     def guardar_nuevo(self, e=None):
         try:
@@ -232,7 +226,6 @@ class PantallaClientes(Pantalla):
         except Exception as ex:
             print(f"Error guardar_nuevo: {ex}")
 
-    # ─── editar ────────────────────────────────────────────────────
 
     def editar_cliente(self, cid):
         try:
@@ -263,15 +256,13 @@ class PantallaClientes(Pantalla):
                 ft.Column([campo_nombre, campo_telefono], spacing=SP_12, tight=True),
                 acciones=[
                     ft.TextButton("Cancelar", on_click=lambda e: self.cerrar_dialogo(ventana)),
-                    ft.ElevatedButton("Guardar", on_click=guardar),
+                    ft.FilledButton("Guardar", on_click=guardar),
                 ],
-                actions_alignment=ft.MainAxisAlignment.END,
             )
             self.abrir_dialogo(ventana)
         except Exception as ex:
             print(f"Error editar_cliente: {ex}")
 
-    # ─── eliminar ──────────────────────────────────────────────────
 
     def eliminar_cliente(self, cid):
         try:
@@ -320,14 +311,9 @@ class PantallaClientes(Pantalla):
         except Exception as ex:
             print(f"Error eliminar_cliente: {ex}")
 
-    # ─── helpers: heredados de Pantalla (dual 0.84 runtime + Mock/0.28.3).
-    # mostrar_alerta/abrir_dialogo/cerrar_dialogo viven en screen_base.
 
-    # ─── compat dimensionamiento main-only (tests antiguos) ──────────
-    # La UI newer pagina en _zona_tabla; se expone tabla_datos/campo_buscar
-    # como espejos para que la suite 0.28.3 siga encontrando la tabla.
     @property
-    def tabla_datos(self):  # type: ignore[override]
+    def tabla_datos(self):
         contenido = getattr(getattr(self, "_zona_tabla", None), "content", None)
         if isinstance(contenido, ft.DataTable):
             return contenido
@@ -338,7 +324,7 @@ class PantallaClientes(Pantalla):
         )
 
     @property
-    def campo_buscar(self):  # type: ignore[override]
+    def campo_buscar(self):
         campo = campo_texto(hint_text="Buscar cliente...", expand=True)
         try:
             campo.value = getattr(self, "_busqueda", "") or ""

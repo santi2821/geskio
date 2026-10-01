@@ -16,6 +16,7 @@ def construir_contexto(hoy: date | None = None) -> dict:
     inicio_mes = corte.replace(day=1)
 
     ventas_por_dia = defaultdict(lambda: {"total": 0, "cantidad": 0})
+    ventas_90_dias = []
     total_hoy = total_semana = total_mes = 0
     cantidad_hoy = cantidad_semana = cantidad_mes = 0
 
@@ -40,6 +41,7 @@ def construir_contexto(hoy: date | None = None) -> dict:
         if inicio_90_dias <= fecha <= corte:
             ventas_por_dia[iso]["total"] += total
             ventas_por_dia[iso]["cantidad"] += 1
+            ventas_90_dias.append(venta)
     clientes_por_id = {cliente["id"]: cliente for cliente in datos.clientes}
     deuda_por_cliente = defaultdict(float)
     cuentas_pendientes = 0
@@ -67,6 +69,7 @@ def construir_contexto(hoy: date | None = None) -> dict:
             deuda_por_cliente.items(), key=lambda fila: fila[1], reverse=True
         )[:50]
     ]
+    ganancia, ventas_sin_costo = datos.ganancia_registrada(ventas_90_dias)
 
     return {
         "fecha_de_corte": corte.isoformat(),
@@ -86,6 +89,10 @@ def construir_contexto(hoy: date | None = None) -> dict:
                 {"fecha": fecha, **valores}
                 for fecha, valores in sorted(ventas_por_dia.items())
             ],
+            "margen_registrado_ultimos_90_dias": {
+                "total": ganancia,
+                "ventas_sin_costo": ventas_sin_costo,
+            },
             "detalle_transaccional_incluido": False,
         },
         "inventario": {
@@ -103,7 +110,7 @@ def construir_contexto(hoy: date | None = None) -> dict:
         "limites": [
             "No se incluyen teléfonos, identificadores ni el archivo JSON.",
             "Solo se incluyen agregados diarios de ventas; no se incluyen filas de venta individuales.",
-            "La ganancia histórica no está disponible: no se guardó el costo de cada venta.",
+            "El margen histórico solo incluye ventas con costo registrado al cobrarlas; se informa cuántas ventas se excluyeron.",
             "El catálogo se limita a los primeros 150 productos y los saldos a 50 clientes.",
         ],
     }

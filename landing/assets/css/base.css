@@ -1,4 +1,3 @@
-/* GesKio — base: reset, tipografía, foco */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -21,10 +20,8 @@ h1, h2, h3, h4 {
   font-weight: 800;
 }
 
-/* ancla por debajo de la nav fija */
 [id] { scroll-margin-top: calc(var(--nav-h) + 16px); }
 
-/* salto al contenido para teclado */
 .salto {
   position: absolute; left: -9999px; top: 0;
   background: var(--accent); color: #fff;
@@ -32,7 +29,6 @@ h1, h2, h3, h4 {
 }
 .salto:focus { left: 0; }
 
-/* marca de texto: la parte con acento del título */
 .marca {
   background: var(--grad-texto);
   -webkit-background-clip: text;
@@ -40,7 +36,6 @@ h1, h2, h3, h4 {
   color: transparent;
 }
 
-/* solo para lectores de pantalla */
 .sr-only {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;

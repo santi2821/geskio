@@ -1,4 +1,5 @@
 import sys
+from types import SimpleNamespace
 sys.path.insert(0, "app")
 sys.path.insert(0, "app/screens")
 
@@ -26,7 +27,6 @@ def test_crear_proveedor():
     assert pr["email"] == "test@prov.com"
     assert pr["rubro"] == "TestRubro"
     assert len(proveedores) == n + 1
-    # cleanup via eliminar
     assert eliminar_proveedor(pr["id"]) is True
     assert len(proveedores) == n
 
@@ -34,17 +34,14 @@ def test_crear_proveedor():
 def test_actualizar_proveedor():
     pr = crear_proveedor("Tmp Prov", "3510000000", "tmp@prov.com", "Inicial")
     pid = pr["id"]
-    # actualizar todos campos
     actualizar_proveedor(pid, "Tmp Prov 2", "3519999999", "nuevo@prov.com", "NuevoRubro")
     fetched = prov_por_id(pid)
     assert fetched["nombre"] == "Tmp Prov 2"
     assert fetched["telefono"] == "3519999999"
     assert fetched["email"] == "nuevo@prov.com"
     assert fetched["rubro"] == "NuevoRubro"
-    # actualizar parcial con kwargs
     actualizar_proveedor(pid, nombre="Solo Nombre")
     assert prov_por_id(pid)["nombre"] == "Solo Nombre"
-    # telefono debe permanecer igual si None
     assert prov_por_id(pid)["telefono"] == "3519999999"
     eliminar_proveedor(pid)
 
@@ -55,7 +52,6 @@ def test_eliminar_proveedor():
     assert eliminar_proveedor(pr["id"]) is True
     assert len(proveedores) == n - 1
     assert prov_por_id(pr["id"]) is None
-    # eliminar inexistente
     assert eliminar_proveedor("noexiste123") is False
 
 
@@ -72,11 +68,8 @@ def test_ventas_por_dia():
     for entry in data:
         assert "fecha" in entry and "total" in entry
         assert isinstance(entry["total"], (int, float))
-    # por defecto 7
     assert len(ventas_por_dia()) == 7
-    # custom dias
     assert len(ventas_por_dia(3)) == 3
-    # ultimo dia debe incluir ventas de hoy si hay
     from datetime import date
     hoy = date.today().isoformat()
     assert data[-1]["fecha"] == hoy
@@ -86,7 +79,6 @@ def test_stock_stats():
     s = stock_stats()
     assert "ok" in s and "bajo" in s and "agotado" in s
     assert s["ok"] + s["bajo"] + s["agotado"] == len(productos)
-    # verificar tipos
     assert all(isinstance(v, int) for v in s.values())
 
 
@@ -95,9 +87,8 @@ def test_ventas_por_mes():
     assert len(data) == 6
     for entry in data:
         assert "mes" in entry and "total" in entry
-        assert len(entry["mes"]) == 7  # YYYY-MM
+        assert len(entry["mes"]) == 7
         assert "-" in entry["mes"]
-    # custom
     assert len(ventas_por_mes(3)) == 3
     assert len(ventas_por_mes()) == 6
 
@@ -109,7 +100,6 @@ def test_ganancia_por_mes():
         assert "mes" in e and "ganancia" in e
 
 
-# ─── Screen test (mock Page) ────────────────────────────────────────────
 
 class MockPage:
     def __init__(self):
@@ -139,23 +129,16 @@ def test_pantalla_proveedores_build():
     s = PantallaProveedores(page)
     built = s.build()
     assert built is not None
-    # verificar que tiene tabla y campos
     assert hasattr(s, "tabla_datos")
     assert hasattr(s, "campo_nombre")
     assert hasattr(s, "campo_telefono")
     assert hasattr(s, "campo_email")
     assert hasattr(s, "campo_rubro")
-    # columnas
     assert len(s.tabla_datos.columns) == 5
-    # actualizar no debe crashear
     s.actualizar()
-    # filtrar
-    s.campo_buscar.value = "Sur"
-    s.filtrar_datos()
+    s._al_buscar_evento(SimpleNamespace(data="Sur"))
     assert len(s.tabla_datos.rows) >= 1
-    s.campo_buscar.value = "noexisteXYZ123"
-    s.filtrar_datos()
-    # debe mostrar Sin resultados
+    s._al_buscar_evento(SimpleNamespace(data="noexisteXYZ123"))
     assert len(s.tabla_datos.rows) == 1
 
 
@@ -164,7 +147,6 @@ def test_pantalla_proveedores_crud_dialogs():
     page = MockPage()
     s = PantallaProveedores(page)
     s.build()
-    # guardar nuevo via campos
     n = len(proveedores)
     s.campo_nombre.value = "Prov Test Dialog"
     s.campo_telefono.value = "3510001111"
@@ -174,21 +156,15 @@ def test_pantalla_proveedores_crud_dialogs():
     assert len(proveedores) == n + 1
     pr = proveedores[-1]
     assert pr["nombre"] == "Prov Test Dialog"
-    # cleanup
     eliminar_proveedor(pr["id"])
-    # probar editar_proveedor dialog open
     s.editar_proveedor("pr1")
-    # debe haber abierto dialog via page.open
     assert len(page._opened) >= 1
-    # cerrar
     dlg = page._opened[-1]
     s.cerrar_dialogo(dlg)
     assert dlg.open is False
-    # probar eliminar dialog
     prev_opened = len(page._opened)
     s.eliminar_proveedor("pr2")
     assert len(page._opened) > prev_opened
-    # mostrar alerta usa snack_bar
     s.mostrar_alerta("Test alerta")
     assert page.snack_bar is not None
 
@@ -198,18 +174,13 @@ def test_pantalla_proveedores_search_multifield():
     page = MockPage()
     s = PantallaProveedores(page)
     s.build()
-    # buscar por rubro
     s.campo_buscar.value = "Bebidas"
     s.filtrar_datos()
-    # debe encontrar Bebidas Norte
     found = any("Bebidas" in str(row.cells[3].content.value) for row in s.tabla_datos.rows if len(row.cells) >= 4)
-    # fallback: check row count
     assert len(s.tabla_datos.rows) >= 1
-    # buscar por email
     s.campo_buscar.value = "distrisur"
     s.filtrar_datos()
     assert len(s.tabla_datos.rows) >= 1
-    # buscar por telefono
     s.campo_buscar.value = "351423"
     s.filtrar_datos()
     assert len(s.tabla_datos.rows) >= 1

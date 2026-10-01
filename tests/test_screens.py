@@ -45,7 +45,6 @@ def test_build_screens():
         s = Cls(page)
         built = s.build()
         assert built is not None
-        # actualizar no debe crashear
         try:
             s.actualizar()
         except Exception as e:
@@ -58,7 +57,6 @@ def test_dimensionamiento_expand():
     for Cls in [PantallaDashboard, PantallaStock]:
         s = Cls(page)
         b = s.build()
-        # root debe ser Column expand=True
         assert getattr(b, "expand", None) is True or getattr(s, "expand", None) is True
 
 def test_dialog_api_028():
@@ -67,8 +65,5 @@ def test_dialog_api_028():
     from screens.stock import PantallaStock
     s = PantallaStock(page)
     s.build()
-    # verificar que mostrar_alerta usa page.snack_bar o page.open, no overlay directo para SnackBar
-    # Simular mostrar_alerta
     s.mostrar_alerta("test")
-    # debe haber snack_bar seteado
     assert page.snack_bar is not None or len(page.overlay) > 0

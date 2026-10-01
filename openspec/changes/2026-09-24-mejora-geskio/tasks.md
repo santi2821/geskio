@@ -5,7 +5,7 @@
 - [x] 0.1 Crear objetivo explícito para mejorar GesKio con alcance por ciclos.
 - [x] 0.2 Guardar ref Git del estado versionado sucio sin mover la rama ni limpiar archivos.
 - [x] 0.3 Hacer revisiones independientes de UI, reglas de negocio y roadmap IA.
-- [ ] 0.4 Comparar código actual con las especificaciones activas; registrar deltas intencionales y corregir docs obsoletas (landing reconciliada; especificaciones de módulos pendientes).
+- [x] 0.4 Comparar código actual con las especificaciones activas; registrar deltas intencionales y corregir docs obsoletas.
 - [x] 0.5 Añadir una rutina repetible `python -m unittest discover -s tests -v`, con datos aislados y sin tocar el JSON del usuario.
 
 ## Fase 1 — Datos fiables antes de uso real
@@ -14,20 +14,27 @@
 - [x] 1.2 Rechazar cantidades no positivas, stock insuficiente, producto inexistente y fiado sin cliente al crear una venta.
 - [x] 1.3 Validar pagos de fiado para impedir importes negativos, no finitos o superiores al saldo.
 - [x] 1.4 Bloquear borrado de cliente con historial; una opción de archivo queda pendiente de decisión de producto.
-- [ ] 1.5 Guardar costo/precio unitarios en ventas para mantener el historial; migrar datos demo con cuidado.
+- [x] 1.5 Guardar el costo unitario registrado en cada venta y migrar datos demo v1 sin inventar costos históricos.
 - [x] 1.6 Implementar persistencia local JSON versionada para la demo: carga al iniciar, guardado atómico al mutar datos y semilla de ejemplo solo cuando no existe archivo.
 - [x] 1.7 Verificar reinicio entre procesos, archivo malformado/versión desconocida y recuperación con ruta temporal; definir backups antes de aceptar datos reales.
 - [x] 1.8 Impedir ventas con productos eliminados, precios o stock desactualizados; conservar clientes con historial y rechazar pagos de fiado no finitos o fuera de saldo.
 
 ## Fase 2 — UI y funciones principales, sin IA
 
-- [ ] 2.1 Auditar Caja en ventana 1100×700 y tamaño estrecho: producto, carrito, total, medio de pago, cobrar, deshacer y errores.
-- [ ] 2.2 Reordenar Stock alrededor de buscar/estado/acciones; ofrecer movimiento de stock comprensible y edición validada.
-- [ ] 2.3 Hacer Clientes y Fiado más legibles con historial y estado de deuda/pago claros.
-- [ ] 2.4 Corregir periodos, contexto de cifras, jerarquía y acciones del Dashboard.
+- [x] 2.1 Auditar Caja en ventana 1100×700 y tamaño estrecho: producto, carrito, total, medio de pago, cobrar, deshacer y errores.
+- [x] 2.2 Reordenar Stock alrededor de buscar/estado/acciones; ofrecer movimiento de stock comprensible y edición validada.
+- [x] 2.3 Hacer Clientes y Fiado más legibles con historial y estado de deuda/pago claros.
+- [x] 2.4 Corregir periodos, contexto de cifras, jerarquía y acciones del Dashboard.
 - [ ] 2.5 Organizar Ajustes por Apariencia, Comercio, Datos y Accesibilidad; definir persistencia para cada preferencia.
 - [ ] 2.6 Revisar controles con teclado/mouse, etiquetas accesibles, estados vacíos/errores y claro/oscuro.
 - [x] 2.7 Reconciliar CSS/JS del sitio y las afirmaciones de landing con comportamiento y distribución existentes.
+- [x] 2.8 Historial de ventas con filtros, detalle histórico y total del conjunto filtrado.
+- [x] 2.9 Mejorar Caja con vuelto, edición de cantidades y validación de stock acumulado.
+- [x] 2.10 Presentar ventas del día por medio y abonos de fiado como cobros separados.
+- [x] 2.11 Elegir datos de ejemplo o inicio vacío cuando todavía no hay un archivo local.
+- [x] 2.12 Guardar y mostrar el historial de abonos de fiado con fecha e instrumento de cobro.
+- [x] 2.13 Registrar ajustes, ventas y anulaciones en el historial de movimientos de stock.
+- [x] 2.14 Migrar el estado y los respaldos v1/v2 a v3 sin inventar detalles de abonos ni movimientos históricos.
 
 ## Fase 3 — Asistente generativo y Jev para decisiones
 
@@ -38,9 +45,10 @@
 - [ ] 3.5 Sugerencias por campo con procedencia/confianza/aceptar/editar/descartar; costo, precio y stock vacíos si no existe una fuente confiable.
 - [ ] 3.6 Playground declarativo para series/gráficas sobre consultas permitidas; sin código arbitrario, mutaciones ni acceso a archivos.
 - [ ] 3.7 Ajustes: separar Apariencia, Comercio, Datos, Accesibilidad e IA; cada opción con consumidor, valor inicial y persistencia definida.
-- [ ] 3.8 Aprobar historial del chat, permisos/retención, controles de privacidad y comportamiento sin red antes de persistir prompts o enviar datos.
+- [x] 3.8 Mantener historial efímero, pedir permiso antes de cada sesión remota y permitir borrar el chat; sin clave, no enviar consultas ni exigir permiso externo.
 - [x] 3.9 Usar un modelo conversacional concreto (`openai/gpt-6-luna`) por defecto en Chat; conservar `OPENROUTER_MODEL` como override y separar la identidad del asistente del modelo Jev de TypeSafe.
-- [ ] 3.10 Prototipar Jev (TypeSafe System One) con contrato typed y fake offline; evaluar la API Alpha `/api/alpha/decisions` para clasificación/enrutamiento solo tras una evaluación local útil.
+- [x] 3.10a Crear contrato de decisión tipado y clasificador fake/offline para intents allowlisted; enrutar el fallback local y evaluar casos curados sin red.
+- [ ] 3.10b Evaluar la API Alpha `/api/alpha/decisions` para clasificación/enrutamiento solo después de medir preguntas anonimizadas, confirmar acceso y decidir habilitar ese provider.
 
 ## Cierre de cada ciclo
 
@@ -48,9 +56,18 @@
 - [ ] Limitar cambios a las rutas declaradas; revisar diff frente a checkpoint.
 - [ ] Validar las rutas felices, errores y recuperación de ese cambio.
 - [ ] Pedir review a un agente en solo lectura y resolver hallazgos antes del siguiente ciclo.
-- [ ] Registrar qué quedó implementado, qué se verificó y qué sigue siendo una limitación.
+- [x] Registrar qué quedó implementado, qué se verificó y qué sigue siendo una limitación (bitácora del ciclo 15 y `docs/oportunidades-mejora-2026-10-01.md`).
 
 ## Bitácora de ciclos
+
+### Ciclo 15 — Mejoras funcionales de ventas, inventario y deuda
+
+- Se implementaron los seis frentes del informe del 1 de octubre y se actualizaron README y documentación de oportunidades.
+- El JSON pasó a v3: conserva saldos previos de fiado como `pagado_sin_detalle`; añade el historial de abonos, configuración de primer inicio y libro de movimientos. Restauración y exportación incluyen esos datos.
+- Se actualizaron las expectativas de versión en las pruebas existentes y el entorno pytest sigue aislando el JSON y el provider. Se agregaron siete pruebas de regresión para migración v2, abonos, movimientos, inicio vacío, control de Caja y resumen diario.
+- Verificación: `python -m pytest -q -W error::DeprecationWarning` — 105 pasaron; `python -m compileall -q app tests`, disponibilidad de las APIs/iconos Flet utilizados y `git diff --check` también pasan.
+- Smoke Flet de escritorio, con JSON temporal: se recorrieron bienvenida, Dashboard diario, historial y detalle de ventas, pantalla de abonos y Caja. Se confirmó que «Cobrar» ocupa el ancho disponible; no se registraron ventas ni pagos. El selector real de archivos se cubre fuera del alcance de este ciclo.
+- Queda pendiente revisar visualmente los filtros en uso, el vuelto, un pago nuevo, Movimientos y ancho compacto; también una auditoría integral de teclado/lector de pantalla. El checkpoint conserva el estado anterior a las ediciones en `%TEMP%\geskio-before-20261001-025239`.
 
 ### Ciclo 1 — Validación de productos
 
@@ -163,3 +180,49 @@
 - Verificación: suite completa, 35 tests OK; `python -m compileall -q app tests` y `git diff --check` OK (avisos Git de normalización LF/CRLF en archivos existentes). Los tests HTTP y UI verifican el modelo predeterminado y el fallback cuando el override está vacío. Sin clave no se hizo llamada externa.
 - Revisión de plan/modelo: confirmó la separación entre chat generativo, clasificación estructurada, transcripción de audio y DSL de Playground; validó el encaje de consultas allowlisted y fallback local.
 - Checkpoint de cierre: `refs/codex/checkpoints/geskio-cycle-9-chat-model-jev-roadmap` (índice alterno; rama e índice real preservados).
+
+### Ciclo 10 — Sincronización y mejoras integrales en `codex/geskio-complete`
+
+- Base: `origin/main` sincronizado en `36780104fffec9cd8bf146f8d2e8ba08faa9e1aa`; rama creada para este ciclo. Checkpoint previo: `refs/codex/checkpoints/geskio-complete-before-core`.
+- Datos: versión 2 del JSON guarda el costo de cada línea nueva; la migración v1 conserva margen histórico como desconocido. Dashboard, Chat y snapshot remoto excluyen las ventas heredadas sin costo verificable.
+- Recuperación: copias JSON manuales, límite de 16 MB tanto al exportar como al leer, lectura validada, reemplazo atómico, previsualización y confirmación antes de restaurar. Se conserva la ubicación local y se avisa que las copias incluyen teléfonos y saldos.
+- Chat: modo local sin red ni consentimiento de OpenRouter; modo externo con clave requiere autorización. Si el provider falla, la respuesta identifica el fallback local sin mostrar detalles privados. La interfaz identifica la demo, usa tokens para claro/oscuro y permite borrar borradores/historial; se evita la etiqueta engañosa «En vivo».
+- Calidad adicional: se corrigió la búsqueda de proveedores para usar el valor más reciente del evento Flet y se reemplazaron APIs deprecadas de Flet en componentes editados; landing, README y guía de OpenRouter describen las funciones reales.
+- Pruebas: `python -m pytest -q -W error::DeprecationWarning` — 84 pasaron, incluidas migración, margen histórico, backups, límite de tamaño, rollback, privacidad del Chat, modo local, consentimiento remoto y controles de Ajustes. `tests/conftest.py` usa JSON temporal y elimina cualquier clave de provider para la suite.
+- Recorrido Flet: las ocho pantallas renderizan; tema claro/oscuro cambia y se puede restaurar; Ajustes hace scroll a 900×600 y mantiene visibles los controles. El selector/descarga de archivo real del navegador no quedó comprobado en el navegador integrado; los métodos de escritorio/web están cubiertos con el FilePicker simulado.
+- Sigue pendiente el ancho compacto en Caja y la auditoría completa de teclado/lector de pantalla. Voz requiere decidir una solución de transcripción y consentimiento de micrófono; sugerencias necesitan una fuente de datos confiable; Jev Alpha y un Playground mayor requieren evaluación de producto y límites. No se conectó ningún provider ni se enviaron datos reales.
+
+### Ciclo 11 — Caja adaptable, carrito visible y auditoría de cierre
+
+- Alcance: `app/screens/caja.py`, `app/widgets.py`, `app/theme.py`, `openspec/specs/design-tokens/spec.md`, `tests/test_caja.py`, `tests/test_dimensionamiento.py`, `tests/test_responsive_frame.py` y esta bitácora.
+- Caja usa filas responsivas para apilar controles en móvil; el carrito visible es un `ListView` acotado que crece con sus artículos; se retiró la lista invisible de compatibilidad. Cantidad conserva su etiqueta completa, el botón Agregar mantiene ancho legible y quitar un artículo anuncia su nombre.
+- El marco usa ancho/alto reales de `Page`, se suscribe a `on_resize` y conserva cualquier callback previo; el encabezado oculta la fecha larga en ventanas estrechas.
+- Verificación visual Flet al iniciar a 1100×700 y 390×844: barra lateral expandida/compacta, campos y botón sin recortes, y total/Cobrar accesibles al desplazar. `test_responsive_frame.py` simula los eventos de resize. La sesión local persistió solo en un JSON temporal.
+- Los tests de pantalla ejecutan agregar/acumular/quitar, errores de cantidad/stock/precio, fiado sin cliente, cobro y deshacer con datos temporales. La interfaz integrada mostró las pantallas y abrió el selector, pero el control remoto de navegador no envió el evento del botón Agregar; ese límite se cubrió con el test aislado de flujo de Caja.
+- Verificación completa: `python -m pytest -q -W error::DeprecationWarning` — 90 pasaron; `python -m compileall -q app tests` y `git diff --check` pasan. No se registra una venta real.
+
+### Ciclo 12 — Reconciliación del alcance visual ya implementado
+
+- Revisión de `stock.py`, `clientes.py`, `fiado.py`, `dashboard.py`, `widgets.py` y la suite confirma que los trabajos 2.2–2.4 ya estaban implementados por ciclos anteriores: búsqueda/filtro/paginación y edición/movimiento validado; deudas con importes pagados/pendientes, antigüedad y estado; periodos del Dashboard con margen de costos registrados y alertas limitadas.
+- Se actualizaron las casillas pendientes para que el roadmap no presente como faltantes funciones existentes. El Dashboard excluye las ventas antiguas sin costo de su margen, según el ciclo 10.
+- Se reconciliaron las especificaciones de shell, tokens, dashboard, tablas y widgets con las APIs, paletas y margen registrados que usa el código. `brand-alignment` distingue las decisiones históricas del contrato actual: copy factual puede cambiar, landing conserva layout/flows, y las mejoras de integridad pueden modificar `datos.py`.
+- Se centralizaron los límites de altura mínima, crecimiento por artículo y altura máxima del carrito en `theme.py`; Caja y sus pruebas usan los mismos tokens.
+- Verificación final tras el pulido: 90 pruebas con `-W error::DeprecationWarning`, compilación de `app` y `tests`, y `git diff --check` sin errores. La base continúa igualada con `origin/main` (`3678010`).
+- No se marcan como terminadas las preferencias sin consumidor definido, la revisión manual integral de accesibilidad/teclado, voz sin proveedor Speech-to-Text elegido, sugerencias sin fuente confiable, Playground ni la evaluación remota de Jev Alpha; requieren decisiones de producto, proveedor o validación que la suite no puede demostrar.
+
+### Ciclo 13 — Contrato local tipado para Jev
+
+- Se implementaron `JevRequest`, `JevDecision`, enums cerrados de intención/periodo/fuente y confianza validada en `app/jev/contract.py`; `app/jev/fake.py` es determinista, no importa la capa de datos y no realiza red ni acciones.
+- El Chat local enruta por las decisiones a sus consultas de solo lectura existentes. Ventas y margen registrado sin periodo solicitan aclaración; las intenciones fuera del catálogo devuelven ejemplos admitidos.
+- Evaluación fija de nueve consultas curadas: 9/9 intenciones y periodos esperados. Es una prueba de implementación, no una medida de precisión con usuarios reales; Jev TypeSafe/OpenRouter Alpha no se conectó.
+- Pruebas añadidas de contrato inmutable, rango de confianza, unknown/clarification y enrutamiento del Chat; la suite completa se repitió tras integrar el cambio.
+
+### Ciclo 14 — Ajustes transparentes para el asistente
+
+- Rama: `codex/geskio-complete`. Checkpoint de respaldo creado fuera del repositorio porque la política rechazó escribir un ref Git: `%TEMP%\geskio-cycle-14-before-settings-20260927-003524` (diff completo del árbol rastreado y copias de los tres archivos Jev nuevos; el índice y los artefactos ajenos quedaron intactos).
+- Alcance: `app/jev/openrouter.py`, `app/screens/ajustes.py`, `app/screens/chat.py`, `tests/test_ajustes.py`, `tests/test_jev.py`, `proposal.md`, `design.md` y esta bitácora.
+- Ajustes ahora explica el modo local/remoto, el modelo activo, que una clave detectada todavía debe validarse, el permiso por sesión, los posibles cargos y las clases de datos que se envían/excluyen. El resumen de configuración no contiene el valor de `OPENROUTER_API_KEY` y sanitiza etiquetas de modelo inválidas; el indicador del Chat usa la misma fuente.
+- Pruebas nuevas comprueban ambos modos de Ajustes, que la clave no aparezca en la UI/objeto de configuración y el uso de modelo predeterminado/override. Smoke visual del Flet en 390×844 confirmó que Asistente y Datos siguen accesibles con scroll.
+- La revisión documental del ciclo corrigió descripciones que seguían diciendo que no había copias manuales y que el margen histórico usaba siempre el costo actual.
+- Verificación completa: 98 pruebas con `-W error::DeprecationWarning`, compilación Python, seis scripts JavaScript y `git diff --check`.
+- Alcance parcial de 2.5/3.7: se agregó la categoría Asistente, pero no se inventaron preferencias de Comercio o Accesibilidad sin consumidores definidos; la revisión manual integral de teclado/lector de pantalla sigue abierta.

@@ -19,7 +19,6 @@
   <link rel="stylesheet" href="../assets/css/pages/funciones.css">
   <script>document.documentElement.classList.add('js');</script>
   <script>
-    // leo el tema guardado o el del sistema, antes de pintar
     (function () {
       var saved = null;
       try { saved = localStorage.getItem('geskio-theme'); } catch (e) {}
@@ -65,7 +64,6 @@
     </section>
 
     <div class="wrap">
-      <!-- ============ CAJA ============ -->
       <article class="modulo" id="caja">
         <div>
           <h2 class="reveal">Caja: cobrás como siempre</h2>
@@ -94,7 +92,6 @@
         </div>
       </article>
 
-      <!-- ============ STOCK ============ -->
       <article class="modulo" id="stock">
         <div class="modulo-mock reveal" role="img" aria-label="Vista del módulo Stock: productos con costo, precio, margen y barras de stock">
           <div class="mock">
@@ -119,7 +116,6 @@
         </div>
       </article>
 
-      <!-- ============ CLIENTES ============ -->
       <article class="modulo" id="clientes">
         <div>
           <h2 class="reveal">Clientes: tu clientela, sin memoria</h2>
@@ -144,7 +140,6 @@
         </div>
       </article>
 
-      <!-- ============ FIADO ============ -->
       <article class="modulo" id="fiado">
         <div class="modulo-mock reveal" role="img" aria-label="Vista del módulo Fiado: dos cuentas con su antigüedad y el cobro por partes">
           <div class="mock">
@@ -167,7 +162,6 @@
         </div>
       </article>
 
-      <!-- ============ DASHBOARD ============ -->
       <article class="modulo" id="dashboard">
         <div>
           <h2 class="reveal">Dashboard: cómo va el negocio</h2>
@@ -194,7 +188,6 @@
         </div>
       </article>
 
-      <!-- ============ CHAT ============ -->
       <article class="modulo" id="chat">
         <div class="modulo-mock reveal" role="img" aria-label="Ejemplo ilustrativo del prototipo Chat; los datos no son reales">
           <div class="mock">
@@ -220,7 +213,6 @@
       </article>
     </div>
 
-    <!-- ============ LA DIFERENCIA ============ -->
     <section class="seccion seccion-soft" id="antes">
       <div class="wrap">
         <div class="cab">
@@ -251,7 +243,6 @@
       </div>
     </section>
 
-    <!-- ============ DÓNDE CORRE Y QUÉ NO HACE ============ -->
     <section class="seccion" id="limites">
       <div class="wrap">
         <div class="cab">
@@ -264,7 +255,7 @@
             <ul class="puntos">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Windows 10 y 11.</strong> Liviana: alcanza la compu del mostrador de siempre.</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Pensada para una pantalla de 1100×700</strong>, como la del mostrador.</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Datos locales en JSON:</strong> la demo guarda los cambios en esta computadora y los vuelve a cargar al iniciar. Todavía no incluye una copia de seguridad guiada; usá datos de prueba.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Datos locales en JSON:</strong> la demo guarda los cambios en esta computadora y los vuelve a cargar al iniciar. Desde Ajustes podés exportar una copia JSON y restaurarla; no hay respaldo automático ni en la nube. Usá datos de prueba.</span></li>
             </ul>
           </div>
           <div class="card reveal" style="--d:.06s">
@@ -276,7 +267,6 @@
       </div>
     </section>
 
-    <!-- ============ CTA ============ -->
     <section class="seccion cta" style="padding-top:0">
       <div class="wrap">
         <div class="cta-caja reveal">
@@ -296,7 +286,7 @@
       <div class="pie-grilla">
         <div>
           <p class="pie-logo">GesKio</p>
-          <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. Los planes de IA siguen en evaluación.</p>
+          <p>Gestión para kioscos, almacenes y despensas: caja, stock, clientes y fiado en una sola pantalla. El asistente local y el uso opcional de OpenRouter se explican en la demo.</p>
         </div>
         <div>
           <h4>Producto</h4>

@@ -1,4 +1,3 @@
-// GesKio — acordeón de preguntas frecuentes
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.faq-item').forEach((item, i) => {
     var btn = item.querySelector('.faq-pregunta');
@@ -26,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // si rota el celular o hay zoom, la altura del panel abierto se recalcula
   window.addEventListener('resize', () => {
     document.querySelectorAll('.faq-item.abierto .faq-respuesta').forEach((resp) => {
       resp.style.maxHeight = resp.scrollHeight + 'px';

@@ -1,4 +1,3 @@
-// GesKio — tema claro/oscuro con persistencia en localStorage
 document.addEventListener('DOMContentLoaded', () => {
   var btn = document.getElementById('temaBtn');
   if (!btn) return;

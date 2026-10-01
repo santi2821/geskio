@@ -29,12 +29,29 @@ from widgets import (
 
 
 def ventas_del_dia(lista_ventas, fecha_iso: str) -> list:
-    # ventas de un dia ISO
     return [v for v in (lista_ventas or []) if v.get("fecha") == fecha_iso]
 
 
+def ventas_por_medio_del_dia(lista_ventas, fecha_iso: str) -> dict:
+    totales = {medio: 0 for medio in ("efectivo", "transferencia", "fiado")}
+    for venta in ventas_del_dia(lista_ventas, fecha_iso):
+        medio = venta.get("pago")
+        if medio in totales:
+            totales[medio] += venta.get("total", 0) or 0
+    return totales
+
+
+def abonos_por_medio_del_dia(lista_cuentas, fecha_iso: str) -> dict:
+    totales = {medio: 0 for medio in ("efectivo", "transferencia")}
+    for cuenta in lista_cuentas or []:
+        for abono in cuenta.get("abonos", []):
+            medio = abono.get("medio_pago")
+            if abono.get("fecha") == fecha_iso and medio in totales:
+                totales[medio] += abono.get("monto", 0) or 0
+    return totales
+
+
 def totales_ultimos_7_dias(lista_ventas, hoy: date) -> list:
-    # totales por dia de los ultimos 7 dias (hoy incluido)
     totales: dict[str, float] = {}
     for v in lista_ventas or []:
         totales[v.get("fecha", "")] = totales.get(v.get("fecha", ""), 0) + (v.get("total", 0) or 0)
@@ -47,7 +64,6 @@ def totales_ultimos_7_dias(lista_ventas, hoy: date) -> list:
 
 
 def totales_mes(lista_ventas, anio: int, mes: int) -> dict:
-    # totales por dia para el mes del calendario
     prefijo = f"{anio:04d}-{mes:02d}-"
     totales: dict[int, float] = {}
     for v in lista_ventas or []:
@@ -83,7 +99,9 @@ class PantallaDashboard(Pantalla):
         hoy_iso = date.today().isoformat()
         entradas = ventas_del_dia(ventas, hoy_iso)
         if not entradas:
-            return ft.Text("Sin ventas hoy", size=FS_14, color=paleta.text_soft)
+            resumen_vacio = ventas_por_medio_del_dia(ventas, hoy_iso)
+            pagos_vacios = abonos_por_medio_del_dia(cuentas, hoy_iso)
+            return self._bloque_cobros_hoy(resumen_vacio, pagos_vacios, "Sin ventas hoy")
         filas: list[ft.Control] = []
         for v in entradas:
             cli = cli_por_id(v.get("cliente_id", ""))
@@ -103,7 +121,37 @@ class PantallaDashboard(Pantalla):
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 )
             )
-        return ft.Column(filas, spacing=SP_8)
+        resumen = ventas_por_medio_del_dia(ventas, hoy_iso)
+        pagos = abonos_por_medio_del_dia(cuentas, hoy_iso)
+        return ft.Column(
+            [self._bloque_cobros_hoy(resumen, pagos), ft.Divider(), *filas],
+            spacing=SP_8,
+        )
+
+    @staticmethod
+    def _bloque_cobros_hoy(ventas_medio, abonos, encabezado_vacio=None):
+        paleta = colores.get()
+        lineas = []
+        if encabezado_vacio:
+            lineas.append(ft.Text(encabezado_vacio, size=FS_14, color=paleta.text_soft))
+        lineas.append(ft.Text("Ventas de hoy por medio de pago", size=FS_14, weight=ft.FontWeight.BOLD))
+        for medio, rotulo in (("efectivo", "Efectivo"), ("transferencia", "Transferencia"), ("fiado", "Fiado")):
+            lineas.append(
+                ft.Row(
+                    [ft.Text(rotulo, size=FS_14), ft.Text(moneda(ventas_medio[medio]), size=FS_14)],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                )
+            )
+        lineas.append(ft.Divider())
+        lineas.append(ft.Text("Abonos de fiado recibidos hoy", size=FS_14, weight=ft.FontWeight.BOLD))
+        for medio, rotulo in (("efectivo", "Efectivo"), ("transferencia", "Transferencia")):
+            lineas.append(
+                ft.Row(
+                    [ft.Text(rotulo, size=FS_14), ft.Text(moneda(abonos[medio]), size=FS_14)],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                )
+            )
+        return ft.Column(lineas, spacing=SP_4)
 
     def _contenido_semana(self) -> ft.Control:
         serie = totales_ultimos_7_dias(ventas, date.today())
@@ -237,7 +285,6 @@ class PantallaDashboard(Pantalla):
         )
         return ft.Column([resumen, *visibles, accesos], spacing=SP_8)
 
-    # ─── build ───────────────────────────────────────────────────────
     def build(self):
         resumen = stats()
         focal_hoy = tarjeta_focal("Hoy", moneda(resumen["hoy"]), rol="text", icono=ft.Icons.TODAY)
@@ -248,7 +295,7 @@ class PantallaDashboard(Pantalla):
             icono=ft.Icons.CALENDAR_MONTH,
         )
         tarjeta_ganancia = tarjeta_stat(
-            "Ganancia estimada del mes",
+            "Margen registrado del mes",
             moneda(resumen["ganancia"]),
             rol="success" if resumen["ganancia"] >= 0 else "danger_text",
             icono=ft.Icons.TRENDING_UP,
@@ -292,8 +339,6 @@ class PantallaDashboard(Pantalla):
             },
         )
 
-        # Container raiz (compat suite main-only: Container expand con Column
-        # interna scroll AUTO) envolviendo el Column de la arquitectura newer.
         return ft.Container(
             content=ft.Column(
                 [
@@ -304,7 +349,12 @@ class PantallaDashboard(Pantalla):
                     ),
                     fila_stats,
                     ft.Text(
-                        "Calculada con costos vigentes; un cambio de costo puede ajustar meses anteriores.",
+                        (
+                            f"Excluye {resumen.get('ventas_sin_costo', 0)} ventas antiguas "
+                            "sin costo registrado."
+                            if resumen.get("ventas_sin_costo", 0)
+                            else "Usa el costo guardado al momento de cada venta."
+                        ),
                         size=FS_12,
                         color=colores.get().text_muted,
                     ),

@@ -2,64 +2,48 @@
 
 ## Purpose
 
-SnowUI table pattern (AD-3) applied to the 3 table screens: `stock`, `clientes`, `fiado` (slice c). Composed chrome — `TableToolbar` + denser `AppTable` + `TablePager` — on top of Flet `DataTable`; `app/datos.py` stays FROZEN; filter/sort/page is view-side.
+Shared table behavior for Stock, Clientes, and Fiado on top of Flet `DataTable`. The current helpers in `app/widgets.py` are `barra_busqueda`, `tabla`, `paginar`, and `paginador`. Filtering, sorting, and page selection stay in the screens; domain data may change when a separately scoped integrity or persistence feature requires it.
 
 ## Requirements
 
-### Requirement: Table Toolbar
+### Requirement: Shared Search and Filter Toolbar
 
-The kit MUST provide `TableToolbar(on_query, chips=(), actions=())` composed of a search field, filter chips, and action buttons. All 3 table screens MUST render it above the table and MUST NOT hand-build ad-hoc toolbar equivalents.
-
-#### Scenario: All table screens share the toolbar
-
-- GIVEN `stock`, `clientes`, and `fiado` render their tables
-- WHEN each table area is inspected
-- THEN each uses the same `TableToolbar` instance pattern (search + chips + actions) with no screen-local toolbar copies
+All three table screens MUST use `barra_busqueda(al_buscar, chips=(), acciones=(), pista=...)` for search and optional filters. Primary actions MAY live in the shared page header.
 
 #### Scenario: Search query feeds the table
 
-- GIVEN the toolbar search field receives text
+- GIVEN the search field receives text
 - WHEN the query changes
-- THEN the table rows re-filter view-side without any `datos.py` modification
+- THEN the visible rows are filtered in the screen without changing the domain data
 
-### Requirement: Dense Table with Fixed Page Size
+### Requirement: Dense Table and Empty State
 
-`AppTable` MUST apply DataTable density knobs (`heading_row_height`, `data_row_min/max_height`, `heading_row_color`, `horizontal_lines`) with a fixed default page size of 10 rows. Screens MUST NOT override the page size. The kit's empty-state row MUST be preserved.
+`tabla()` MUST apply shared DataTable density values (`heading_row_height`, `data_row_min/max_height`, `heading_row_color`, `horizontal_lines`) and MUST render an explicit empty state when there are no rows. `FILAS_POR_PAGINA` MUST remain 10 unless a later product change updates the shared default.
 
-#### Scenario: Page size fixed at 10
+#### Scenario: Page size stays shared
 
-- GIVEN any of the 3 table screens renders data
+- GIVEN any of the three table screens renders data
 - WHEN rows are counted per page
-- THEN at most 10 rows render and no screen overrides `page_size`
+- THEN at most 10 rows render by default and screens do not override the page size
 
-#### Scenario: Density is uniform
+#### Scenario: Empty data is clear
 
-- GIVEN the 3 table screens
-- WHEN their table row/heading heights are compared
-- THEN all resolve to the same `AppTable` density defaults
+- GIVEN a search/filter leaves no rows
+- WHEN the table renders
+- THEN it shows a screen-appropriate empty message and icon instead of a blank table
 
-### Requirement: Table Pager
+### Requirement: Shared Pager
 
-The kit MUST provide `TablePager(page, pages, on_page)` as a composed `ft.Row`: prev/next controls plus an "n de m" indicator. Screens MUST paginate through it and MUST NOT rely on a Flet-native pager (none exists in 0.84.0).
+Screens MUST use `paginar(filas, pagina, por_pagina=...)` for bounded page slicing and `paginador(pagina, paginas, al_paginar)` for previous/next controls and the "n de m" indicator.
 
 #### Scenario: Pager navigates pages
 
-- GIVEN a dataset of 23 rows at 10/page
-- WHEN the user clicks next twice
-- THEN the indicator shows "2 de 3" then "3 de 3" and rows 21–23 render on the last page
+- GIVEN 23 rows and the shared 10-row page size
+- WHEN the user advances twice
+- THEN the indicator reaches "3 de 3" and the last page contains rows 21–23
 
-#### Scenario: Prev is bounded
+#### Scenario: Previous is bounded
 
 - GIVEN the pager is on page 1
-- WHEN prev is invoked
-- THEN the page stays at 1 with no error
-
-### Requirement: View-Side Pagination Pipeline
-
-Filtering, sorting, and pagination MUST be implemented as view-side helpers (filter → sort → paginate). `app/datos.py` MUST remain untouched (gate: `git diff --exit-code -- app/datos.py`).
-
-#### Scenario: Zero datos.py diff
-
-- GIVEN slice c is implemented
-- WHEN `git diff --exit-code -- app/datos.py` runs
-- THEN it exits clean with zero diff
+- WHEN previous is invoked
+- THEN it stays on page 1 without error

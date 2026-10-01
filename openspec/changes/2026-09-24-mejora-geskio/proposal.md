@@ -7,8 +7,8 @@ Convertir GesKio en una app de escritorio clara y confiable para atender un come
 ## Estado observado
 
 - La app Flet ya tiene Dashboard, Caja, Stock, Clientes, Fiado, Chat y Ajustes, pero el árbol de trabajo contiene una reescritura amplia sin commit que requiere reconciliarse con las especificaciones activas.
-- Los datos de la demo ya persisten como JSON versionado bajo la carpeta local del usuario; el archivo no se sincroniza ni incluye un flujo de respaldo/recuperación para uso comercial.
-- La capa de dominio valida ventas contra productos/precios/stock actuales, relaciones de cliente, tipos de pago y pagos de fiado. En este ciclo se cerró el hueco de alta/edición de clientes inválidos que podía bloquear el próximo arranque. La ganancia histórica todavía usa el costo actual del producto.
+- Los datos de la demo persisten como JSON versionado bajo la carpeta local del usuario. Ajustes ofrece exportación y restauración manuales de copias de hasta 16 MB; no hay sincronización ni backup automático, por lo que no se presenta como almacenamiento comercial.
+- La capa de dominio valida ventas contra productos/precios/stock actuales, relaciones de cliente, tipos de pago y pagos de fiado. Las ventas nuevas guardan el costo por línea al cobrar; la migración v1 conserva como desconocido el costo histórico que no se puede reconstruir.
 - El shell, jerarquía del Dashboard, encabezados y Ajustes recibieron una primera revisión visual. Caja/Stock/Clientes/Fiado aún requieren revisar sus flujos interactivos y tamaños estrechos.
 - El Chat generativo integra OpenRouter con `OPENROUTER_API_KEY` y `OPENROUTER_MODEL` opcional; usa `openai/gpt-6-luna` como modelo normal predeterminado. Tras autorización por sesión, envía una consulta, hasta ocho mensajes previos y un snapshot minimizado: periodos, totales diarios, inventario y hasta 50 saldos pendientes por nombre. No incluye ventas individuales, teléfonos, identificadores ni el JSON completo. No guarda las conversaciones al cerrar ni tiene herramientas de escritura.
 - Jev de TypeSafe es un modelo distinto, de decisiones tipadas (Choice/Score/Noul) que no genera prosa de chat. OpenRouter ofrece para Jev una API de decisiones Alpha separada de Chat Completions; queda en el roadmap de clasificación/enrutamiento, no como el modelo de conversación.
@@ -17,7 +17,7 @@ Convertir GesKio en una app de escritorio clara y confiable para atender un come
 ## Prioridad
 
 1. Proteger el estado actual en Git y reconciliar implementación, especificaciones y cambios locales.
-2. Seguir cerrando invariantes financieros y resolver decisiones de respaldo/recuperación más allá de la demo JSON.
+2. Seguir cerrando invariantes financieros y evaluar requisitos de respaldo/recuperación para un futuro uso comercial; la demo ya permite exportar/restaurar copias manualmente.
 3. Completar la revisión interactiva de Caja, Stock, Clientes, Fiado y Dashboard a tamaños amplio y compacto.
 4. Completar Ajustes sin inventar opciones comerciales aún no modeladas; validar foco, teclado y temas.
 5. Validar Chat generativo con una clave/modelo reales; después estabilizar datos para análisis histórico.
@@ -27,7 +27,7 @@ Convertir GesKio en una app de escritorio clara y confiable para atender un come
 
 - Validación en la capa de dominio para productos, ventas y pagos de fiado.
 - Preservación del historial de ventas, saldos y costos/precios al momento de la operación.
-- Persistencia local JSON elegida para la demo: un archivo versionado en la carpeta de datos del usuario, guardado de forma atómica. No es la estrategia para uso comercial prolongado ni incluye sincronización entre equipos.
+- Persistencia local JSON elegida para la demo: un archivo versionado en la carpeta de datos del usuario, guardado de forma atómica. Ajustes ofrece exportación/restauración manual, validadas y con confirmación; no es la estrategia para uso comercial prolongado ni incluye sincronización entre equipos.
 - Revisión visual de escritorio a 1100×700 y otros tamaños; jerarquía, densidad, foco de teclado, errores junto al campo y estados vacíos claros.
 - Ajustes divididos en secciones reconocibles: apariencia, comercio, datos y accesibilidad. Cada preferencia debe indicar si se guarda localmente.
 - Hoja de ruta de IA: modelo generativo normal para Chat ahora; Jev separado para decisiones; voz, sugerencias y Playground después.
@@ -38,7 +38,7 @@ Convertir GesKio en una app de escritorio clara y confiable para atender un come
 - Enviar al provider otros datos que no estén en el snapshot mínimo descrito para Chat.
 - Permitir que la IA cobre, borre, modifique stock o guarde productos sin confirmación explícita.
 - Ejecutar código arbitrario o conceder a Playground acceso ilimitado al equipo.
-- Prometer disponibilidad comercial, instalador, backups o retención que todavía no existan.
+- Prometer disponibilidad comercial, instalador, backup automático o retención que todavía no existan.
 
 ## Criterios de éxito
 

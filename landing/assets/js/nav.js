@@ -1,4 +1,3 @@
-// GesKio — menú mobile, scrollspy y año del footer
 document.addEventListener('DOMContentLoaded', () => {
   var menuBtn = document.getElementById('menuBtn');
   var links = document.getElementById('links');
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // scrollspy: marca la sección visible (solo donde existan data-spy)
   var secciones = document.querySelectorAll('[data-spy]');
   var anclas = links ? Array.from(links.querySelectorAll('a[href^="#"]')) : [];
   if (secciones.length && anclas.length && 'IntersectionObserver' in window) {
@@ -46,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     secciones.forEach((s) => io.observe(s));
   }
 
-  // año del footer
   var anio = document.getElementById('anio');
   if (anio) anio.textContent = new Date().getFullYear();
 });

@@ -1,6 +1,4 @@
-/* GesKio — animaciones compartidas */
 
-/* aparición al hacer scroll (activa reveal.js) */
 html.js .reveal {
   opacity: 0;
   transform: translateY(18px);
@@ -9,7 +7,6 @@ html.js .reveal {
 }
 html.js .reveal.in { opacity: 1; transform: none; }
 
-/* flotación suave para el mock del hero */
 @keyframes flotar {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
@@ -20,7 +17,6 @@ html.js .reveal.in { opacity: 1; transform: none; }
   50% { opacity: .45; }
 }
 
-/* puntos de red de fondo del hero */
 @keyframes nube-a {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(24px, -18px) scale(1.06); }

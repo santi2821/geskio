@@ -1,4 +1,4 @@
-# Activar JEV Chat con OpenRouter
+# Chat conversacional con OpenRouter
 
 El Chat de GesKio usa un modelo generativo normal, `openai/gpt-6-luna`, a través de OpenRouter. `OPENROUTER_MODEL` permite elegir otro modelo de texto compatible; si falta, se conserva GPT-6 Luna. Esto no usa el modelo Jev de TypeSafe, que devuelve decisiones tipadas y no texto conversacional.
 
@@ -23,7 +23,9 @@ finally {
 }
 ```
 
-Cada consulta envía a OpenRouter el texto, hasta ocho mensajes previos y un resumen limitado de ventas, inventario y saldos. Los teléfonos, IDs y el archivo JSON completo quedan fuera. El modelo y la cuenta de OpenRouter pueden tener cargos o límites propios. Si falta la clave, el Chat muestra el paso de configuración; el resto de GesKio permanece disponible.
+Sin `OPENROUTER_API_KEY`, el chat responde con reglas locales sencillas; no usa una IA generativa ni envía consultas por internet. La casilla de consentimiento remoto permanece oculta y se puede usar el modo local sin permiso para compartir datos.
+
+Con una clave configurada, cada consulta remota requiere marcar el permiso explícito en el Chat. Se envían el texto, hasta ocho mensajes previos y un resumen limitado de ventas, inventario y saldos. Los teléfonos, IDs y el archivo JSON completo quedan fuera. Al desmarcar el permiso, no se envían nuevas consultas; el botón para borrar la conversación elimina el historial efímero de la sesión. El modelo y la cuenta de OpenRouter pueden tener cargos o límites propios.
 
 ## Jev de TypeSafe (roadmap separado)
 

@@ -4,6 +4,10 @@
 
 Convergence between the Flet app and the landing site, plus normalization of copy-paste drift found in exploration. Decisions: D2 (red primary, green semantic), D4 (landing in scope for token alignment), D5 (per-screen slices, auto-chain, 800-line review budget). Research 04 (CRM) contributes zero patterns in v1.
 
+## Current Implementation Reconciliation
+
+The requirements below record the original UI exploration. For the current application, the implemented red/green light/dark palettes in `app/theme.py` are authoritative; exact 1:1 hex parity with landing CSS is not assumed for alternate brands or custom accents. The landing keeps its existing layout and interactions, while truthful copy may be updated when product capabilities change. Shared Flet component names are documented in `widget-kit/spec.md`. The old fixed branch/base-commit, 800-line budget, and `app/datos.py`-must-never-change instructions are historical delivery constraints, not current product requirements; scoped data-integrity work may change that module.
+
 ## Requirements
 
 ### Requirement: App–Landing Token Convergence (D2, D4)
@@ -24,7 +28,7 @@ Convergence between the Flet app and the landing site, plus normalization of cop
 
 ### Requirement: Drift Normalization
 
-The change MUST normalize the exploration drifts: `column_spacing` 16→12 (clientes), `Divider` heights (dashboard 20 vs fiado 4 → one standard via tokens), cart radius 8→12, and the `fiado.py` title `Cuenta Corriente` → nav name `Fiado`.
+The shared implementation MUST normalize visual drift through named tokens and helpers. The current app uses a compact 10px card/field radius, 12px table spacing, shared divider tokens, and `Fiado` as the account screen name.
 
 #### Scenario: Spacing inconsistency eliminated
 
@@ -40,7 +44,7 @@ The change MUST normalize the exploration drifts: `column_spacing` 16→12 (clie
 
 ### Requirement: Landing No Regression
 
-Landing changes MUST NOT alter existing behavior: navbar blur/scrolled state, mobile drawer, theme toggle with `localStorage geskio-theme` persistence, reveal observer, marquee, contact form flow, footer year. The landing revert MUST remain a single-commit change (CSS-var-only diff).
+Landing changes MUST preserve existing behavior: navbar blur/scrolled state, mobile drawer, theme toggle with `localStorage geskio-theme` persistence, reveal observer, marquee, contact form flow, and footer year. Factual copy may be corrected without changing those flows or the page layout.
 
 #### Scenario: Landing behaviors survive
 
@@ -66,26 +70,25 @@ Landing changes MUST NOT alter existing behavior: navbar blur/scrolled state, mo
 
 ### Requirement: Sliced Delivery Budget (D5)
 
-Implementation MUST be delivered as shell-first slices a–d under auto-chain on `feat/ui-figma-v2` (`base-primer-commit` frozen), each ≤800 review lines, in the order: (a) shell + token extension + adapter; (b) dashboard stats + calendar; (c) tables (stock/clientes/fiado); (d) caja + chat. Tokens MUST stay isolated in `theme.py`; each slice MUST be independently revertible; every slice MUST gate on `git diff --exit-code -- app/datos.py` and preserve V2-D5 fixes (sync_text, on_select, AA roles, `:focus-visible`, AppDialog, feedback).
-(Previously: per-screen slices ordered theme.py → widgets.py → dashboard → caja/stock → clientes/fiado → chat + landing.)
+Implementation changes MUST be scoped, reviewable, and covered by tests appropriate to the change. Data-model changes MUST preserve migration, rollback, and persistence guarantees; they are allowed when required by data-integrity work. Branch names, commit boundaries, and delivery order are selected per task.
 
-#### Scenario: Slice budget enforced
+#### Scenario: Scoped change is reviewed
 
-- GIVEN any implementation slice
+- GIVEN any implementation change
 - WHEN its changed-lines are counted
-- THEN the total is ≤800; if one slice exceeds the budget, it is split or rejected, never merged over budget
+- THEN its touched routes and rationale are documented, and large changes are separated into reviewable parts
 
-#### Scenario: Token isolation enables rollback
+#### Scenario: Token source stays centralized
 
-- GIVEN a defective screen slice
-- WHEN it is reverted
-- THEN `theme.py` and other migrated screens are unaffected
+- GIVEN a screen uses shared palette or geometry styles
+- WHEN those styles are changed
+- THEN shared roles and dimensions remain defined in `theme.py`
 
-#### Scenario: datos.py frozen per slice
+#### Scenario: Data change is covered
 
-- GIVEN slice a, b, c, or d lands
-- WHEN `git diff --exit-code -- app/datos.py` runs
-- THEN it exits clean with zero diff
+- GIVEN a scoped change modifies `app/datos.py`
+- WHEN the change is reviewed
+- THEN migration, persistence, validation, and rollback behavior are tested as applicable
 
 ### Requirement: Parity Trace Extended to New Roles
 

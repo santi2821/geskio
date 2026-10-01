@@ -1,6 +1,4 @@
-/* GesKio — página: home */
 
-/* ---------- Hero ---------- */
 .hero { position: relative; padding: 96px 0 84px; overflow: hidden; }
 .hero-nube {
   position: absolute; border-radius: 50%; filter: blur(70px);
@@ -35,7 +33,6 @@
 
 .hero-mock .mock { animation: flotar 7s ease-in-out infinite; }
 
-/* ---------- Funciones ---------- */
 .funciones .card { padding: 24px; }
 .funciones .card p { margin-bottom: 14px; }
 .card-link {
@@ -44,7 +41,6 @@
 }
 .card-link:hover { text-decoration: underline; }
 
-/* ---------- Pasos ---------- */
 .pasos-grilla {
   position: relative; z-index: 0;
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
@@ -64,11 +60,9 @@
   z-index: -1;
 }
 
-/* ---------- Próximamente ---------- */
 .prox .card .chip { margin-bottom: 14px; }
 .prox .card h3 { margin-bottom: 8px; }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .hero-grilla { grid-template-columns: 1fr; gap: 48px; }
   .pasos-grilla { grid-template-columns: 1fr; gap: 36px; }

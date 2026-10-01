@@ -9,7 +9,6 @@ import platform
 import tempfile
 import uuid
 
-# datos en memoria (demo); aca van productos, clientes, ventas y cuentas de fiado
 productos = [
     {
         "id": "p1",
@@ -125,8 +124,13 @@ proveedores = [
 
 ventas = []
 cuentas = []
+movimientos_stock = []
 
-_VERSION_ESTADO = 1
+COMERCIO_INICIALIZADO = False
+MODO_COMERCIO = "demo"
+
+_VERSION_ESTADO = 3
+MAX_BYTES_RESPALDO = 16 * 1024 * 1024
 _PERSISTENCIA_ACTIVA = False
 
 
@@ -154,35 +158,50 @@ def _estado_actual():
         "proveedores": proveedores,
         "ventas": ventas,
         "cuentas": cuentas,
+        "movimientos_stock": movimientos_stock,
+        "inicio": {"seleccionado": COMERCIO_INICIALIZADO, "modo": MODO_COMERCIO},
     }
 
 
-def _guardar_estado():
-    datos = {"version": _VERSION_ESTADO, **_estado_actual()}
+def _escribir_bytes_atomico(destino, contenido):
+    destino = Path(destino).expanduser()
     temporal = None
     try:
-        RUTA_ARCHIVO_DATOS.parent.mkdir(parents=True, exist_ok=True)
+        destino.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            newline="\n",
-            dir=RUTA_ARCHIVO_DATOS.parent,
-            prefix=f".{RUTA_ARCHIVO_DATOS.name}.",
+            mode="wb",
+            dir=destino.parent,
+            prefix=f".{destino.name}.",
             suffix=".tmp",
             delete=False,
         ) as archivo:
             temporal = Path(archivo.name)
-            json.dump(datos, archivo, ensure_ascii=False, indent=2, allow_nan=False)
-            archivo.write("\n")
+            archivo.write(contenido)
             archivo.flush()
             os.fsync(archivo.fileno())
-        os.replace(temporal, RUTA_ARCHIVO_DATOS)
-    except (OSError, TypeError, ValueError) as ex:
+        os.replace(temporal, destino)
+    except OSError:
         if temporal is not None:
             try:
                 temporal.unlink(missing_ok=True)
             except OSError:
                 pass
+        raise
+
+
+def _serializar_estado(estado):
+    datos_a_guardar = dict(estado)
+    datos_a_guardar["version"] = _VERSION_ESTADO
+    return (
+        json.dumps(datos_a_guardar, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    ).encode("utf-8")
+
+
+def _guardar_estado(estado=None):
+    datos_a_guardar = estado if estado is not None else _estado_actual()
+    try:
+        _escribir_bytes_atomico(RUTA_ARCHIVO_DATOS, _serializar_estado(datos_a_guardar))
+    except (OSError, TypeError, ValueError) as ex:
         raise RuntimeError(
             f"No se pudieron guardar los datos de la demo en {RUTA_ARCHIVO_DATOS}: {ex}"
         ) from ex
@@ -190,6 +209,117 @@ def _guardar_estado():
 
 def _rechazar_constante_json(valor):
     raise ValueError(f"Constante JSON inválida: {valor}")
+
+
+def _migrar_estado(datos):
+    """Migra estados previos sin inventar costos ni movimientos históricos."""
+    if not isinstance(datos, dict):
+        raise ValueError("versión o estructura del archivo no compatible")
+    version = datos.get("version")
+    if type(version) is not int:
+        raise ValueError("versión o estructura del archivo no compatible")
+    if version == _VERSION_ESTADO:
+        return datos, False
+    if version not in (1, 2):
+        raise ValueError("versión o estructura del archivo no compatible")
+
+    migrado = deepcopy(datos)
+    if version == 1:
+        ventas_v1 = migrado.get("ventas")
+        if isinstance(ventas_v1, list):
+            for venta in ventas_v1:
+                if not isinstance(venta, dict):
+                    continue
+                items = venta.get("items")
+                if not isinstance(items, list):
+                    continue
+                for item in items:
+                    if isinstance(item, dict):
+                        item.setdefault("costo", None)
+    for cuenta in migrado.get("cuentas", []):
+        if isinstance(cuenta, dict):
+            cuenta.setdefault("abonos", [])
+            cuenta.setdefault("pagado_sin_detalle", cuenta.get("pagado", 0))
+    migrado.setdefault("movimientos_stock", [])
+    migrado["inicio"] = {"seleccionado": True, "modo": "demo"}
+    migrado["version"] = _VERSION_ESTADO
+    return migrado, True
+
+
+def serializar_respaldo():
+    """Devuelve una copia validada del estado actual en formato JSON v3."""
+    estado = {"version": _VERSION_ESTADO, **deepcopy(_estado_actual())}
+    _validar_estado(estado)
+    contenido = _serializar_estado(estado)
+    if len(contenido) > MAX_BYTES_RESPALDO:
+        raise ValueError("La copia supera el límite de 16 MB")
+    return contenido
+
+
+def leer_respaldo(contenido):
+    """Valida y normaliza un respaldo v1/v2/v3 sin modificar datos ni archivos."""
+    if isinstance(contenido, str):
+        contenido = contenido.encode("utf-8")
+    if not isinstance(contenido, (bytes, bytearray)):
+        raise ValueError("El respaldo no contiene un archivo JSON válido")
+    if len(contenido) > MAX_BYTES_RESPALDO:
+        raise ValueError("El respaldo supera el límite de 16 MB")
+    try:
+        texto = bytes(contenido).decode("utf-8-sig")
+        estado = json.loads(texto, parse_constant=_rechazar_constante_json)
+        estado, _ = _migrar_estado(estado)
+        _validar_estado(estado)
+        return estado
+    except (UnicodeError, json.JSONDecodeError, TypeError, ValueError, OverflowError) as ex:
+        raise ValueError(f"El respaldo no es compatible o está dañado: {ex}") from ex
+
+
+def leer_respaldo_archivo(ruta):
+    ruta = Path(ruta).expanduser()
+    try:
+        with ruta.open("rb") as archivo:
+            contenido = archivo.read(MAX_BYTES_RESPALDO + 1)
+        return leer_respaldo(contenido)
+    except OSError as ex:
+        raise ValueError(f"No se pudo leer el respaldo: {ex}") from ex
+
+
+def exportar_respaldo(ruta):
+    contenido = serializar_respaldo()
+    try:
+        _escribir_bytes_atomico(ruta, contenido)
+    except OSError as ex:
+        raise RuntimeError(f"No se pudo guardar la copia de respaldo: {ex}") from ex
+    return Path(ruta).expanduser()
+
+
+def restaurar_respaldo(estado):
+    """Reemplaza el estado tras validar y escribir el archivo de forma atómica."""
+    global _PERSISTENCIA_ACTIVA
+    candidato = deepcopy(estado)
+    candidato, _ = _migrar_estado(candidato)
+    _validar_estado(candidato)
+    _guardar_estado(candidato)
+    for clave, filas in candidato.items():
+        if clave not in _estado_actual():
+            continue
+        actual = _estado_actual()[clave]
+        if isinstance(actual, list):
+            actual[:] = filas
+        elif isinstance(actual, dict):
+            actual.clear()
+            actual.update(filas)
+    global COMERCIO_INICIALIZADO, MODO_COMERCIO
+    COMERCIO_INICIALIZADO = bool(candidato["inicio"]["seleccionado"])
+    MODO_COMERCIO = candidato["inicio"]["modo"]
+    _PERSISTENCIA_ACTIVA = True
+    return {
+        "productos": len(productos),
+        "clientes": len(clientes),
+        "proveedores": len(proveedores),
+        "ventas": len(ventas),
+        "cuentas": len(cuentas),
+    }
 
 
 def _validar_numero_estado(valor, campo, minimo=None):
@@ -213,12 +343,46 @@ def _validar_estado(datos):
         raise ValueError("versión o estructura del archivo no compatible")
     if any(not isinstance(datos.get(clave), list) for clave in claves):
         raise ValueError("faltan listas requeridas en el archivo")
-    # proveedores es main-only: los archivos v1 no la traen; se acepta ausente
-    # y se normaliza a lista vacia para no romper la carga de datos existentes.
     if datos.get("proveedores") is None:
         datos["proveedores"] = []
     if not isinstance(datos.get("proveedores"), list):
         raise ValueError("faltan listas requeridas en el archivo")
+    for clave in ("movimientos_stock",):
+        if not isinstance(datos.get(clave, []), list):
+            raise ValueError("movimientos de stock inválidos")
+    datos.setdefault("movimientos_stock", [])
+    if "inicio" not in datos:
+        datos["inicio"] = {"seleccionado": True, "modo": "demo"}
+    if not isinstance(datos.get("inicio"), dict):
+        raise ValueError("configuración de inicio inválida")
+    datos["inicio"].setdefault("seleccionado", True)
+    datos["inicio"].setdefault("modo", "demo")
+    if (type(datos["inicio"]["seleccionado"]) is not bool or
+            datos["inicio"]["modo"] not in {"demo", "vacio"}):
+        raise ValueError("configuración de inicio inválida")
+
+    for movimiento in datos["movimientos_stock"]:
+        if not isinstance(movimiento, dict):
+            raise ValueError("movimiento de stock inválido")
+        if not isinstance(movimiento.get("id"), str) or not movimiento["id"]:
+            raise ValueError("identificador de movimiento inválido")
+        fecha = movimiento.get("fecha")
+        if not isinstance(fecha, str) or date.fromisoformat(fecha).isoformat() != fecha:
+            raise ValueError("fecha de movimiento inválida")
+        if not isinstance(movimiento.get("producto_id"), str):
+            raise ValueError("producto de movimiento inválido")
+        if not isinstance(movimiento.get("producto_nombre"), str):
+            raise ValueError("nombre de producto de movimiento inválido")
+        if movimiento.get("tipo") not in {"ajuste", "venta", "anulacion"}:
+            raise ValueError("tipo de movimiento inválido")
+        for campo in ("anterior", "nuevo", "cantidad"):
+            valor = movimiento.get(campo)
+            if isinstance(valor, bool) or not isinstance(valor, int) or valor < 0 and campo != "cantidad":
+                raise ValueError(f"{campo} de movimiento inválido")
+        if movimiento["nuevo"] - movimiento["anterior"] != movimiento["cantidad"]:
+            raise ValueError("cantidades de movimiento incoherentes")
+        if not isinstance(movimiento.get("motivo"), str) or not movimiento["motivo"].strip():
+            raise ValueError("motivo de movimiento inválido")
 
     for clave in (*claves, "proveedores"):
         ids = set()
@@ -258,6 +422,8 @@ def _validar_estado(datos):
     ventas_por_id = {venta["id"]: venta for venta in datos["ventas"]}
     cuentas_por_venta = {}
     for cuenta in datos["cuentas"]:
+        cuenta.setdefault("abonos", [])
+        cuenta.setdefault("pagado_sin_detalle", 0)
         venta_id = cuenta.get("venta_id")
         if venta_id not in ventas_por_id:
             raise ValueError("cuenta asociada a una venta inexistente")
@@ -290,6 +456,10 @@ def _validar_estado(datos):
             ):
                 raise ValueError("cantidad de venta inválida")
             _validar_numero_estado(item.get("precio"), "precio de venta", 0)
+            if "costo" not in item:
+                raise ValueError("costo de venta faltante")
+            if item["costo"] is not None:
+                _validar_numero_estado(item["costo"], "costo de venta", 0)
             if item["prod_id"] not in productos_por_id:
                 raise ValueError("producto vendido inexistente")
             total_items += item["precio"] * item["cantidad"]
@@ -307,6 +477,31 @@ def _validar_estado(datos):
         _validar_numero_estado(cuenta.get("pagado"), "pago de cuenta", 0)
         if cuenta["pagado"] > cuenta["total"]:
             raise ValueError("pago superior al total de la cuenta")
+        _validar_numero_estado(cuenta.get("pagado_sin_detalle", 0), "pagos sin detalle", 0)
+        abonos = cuenta.get("abonos", [])
+        if not isinstance(abonos, list):
+            raise ValueError("historial de abonos inválido")
+        total_abonos = 0
+        for abono in abonos:
+            if not isinstance(abono, dict) or not isinstance(abono.get("id"), str):
+                raise ValueError("abono inválido")
+            fecha_abono = abono.get("fecha")
+            if not isinstance(fecha_abono, str) or date.fromisoformat(fecha_abono).isoformat() != fecha_abono:
+                raise ValueError("fecha de abono inválida")
+            _validar_numero_estado(abono.get("monto"), "monto de abono", 0)
+            medio = abono.get("medio_pago")
+            if (
+                abono["monto"] <= 0
+                or not isinstance(medio, str)
+                or medio not in {"efectivo", "transferencia"}
+            ):
+                raise ValueError("datos de abono inválidos")
+            total_abonos += abono["monto"]
+        if not math.isclose(
+            cuenta["pagado_sin_detalle"] + total_abonos, cuenta["pagado"],
+            rel_tol=1e-9, abs_tol=1e-9
+        ):
+            raise ValueError("los abonos no coinciden con el total pagado")
         venta = ventas_por_id[cuenta["venta_id"]]
         cliente_id = cuenta.get("cliente_id")
         if not isinstance(cliente_id, str) or cliente_id not in clientes_por_id:
@@ -323,7 +518,10 @@ def _cargar_estado():
     try:
         with RUTA_ARCHIVO_DATOS.open("r", encoding="utf-8") as archivo:
             datos = json.load(archivo, parse_constant=_rechazar_constante_json)
+        datos, migrado = _migrar_estado(datos)
         _validar_estado(datos)
+        if migrado:
+            _guardar_estado(datos)
     except (
         OSError,
         UnicodeError,
@@ -338,12 +536,15 @@ def _cargar_estado():
             f"Detalle: {ex}"
         ) from ex
 
-    # Las pantallas importan estas listas directamente: conservar su identidad.
     productos[:] = datos["productos"]
     clientes[:] = datos["clientes"]
     proveedores[:] = datos["proveedores"]
     ventas[:] = datos["ventas"]
     cuentas[:] = datos["cuentas"]
+    movimientos_stock[:] = datos["movimientos_stock"]
+    global COMERCIO_INICIALIZADO, MODO_COMERCIO
+    COMERCIO_INICIALIZADO = datos["inicio"]["seleccionado"]
+    MODO_COMERCIO = datos["inicio"]["modo"]
     return True
 
 
@@ -353,7 +554,10 @@ def _persistir_mutacion(funcion):
         if not _PERSISTENCIA_ACTIVA:
             return funcion(*args, **kwargs)
         anterior = deepcopy(_estado_actual())
-        referencias = {clave: list(filas) for clave, filas in _estado_actual().items()}
+        referencias = {
+            clave: list(filas) if isinstance(filas, list) else deepcopy(filas)
+            for clave, filas in _estado_actual().items()
+        }
         try:
             resultado = funcion(*args, **kwargs)
             if _estado_actual() != anterior:
@@ -363,11 +567,15 @@ def _persistir_mutacion(funcion):
             if _estado_actual() != anterior:
                 for clave, destino in _estado_actual().items():
                     filas_originales = referencias[clave]
-                    for fila, contenido in zip(filas_originales, anterior[clave]):
-                        if isinstance(fila, dict) and isinstance(contenido, dict):
-                            fila.clear()
-                            fila.update(deepcopy(contenido))
-                    destino[:] = filas_originales
+                    if isinstance(destino, list):
+                        for fila, contenido in zip(filas_originales, anterior[clave]):
+                            if isinstance(fila, dict) and isinstance(contenido, dict):
+                                fila.clear()
+                                fila.update(deepcopy(contenido))
+                        destino[:] = filas_originales
+                    elif isinstance(destino, dict):
+                        destino.clear()
+                        destino.update(deepcopy(anterior[clave]))
             raise
 
     return envuelta
@@ -434,7 +642,6 @@ def _validar_producto(nombre, costo, precio, stock, minimo):
     return nombre, costo, precio, stock_entero, minimo_entero
 
 
-# ─── Productos CRUD ─────────────────────────────────────────────────
 
 
 @_persistir_mutacion
@@ -452,6 +659,24 @@ def crear_producto(nombre, costo, precio, stock=0, minimo=5):
     return p
 
 
+def _registrar_movimiento_stock(pid, nombre, anterior, nuevo, motivo, tipo="ajuste"):
+    if anterior == nuevo:
+        return None
+    movimiento = {
+        "id": id_unico(),
+        "fecha": date.today().isoformat(),
+        "producto_id": pid,
+        "producto_nombre": nombre,
+        "tipo": tipo,
+        "anterior": anterior,
+        "nuevo": nuevo,
+        "cantidad": nuevo - anterior,
+        "motivo": motivo,
+    }
+    movimientos_stock.append(movimiento)
+    return movimiento
+
+
 @_persistir_mutacion
 def actualizar_producto(pid, nombre, costo, precio, stock, minimo):
     p = prod_por_id(pid)
@@ -459,6 +684,7 @@ def actualizar_producto(pid, nombre, costo, precio, stock, minimo):
         nombre, costo, precio, stock, minimo = _validar_producto(
             nombre, costo, precio, stock, minimo
         )
+        stock_anterior = p["stock"]
         p.update(
             {
                 "nombre": nombre,
@@ -468,12 +694,14 @@ def actualizar_producto(pid, nombre, costo, precio, stock, minimo):
                 "minimo": minimo,
             }
         )
+        _registrar_movimiento_stock(
+            pid, p["nombre"], stock_anterior, stock, "Edición del producto"
+        )
     return p
 
 
 @_persistir_mutacion
 def eliminar_producto(pid):
-    # no se borra si tiene ventas asociadas
     if any(pid in (i.get("prod_id") for i in v.get("items", [])) for v in ventas):
         return False
     idx = next((i for i, p in enumerate(productos) if p["id"] == pid), None)
@@ -484,19 +712,23 @@ def eliminar_producto(pid):
 
 
 @_persistir_mutacion
-def ajustar_stock(pid, cantidad):
+def ajustar_stock(pid, cantidad, motivo="Ajuste manual"):
     """cantidad positiva = entra, negativa = sale"""
     if isinstance(cantidad, bool) or not isinstance(cantidad, int) or cantidad == 0:
         raise ValueError("El ajuste de stock debe ser un entero distinto de cero")
+    if not isinstance(motivo, str) or not motivo.strip():
+        raise ValueError("Escribí un motivo para ajustar el stock")
+    motivo = motivo.strip()[:120]
     p = prod_por_id(pid)
     if p:
         if p["stock"] + cantidad < 0:
             raise ValueError(f"El ajuste dejaría stock negativo de {p['nombre']}")
+        anterior = p["stock"]
         p["stock"] += cantidad
+        _registrar_movimiento_stock(pid, p["nombre"], anterior, p["stock"], motivo)
     return p
 
 
-# ─── Clientes CRUD ──────────────────────────────────────────────────
 
 
 @_persistir_mutacion
@@ -538,7 +770,6 @@ def _validar_cliente(nombre, telefono):
     return nombre, telefono.strip()
 
 
-# ─── Proveedores CRUD (port main-only a arquitectura 0.84) ────────────
 
 
 def _validar_proveedor(nombre, telefono="", email="", rubro=""):
@@ -598,7 +829,6 @@ def eliminar_proveedor(pid):
     return False
 
 
-# ─── Ventas ─────────────────────────────────────────────────────────
 
 
 @_persistir_mutacion
@@ -635,6 +865,7 @@ def crear_venta(items, cliente_id="", pago="efectivo"):
                 "prod_id": producto["id"],
                 "nombre": producto["nombre"],
                 "cantidad": cantidad,
+                "costo": producto["costo"],
                 "precio": producto["precio"],
             }
         )
@@ -663,7 +894,12 @@ def crear_venta(items, cliente_id="", pago="efectivo"):
     for item in items_venta:
         p = prod_por_id(item["prod_id"])
         if p:
-            p["stock"] = max(0, p["stock"] - item["cantidad"])
+            anterior = p["stock"]
+            p["stock"] = anterior - item["cantidad"]
+            _registrar_movimiento_stock(
+                p["id"], p["nombre"], anterior, p["stock"],
+                f"Venta del {hoy}", tipo="venta"
+            )
     if pago == "fiado" and cliente_id:
         cuentas.append(
             {
@@ -672,6 +908,8 @@ def crear_venta(items, cliente_id="", pago="efectivo"):
                 "venta_id": v["id"],
                 "total": total,
                 "pagado": 0,
+                "pagado_sin_detalle": 0,
+                "abonos": [],
                 "created_at": hoy,
             }
         )
@@ -680,14 +918,18 @@ def crear_venta(items, cliente_id="", pago="efectivo"):
 
 @_persistir_mutacion
 def deshacer_venta(vid):
-    # revierte una venta: devuelve el stock y borra venta + cuenta de fiado
     v = next((x for x in ventas if x.get("id") == vid), None)
     if not v:
         return False
     for item in v.get("items", []):
         p = prod_por_id(item.get("prod_id"))
         if p:
+            anterior = p["stock"]
             p["stock"] = p["stock"] + item.get("cantidad", 0)
+            _registrar_movimiento_stock(
+                p["id"], p["nombre"], anterior, p["stock"],
+                f"Anulación de venta {vid}", tipo="anulacion"
+            )
     idx = next((i for i, x in enumerate(ventas) if x.get("id") == vid), None)
     if idx is not None:
         ventas.pop(idx)
@@ -698,36 +940,66 @@ def deshacer_venta(vid):
 
 
 @_persistir_mutacion
-def pagar_fiado(ccid, monto):
+def pagar_fiado(ccid, monto, medio_pago="efectivo"):
     c = cta_por_id(ccid)
     if c:
         _validar_numero_estado(monto, "monto de pago", 0)
         if monto <= 0:
             raise ValueError("El pago debe ser mayor a cero")
+        if not isinstance(medio_pago, str) or medio_pago not in {"efectivo", "transferencia"}:
+            raise ValueError("Elegí un medio de pago válido")
         pendiente = c["total"] - c["pagado"]
         if monto > pendiente:
             raise ValueError(f"El pago supera el saldo pendiente ({pendiente})")
         c["pagado"] += monto
+        c.setdefault("pagado_sin_detalle", 0)
+        c.setdefault("abonos", []).append(
+            {
+                "id": id_unico(),
+                "fecha": date.today().isoformat(),
+                "monto": monto,
+                "medio_pago": medio_pago,
+            }
+        )
     return c
 
 
+def ganancia_registrada(ventas_periodo):
+    """Calcula margen solo para ventas cuyo costo quedó guardado al cobrarlas."""
+    total = 0
+    ventas_sin_costo = 0
+    for venta in ventas_periodo:
+        items = venta.get("items", [])
+        if any(item.get("costo") is None for item in items):
+            ventas_sin_costo += 1
+            continue
+        total += sum(
+            (item["precio"] - item["costo"]) * item["cantidad"] for item in items
+        )
+    return total, ventas_sin_costo
+
+
 def stats():
-    hoy = date.today().isoformat()
-    mes = date.today().strftime("%Y-%m")
+    hoy_fecha = date.today()
+    hoy = hoy_fecha.isoformat()
+    mes = hoy_fecha.strftime("%Y-%m")
     vh = sum(v["total"] for v in ventas if v["fecha"] == hoy)
     vm = sum(v["total"] for v in ventas if v["fecha"].startswith(mes))
-    gan = sum(
-        (i["precio"] - (prod_por_id(i["prod_id"]) or {}).get("costo", 0)) * i["cantidad"]
-        for v in ventas
-        if v["fecha"].startswith(mes)
-        for i in v.get("items", [])
+    gan, ventas_sin_costo = ganancia_registrada(
+        [v for v in ventas if v["fecha"].startswith(mes)]
     )
     deb = sum(c["total"] - c["pagado"] for c in cuentas)
     bajo = [p for p in productos if p["stock"] <= p["minimo"]]
-    return {"hoy": vh, "mes": vm, "ganancia": gan, "deben": deb, "stock_bajo": bajo}
+    return {
+        "hoy": vh,
+        "mes": vm,
+        "ganancia": gan,
+        "ventas_sin_costo": ventas_sin_costo,
+        "deben": deb,
+        "stock_bajo": bajo,
+    }
 
 
-# ─── Helpers para gráficos / dashboard (0.28.3) ───────────────────────
 
 
 def ventas_por_dia(dias=7):
@@ -779,23 +1051,60 @@ def ganancia_por_mes(meses=6):
         meses_lista.append(f"{yy:04d}-{mm:02d}")
     resultado = []
     for mes_str in meses_lista:
-        gan = sum(
-            (it["precio"] - (prod_por_id(it["prod_id"]) or {}).get("costo", 0)) * it["cantidad"]
-            for v in ventas
-            if v.get("fecha", "").startswith(mes_str)
-            for it in v.get("items", [])
+        gan, ventas_sin_costo = ganancia_registrada(
+            [v for v in ventas if v.get("fecha", "").startswith(mes_str)]
         )
-        resultado.append({"mes": mes_str, "ganancia": gan})
+        resultado.append(
+            {
+                "mes": mes_str,
+                "ganancia": gan,
+                "ventas_sin_costo": ventas_sin_costo,
+            }
+        )
     return resultado
 
 
-# Se crean los datos iniciales solo si todavía no existe un archivo de estado.
-def _inicializar_estado():
-    global _PERSISTENCIA_ACTIVA
-    if _cargar_estado():
+def _inicializar_comercio(modo):
+    global _PERSISTENCIA_ACTIVA, COMERCIO_INICIALIZADO, MODO_COMERCIO
+    if modo not in {"demo", "vacio"}:
+        raise ValueError("Elegí datos de ejemplo o empezar con el comercio vacío")
+    anterior = deepcopy(_estado_actual())
+    try:
+        movimientos_stock.clear()
+        ventas.clear()
+        cuentas.clear()
+        if modo == "demo":
+            _inicializar_ventas_demo()
+        else:
+            productos.clear()
+            clientes.clear()
+            proveedores.clear()
+        COMERCIO_INICIALIZADO = True
+        MODO_COMERCIO = modo
         _PERSISTENCIA_ACTIVA = True
-        return
+        _guardar_estado()
+    except Exception:
+        for clave, filas in anterior.items():
+            actual = _estado_actual()[clave]
+            if isinstance(actual, list):
+                actual[:] = filas
+            else:
+                actual.clear()
+                actual.update(filas)
+        COMERCIO_INICIALIZADO = anterior["inicio"]["seleccionado"]
+        MODO_COMERCIO = anterior["inicio"]["modo"]
+        _PERSISTENCIA_ACTIVA = False
+        raise
 
+
+def iniciar_comercio(modo):
+    """Persiste la elección de inicio sin tocar un archivo que ya exista."""
+    if COMERCIO_INICIALIZADO or RUTA_ARCHIVO_DATOS.exists():
+        raise ValueError("GesKio ya tiene datos guardados en este equipo")
+    _inicializar_comercio(modo)
+
+
+def _inicializar_ventas_demo():
     crear_venta(
         items=[{"prod_id": "p1", "nombre": "Yerba Mate 1kg", "cantidad": 2, "precio": 1800}],
         cliente_id="c1",
@@ -807,8 +1116,18 @@ def _inicializar_estado():
             {"prod_id": "p6", "nombre": "Arroz 1kg", "cantidad": 1, "precio": 1100},
         ],
     )
-    _guardar_estado()
-    _PERSISTENCIA_ACTIVA = True
+
+
+def _inicializar_estado():
+    global _PERSISTENCIA_ACTIVA, COMERCIO_INICIALIZADO
+    if _cargar_estado():
+        _PERSISTENCIA_ACTIVA = True
+        return
+    if os.environ.get("GESKIO_MODO_INICIAL") == "demo":
+        _inicializar_comercio("demo")
+        return
+    COMERCIO_INICIALIZADO = False
+    _PERSISTENCIA_ACTIVA = False
 
 
 _inicializar_estado()

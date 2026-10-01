@@ -1,110 +1,71 @@
-# Widget Kit Specification (geskio)
+# Widget Kit Specification (GesKio)
 
 ## Purpose
 
-Shared Flet component kit (`app/widgets.py`) built exclusively on `design-tokens`, replacing the dialog/SnackBar/table/card code duplicated across the 6 screens. Fixed defaults (per proposal) so the kit enforces consistency by construction.
+Shared Flet components live in `app/widgets.py`. The current API uses Spanish names: `tarjeta`, `encabezado`, `seccion`, `tabla`, `barra_busqueda`, `paginar`, `paginador`, `dialogo`, `confirmar_eliminar`, `aviso`, `burbuja_chat`, and `Calendario`. The shell is composed from `Marco`, `MenuLateral`, and `BarraSuperior`. These names replace earlier English component proposals such as `AppCard`, `PageHeader`, and `AppTable`.
 
 ## Requirements
 
-### Requirement: Shared Components with Fixed Defaults
+### Requirement: Shared Theme-Aware Components
 
-The kit MUST provide: `AppCard`, `PageHeader(title, actions=(), on_refresh=None)` (replaces `AppHeader`), `AppTable` (fixed `column_spacing=12`, `page_size=10`, empty-state row), `AppDialog` incl. `confirm_delete` (destructive = error/red role), `feedback(text)` (SnackBar with fixed duration), status badges/chips, and chat bubbles (user vs bot, no tail). All defaults MUST be fixed in the kit, not passed per screen.
-(Previously: header was `AppHeader(title, on_refresh)` and `AppTable` had no page-size default.)
+Components that draw application UI MUST source colors, spacing, typography, borders, radii, and focus styling from `app/theme.py`. Components MUST support the active light/dark palette. Screen code MAY pass content and behavior but MUST avoid duplicating shared visual primitives.
 
-### Requirement: Rounded Form Controls and Visible Focus
+#### Scenario: Theme changes reach shared components
 
-The widget kit MUST expose shared GesKio text-field and dropdown constructors. They MUST use the 10px field radius, neutral outline, and a 2px primary focus border. Screens MUST use these constructors so form styling stays consistent. Primary, outlined, and text buttons MUST use the shared 8px control radius unless a control has a named, documented exception.
+- GIVEN a light or dark palette is active
+- WHEN a shared widget is built
+- THEN its surface, text, border, and semantic roles come from that palette
 
-#### Scenario: Form control consistency
+### Requirement: Form Controls and Focus
 
-- GIVEN text fields and dropdowns across Caja, Stock, Clientes, Fiado, Chat and Ajustes
-- WHEN their shared constructors are inspected
-- THEN all use the same field radius, neutral outline and visible primary focus border
+Screens MUST use `campo_texto()` and `selector()` for text fields and dropdowns. Both MUST use the shared field radius, neutral outline, and visible 2px primary focus border unless a documented exception is needed.
 
-#### Scenario: Table normalization via kit
+#### Scenario: Form styling is consistent
 
-- GIVEN `stock` uses `column_spacing=12` and `clientes` uses `16` (exploration drift)
-- WHEN both migrate to `AppTable`
-- THEN both render with the kit's fixed `column_spacing=12` and no screen overrides it
+- GIVEN fields across Stock, Caja, Clientes, Chat, Fiado, and Ajustes
+- WHEN they are built through the shared constructors
+- THEN they use the same outline, radius, and focus treatment
 
-#### Scenario: Delete dialog reuse
+### Requirement: Shared Screen Structure
 
-- GIVEN `stock` and `clientes` both implement delete confirmation with red/white button (exploration)
-- WHEN either screen needs a delete dialog
-- THEN it calls `confirm_delete` and gets identical destructive styling and behavior
+`encabezado()` MUST provide the task title, optional description/actions, and refresh action. `seccion()` MUST provide a themed section container. `tarjeta()`, `tarjeta_stat()`, `tarjeta_focal()`, and `grilla_stats()` MUST provide the shared card and dashboard-stat hierarchy.
 
-#### Scenario: Feedback consistency
+#### Scenario: Dashboard stat hierarchy
 
-- GIVEN any success/error action in any screen
-- WHEN user feedback is needed
-- THEN the screen calls `feedback(text)` and receives a SnackBar with the kit's fixed duration and token styling (no per-screen `page.overlay` setups)
+- GIVEN the dashboard renders its focal and secondary metrics
+- WHEN `grilla_stats()` is built
+- THEN only the focal stat uses the focal treatment and secondary stats use the shared responsive grid
 
-### Requirement: Kit Depends Only on Tokens
+### Requirement: Shared Table Structure
 
-Kit widgets MUST use `theme.py` tokens exclusively. The kit MUST NOT contain color/padding/radius literals.
+Table screens MUST use `barra_busqueda()` for search/filter chrome, `tabla()` for density and empty-state presentation, and `paginar()` plus `paginador()` for page slicing and controls. Shared page-header actions MAY remain outside the toolbar.
 
-#### Scenario: Kit grep stays clean
+#### Scenario: Empty table is actionable
 
-- GIVEN a grep for style literals in `app/widgets.py`
-- WHEN run
-- THEN zero literals are found; every value resolves to a token import
+- GIVEN a table has no rows
+- WHEN `tabla()` builds
+- THEN it shows an explicit empty-state icon and message
 
-### Requirement: Screen Adoption
+### Requirement: Dialogs and Feedback
 
-The 6 screens MUST consume the kit for card, header, table, dialog, feedback, and bubble patterns. Screens MUST NOT build ad-hoc equivalents of kit components.
+Dialogs MUST use `dialogo()`; destructive confirmations MUST use `confirmar_eliminar()`; transient success/error feedback MUST use `aviso()`. These helpers MUST use shared theme roles and duration defaults.
 
-#### Scenario: Migration replaces duplication
+#### Scenario: Destructive action can be cancelled
 
-- GIVEN a screen that previously hand-built its card/dialog/SnackBar
-- WHEN the migration slice lands
-- THEN the ad-hoc code is deleted and the kit call is the only usage path (no dead copies kept)
+- GIVEN a destructive action is requested
+- WHEN the confirmation dialog opens
+- THEN the user can cancel without changing data or confirm the named action
 
-### Requirement: Table Empty State
+### Requirement: Shell Composition
 
-`AppTable` MUST render an empty-state row (message + icon) when the data source is empty.
+`Marco` MUST compose the sidebar, topbar, and active `Pantalla`. Geometry MUST resolve to shared theme constants. Screens MUST keep the `Pantalla`/`invalidate()` contract and MUST NOT hand-build a second shell.
 
-#### Scenario: Empty table renders message
+#### Scenario: Navigation updates the shell
 
-- GIVEN a screen whose dataset is empty (e.g. fiado with `Solo pendientes` and no pending rows)
-- WHEN `AppTable` builds
-- THEN it shows the empty-state row instead of a bare header table
+- GIVEN the application is open
+- WHEN `Marco.navegar(key)` is called
+- THEN the active navigation item, topbar title, and content slot update together
 
 ### Requirement: Chat Bubble Contract
 
-The kit MUST provide two bubble variants: user (accent/soft role, `Row` aligned END) and bot (neutral surface role, aligned START), with fixed padding and radius from tokens.
-
-#### Scenario: Bubble sides and roles
-
-- GIVEN a message list in `chat`
-- WHEN user and bot messages render
-- THEN user bubbles align END with the user role and bot bubbles align START with the bot role, both with identical token-driven padding/radius
-
-### Requirement: Shell Kit Components
-
-The kit MUST provide `Shell(page, nav_items, active_key, on_navigate) -> ft.Row` and `PageHeader`. All shell geometry MUST resolve to `theme.py` shell constants. Screens MUST NOT hand-build sidebar/topbar equivalents. `PageHeader` MUST be the only header entry point (no dead `AppHeader` copies kept).
-
-#### Scenario: Shell is the single nav builder
-
-- GIVEN the app boots
-- WHEN the shell renders
-- THEN sidebar, rail, and topbar come from kit `Shell`/`Topbar`/`Sidebar` components with zero literals in `main.py`
-
-### Requirement: Dashboard Kit Components
-
-The kit MUST provide `Section(title, content) -> ft.Container` (card with heading), `StatGrid(focal: AppStatCard, stats: list[AppStatCard]) -> ft.ResponsiveRow`, and `Calendar(get_series, today, view) -> ft.Control` (view-only). The focal treatment (2px primary border, FS_36) MUST be fixed inside the kit.
-
-#### Scenario: StatGrid owns the hierarchy
-
-- GIVEN the dashboard composes its stats
-- WHEN `StatGrid` renders
-- THEN only the focal card carries the 2px primary border and secondary cards are FS_28 role-colored, with no screen-level styling overrides
-
-### Requirement: Table Chrome Kit Components
-
-The kit MUST provide `TableToolbar(on_query, chips=(), actions=()) -> ft.Row` and `TablePager(page, pages, on_page) -> ft.Row` (composed prev/next + "n de m"). `AppTable` MUST default `page_size=10` and keep its empty-state row. There is no Flet-native pager in 0.84.0, so paging MUST go through the composed `TablePager`.
-
-#### Scenario: Pager is composed, not native
-
-- GIVEN a table screen paginates
-- WHEN the pager renders
-- THEN it is the kit's composed `TablePager` row and all 3 table screens reuse it identically
+`burbuja_chat(texto, es_usuario)` MUST align user messages to the end with the user role and assistant messages to the start with a neutral surface; the Chat screen MUST apply the active palette.

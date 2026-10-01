@@ -2,19 +2,19 @@
 
 ## Purpose
 
-Single token namespace (`app/theme.py`) replacing per-screen hardcoded style in the 6 Flet screens. Sources values from `exploration.md` (landing CSS vars + app patterns); reference kits (research rev 3) contribute patterns only. Decisions: D1 (one namespace, Paperpillar anchor), D2 (red primary, green semantic, multi-theme `app_colors`), D3 (spacing + radii frozen upfront).
+Single token namespace (`app/theme.py`) for application palettes, semantic roles, typography, spacing, radii, and shell dimensions. GesKio currently supports red and green brands in light and dark modes, plus user-selected accent colors. The landing has its own CSS tokens; any cross-surface differences are documented instead of assumed to match.
 
 ## Requirements
 
 ### Requirement: Single Token Namespace
 
-The system MUST define all color, typography, spacing, and radius tokens in one module (`app/theme.py`) under one namespace. No other module MAY define style constants. Paperpillar (reference 01) anchors shell structure; references 02–05 contribute patterns re-expressed in this namespace, never verbatim styles (anti-frankenstein).
+The system MUST define shared color palettes, semantic roles, typography, spacing, radius, and shell-size constants in one module (`app/theme.py`). Screen modules MUST NOT define duplicate style constants. Reusable UI patterns are implemented through named helpers in `app/widgets.py`.
 
 #### Scenario: Screens import tokens only
 
-- GIVEN the 6 migrated screens (`dashboard`, `caja`, `stock`, `clientes`, `fiado`, `chat`)
+- GIVEN the GesKio app screens
 - WHEN a grep runs for color/padding/radius literals (e.g. `ft.Colors`, raw hex, inline padding numbers) in `app/screens/*.py`
-- THEN zero style literals are found — every style value resolves to a `theme.py` import
+- THEN shared colors and dimensions come from `theme.py`; examples in labels or validation messages are not style literals
 
 #### Scenario: Reference pattern is re-expressed, not copied
 
@@ -24,27 +24,27 @@ The system MUST define all color, typography, spacing, and radius tokens in one 
 
 ### Requirement: Primary and Semantic Color Roles (D2)
 
-The system MUST define primary as the landing accent red family (`#ef4444` light / `#f43f5e` dark from exploration). Green SHALL remain a semantic role (success/money states) and MUST NOT be the primary CTA color. Dashboard stat colors (Hoy/Mes/Ganancia/Deben) MUST be defined as semantic roles, not per-screen literals.
+Each brand/mode palette MUST define its own primary and on-primary pair. The green palette MAY use green as its primary; the red palette uses red. Success, warning, danger, and information roles MUST retain their semantic meaning. Dashboard stat colors MUST resolve through semantic roles, not per-screen hex literals.
 
 #### Scenario: CTA uses primary
 
 - GIVEN any primary action button (e.g. `Cobrar` in caja)
 - WHEN it is rendered
-- THEN its background is the primary red role and its text is the on-primary role
+- THEN its background is the active palette's primary role and its text is the on-primary role
 
-#### Scenario: Green stays semantic
+#### Scenario: Brand and semantic greens are distinct
 
 - GIVEN the paid/success states in fiado and the money-related stat
 - WHEN colors are resolved
-- THEN green appears only in success/money semantic roles, never as primary CTA
+- THEN the green brand may use a green primary pair, while success/money status uses the semantic success role
 
-### Requirement: Multi-Theme `app_colors` with Personalization (D2)
+### Requirement: Multi-Theme `Tema` with Personalization (D2)
 
-The system MUST provide `app_colors` supporting at least 2 complete themes (light + dark) plus a personalization mechanism (per-theme accent override) for the user.
+The system MUST provide `Tema` supporting the red and green brand families in light and dark modes plus a validated accent override for the user.
 
 #### Scenario: Theme switch
 
-- GIVEN `app_colors` with ≥2 registered themes
+- GIVEN `Tema` with ≥2 registered brand families
 - WHEN the active theme changes
 - THEN every token resolves consistently in the new theme with no screen-level edits
 
@@ -56,7 +56,7 @@ The system MUST provide `app_colors` supporting at least 2 complete themes (ligh
 
 ### Requirement: Frozen Spacing and Radii Scale (D3)
 
-The system MUST freeze the spacing scale (4px grid; steps 4/8/10/12/16/20/24) and graduated radius scale (8/10/16/pill). Small controls use 8px, fields/cards/dialogs use 10px, and larger panels use 16px. Calendar cells may remain tighter where density requires it. Screens and widgets MUST use only scale values.
+The shared spacing scale is 4/8/10/12/16/20/24 and the radius scale is 8/10/16/pill. Small controls use 8px, fields/cards/dialogs use 10px, and larger panels use 16px. Calendar cells may remain tighter where density requires it.
 
 #### Scenario: Off-scale value rejected in review
 
@@ -66,13 +66,13 @@ The system MUST freeze the spacing scale (4px grid; steps 4/8/10/12/16/20/24) an
 
 ### Requirement: Typography Scale
 
-The system MUST define text style tokens for sizes 12/13/14/16/18/20/28/30/36 with the weights observed in exploration. Font family SHOULD resolve to Inter when available without bundling; it MAY fall back to the platform default (no font bundling in v1).
+The system MUST define text-size tokens in `theme.py` for the sizes used by current screens. Font family SHOULD resolve to Inter when available without bundling; it MAY fall back to the platform default.
 
 #### Scenario: Text styles resolve from tokens
 
 - GIVEN a migrated screen rendering headings, labels, values, and body text
 - WHEN inspected
-- THEN every `Text` style comes from a named typography token (e.g. `label`, `value_28`, `header_30`)
+- THEN sizes come from named tokens such as `FS_14`, `FS_24`, or `FS_36`
 
 ### Requirement: Token-Source Provenance
 
@@ -82,23 +82,23 @@ The system SHOULD document, per token group, its source: landing CSS vars (color
 
 - GIVEN any token value in `theme.py`
 - WHEN traced in `design.md`
-- THEN it maps to an exploration value (landing CSS var or app pattern), never to a research/Figma measurement
+- THEN it maps to a documented app or landing value; equality across those surfaces is claimed only when verified
 
-### Requirement: Additive Shell/Layout Token Extension (AD-5)
+### Requirement: Shell and Compact Layout Tokens
 
-`PaletteTheme` dataclass fields MUST remain frozen. Shell and layout dimensions MUST be added as non-color module constants in `theme.py`: `SHELL_SIDEBAR_W=240`, `SHELL_RAIL_W=64`, `SHELL_TOPBAR_H=56`, `SHELL_BREAKPOINT_W=1280`, `SHELL_BREAKPOINT_H=760`, plus focal/calendar layout steps. NO new hex color MAY be introduced anywhere in `theme.py`.
+Shell dimensions and breakpoints MUST be named non-color module constants in `theme.py`: `LATERAL_ANCHO=240`, `RAIL_ANCHO=64`, `SUPERIOR_ALTO=56`, `RUPTURA_ANCHO=1024`, `RUPTURA_ALTO=600`, and `ANCHO_TOPBAR_COMPACTO=600`. Bounded cart geometry MUST use named `CARRITO_ALTO_MIN`, `CARRITO_ALTO_POR_ITEM`, and `CARRITO_ALTO_MAX` tokens. Theme palettes MAY define colors only in `theme.py`; screen-specific colors are not allowed.
 
 #### Scenario: Zero new hex constants
 
 - GIVEN slice a extends `theme.py`
 - WHEN the file is diffed
-- THEN no new color hex literals appear and the `PaletteTheme` dataclass fields are unchanged
+- THEN added shell geometry uses named constants and any new palette color is defined in `theme.py`
 
 #### Scenario: Shell constants are named tokens
 
 - GIVEN `main.py` renders sidebar, rail, and topbar
 - WHEN dimensions are resolved
-- THEN they come from the named shell constants (no raw 240/64/56 literals)
+- THEN they come from `LATERAL_ANCHO`, `RAIL_ANCHO`, and `SUPERIOR_ALTO`
 
 ### Requirement: New Usage Pairs Reuse Verified AA Roles (AD-6)
 

@@ -1,4 +1,3 @@
-// GesKio — mock vivo del hero: ventas que van entrando
 document.addEventListener('DOMContentLoaded', () => {
   var num = document.getElementById('mockNum');
   var toast = document.getElementById('mockToast');
@@ -9,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   var total = 5900;
   var productos = ['Coca-Cola 500ml', 'Alfajor chocolate', 'Golosinas x10', 'Pan lácteo', 'Gaseosa litro'];
   var importes = [900, 450, 1200, 750, 1100];
-  var activa = 6; // índice de la barra "hoy" en el chart
+  var activa = 6;
 
   function formato(v) {
     return '$' + v.toLocaleString('es-AR');
