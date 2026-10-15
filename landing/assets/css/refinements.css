@@ -1,0 +1,645 @@
+/* Navigation and the live product story, revised after the first preview. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-top: 20px;
+  padding-bottom: 12px;
+  background: var(--paper);
+}
+.nav-shell {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 28px;
+  padding: 12px 17px 12px 24px;
+  min-height: 76px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.nav-brand {
+  justify-self: start;
+  font-size: 25px;
+  letter-spacing: -0.04em;
+  gap: 10px;
+}
+.primary-nav {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.primary-nav a {
+  padding: 11px 15px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 8px;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+.primary-nav a:hover,
+.primary-nav a[aria-current] {
+  color: var(--ink);
+  background: #edf2e8;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+}
+.nav-primary {
+  min-height: 44px;
+  padding: 12px 18px;
+  gap: 18px;
+  border-radius: 8px;
+}
+.nav-menu-button {
+  display: none;
+}
+.hero {
+  grid-template-columns: 0.9fr 1.15fr;
+  padding-top: 52px;
+  padding-bottom: 51px;
+  gap: 64px;
+}
+.hero h1 {
+  font-size: clamp(62px, 6vw, 86px);
+}
+.hero-description {
+  font-size: 22px;
+  margin-top: 27px;
+}
+.hero-detail {
+  max-width: 36ch;
+}
+.word-order {
+  color: #537e46;
+}
+.hero-actions {
+  gap: 25px;
+  margin-top: 31px;
+}
+.demo-scene {
+  padding: 20px 18px 16px;
+  border-radius: 16px;
+}
+.demo-app {
+  box-shadow: 0 16px 30px -23px #172a2040;
+}
+.demo-topline {
+  margin-bottom: 14px;
+}
+.demo-topline > span:last-child {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.demo-caption {
+  align-items: center;
+}
+.demo-caption button {
+  min-height: 36px;
+}
+.demo-tabs button {
+  min-height: 44px;
+}
+.quantity-button {
+  min-width: 30px;
+  min-height: 32px;
+}
+.audience {
+  padding-top: 20px;
+  padding-bottom: 30px;
+  font-size: 13px;
+}
+.audience > div {
+  gap: 20px;
+}
+.workflow {
+  padding-block: 82px 74px;
+}
+.workflow-heading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  align-items: end;
+  margin-bottom: 37px;
+}
+.workflow h2 {
+  font-size: 44px;
+  letter-spacing: -0.035em;
+}
+.workflow-heading > p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--muted);
+  max-width: 43ch;
+}
+.workflow-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--sage);
+  padding: 34px 0;
+  border-radius: 16px;
+}
+.workflow-item {
+  padding-inline: 34px;
+}
+.workflow-item + .workflow-item {
+  border-left: 1px solid #cbd8c1;
+}
+.workflow-label {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 650;
+}
+.workflow-item > strong {
+  display: block;
+  margin-top: 24px;
+  font-size: 35px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.workflow-item > strong small {
+  font-size: 22px;
+}
+.workflow-item > p {
+  margin-top: 9px;
+  font-size: 12px;
+  color: #4b6142;
+}
+.workflow-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 23px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+.workflow-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.workflow-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.features {
+  padding-top: 17px;
+  padding-bottom: 76px;
+}
+.section-heading h2,
+.faq h2 {
+  font-size: 39px;
+}
+.section-heading > p {
+  font-size: 14px;
+}
+.feature-layout {
+  display: block;
+}
+.feature-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 70px;
+}
+.feature-list article,
+.feature-list article:first-child,
+.feature-list article:last-child {
+  padding: 29px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+.feature-list article > img {
+  width: 27px;
+  height: 27px;
+}
+.feature-list h3 {
+  font-size: 20px;
+}
+.feature-list p {
+  font-size: 14px;
+}
+.local-section {
+  padding-block: 42px;
+}
+.local-art > img:first-child {
+  width: 85px;
+  height: 85px;
+}
+.local-section h2 {
+  font-size: 32px;
+}
+.start-section {
+  padding-block: 77px;
+}
+.steps p {
+  font-size: 14px;
+}
+.faq {
+  padding-bottom: 75px;
+}
+.faq-list summary {
+  font-size: 15px;
+}
+.faq-list details p {
+  font-size: 14px;
+}
+.closing {
+  padding: 48px 58px;
+}
+.closing h2 {
+  font-size: 45px;
+}
+.closing-mark {
+  transform: none;
+  opacity: 0.65;
+}
+.footer {
+  padding-top: 43px;
+}
+@media (max-width: 1100px) {
+  .nav-shell {
+    gap: 16px;
+    padding-left: 20px;
+  }
+  .primary-nav {
+    gap: 0;
+  }
+  .primary-nav a {
+    font-size: 13px;
+    padding-inline: 11px;
+  }
+  .hero {
+    gap: 35px;
+  }
+  .hero h1 {
+    font-size: 66px;
+  }
+  .workflow-item {
+    padding-inline: 25px;
+  }
+  .workflow-item > strong {
+    font-size: 29px;
+  }
+  .workflow-label {
+    font-size: 12px;
+    gap: 8px;
+  }
+}
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding-top: 42px;
+  }
+  .hero h1 {
+    font-size: 76px;
+  }
+  .hero-detail {
+    margin-inline: auto;
+  }
+  .workflow-heading {
+    gap: 35px;
+  }
+  .workflow h2 {
+    font-size: 36px;
+  }
+  .workflow-heading > p {
+    font-size: 14px;
+  }
+  .workflow-item {
+    padding-inline: 20px;
+  }
+  .workflow-item > strong {
+    font-size: 25px;
+  }
+  .workflow-item > p {
+    min-height: 40px;
+  }
+  .feature-list {
+    column-gap: 40px;
+  }
+  .feature-list h3 {
+    font-size: 18px;
+  }
+  .primary-nav a {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .nav-shell {
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+  }
+  .primary-nav {
+    justify-content: center;
+  }
+  .nav-primary {
+    font-size: 12px;
+    padding-inline: 13px;
+    gap: 10px;
+  }
+  .nav-brand {
+    font-size: 23px;
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    scroll-padding-top: 108px;
+  }
+  .topbar {
+    padding-top: 12px;
+    padding-bottom: 8px;
+  }
+  .nav-shell {
+    position: relative;
+    grid-template-columns: 1fr auto;
+    padding: 10px 11px 10px 17px;
+    min-height: 67px;
+    border-radius: 13px;
+  }
+  .nav-brand {
+    font-size: 23px;
+    gap: 8px;
+  }
+  .nav-brand > img {
+    width: 24px;
+    height: 24px;
+  }
+  .nav-actions {
+    gap: 8px;
+  }
+  .nav-primary {
+    min-height: 42px;
+    padding-inline: 13px;
+    font-size: 11px;
+    gap: 9px;
+  }
+  .nav-primary img {
+    width: 15px;
+    height: 15px;
+  }
+  .nav-menu-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .nav-menu-button span {
+    width: 16px;
+    height: 1.5px;
+    background: currentColor;
+    transition: transform 0.18s ease;
+  }
+  .nav-menu-button[aria-expanded="true"] span:first-child {
+    transform: translateY(3.75px) rotate(45deg);
+  }
+  .nav-menu-button[aria-expanded="true"] span:last-child {
+    transform: translateY(-3.75px) rotate(-45deg);
+  }
+  .primary-nav {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    padding: 9px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 15px 25px -22px #172a2066;
+  }
+  .primary-nav.is-open {
+    display: grid;
+  }
+  .primary-nav a {
+    min-height: 46px;
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+  .workflow {
+    padding-block: 57px;
+  }
+  .workflow-heading {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-bottom: 26px;
+  }
+  .workflow h2 {
+    font-size: 36px;
+  }
+  .workflow-heading > p {
+    max-width: 45ch;
+  }
+  .workflow-track {
+    grid-template-columns: 1fr;
+    padding: 5px 24px;
+  }
+  .workflow-item {
+    padding: 24px 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 15px;
+  }
+  .workflow-item + .workflow-item {
+    border-left: 0;
+    border-top: 1px solid #cbd8c1;
+  }
+  .workflow-label {
+    font-size: 13px;
+  }
+  .workflow-label img {
+    width: 20px;
+  }
+  .workflow-item > strong {
+    margin: 0;
+    font-size: 24px;
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    text-align: right;
+  }
+  .workflow-item > p {
+    grid-column: 1;
+    font-size: 11px;
+    min-height: 0;
+    margin-top: 4px;
+    max-width: 22ch;
+  }
+  .workflow-link {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    margin-top: 4px;
+    padding-block: 8px;
+    width: fit-content;
+  }
+  .workflow-note {
+    align-items: flex-start;
+    line-height: 1.8;
+  }
+  .workflow-note i {
+    margin-top: 7px;
+  }
+}
+@media (max-width: 640px) {
+  .hero {
+    padding-top: 33px;
+    padding-bottom: 26px;
+    gap: 30px;
+  }
+  .hero h1 {
+    font-size: clamp(52px, 14.4vw, 76px);
+  }
+  .hero-description {
+    font-size: 19px;
+    margin-top: 22px;
+  }
+  .hero-actions {
+    margin-top: 25px;
+    gap: 24px;
+  }
+  .demo-scene {
+    padding: 14px 10px 10px;
+    scroll-margin-top: 105px;
+  }
+  .demo-topline > span:last-child {
+    font-size: 11px;
+  }
+  .demo-caption > span {
+    max-width: 175px;
+  }
+  .audience {
+    font-size: 11px;
+    padding-top: 13px;
+    padding-bottom: 23px;
+  }
+  .audience > div {
+    gap: 13px;
+    font-size: 11px;
+  }
+  .workflow h2 {
+    font-size: 34px;
+  }
+  .workflow-item > strong {
+    font-size: 23px;
+  }
+  .features {
+    padding-block: 0 47px;
+  }
+  .section-heading h2,
+  .faq h2 {
+    font-size: 31px;
+  }
+  .section-heading > p {
+    font-size: 13px;
+  }
+  .feature-list {
+    grid-template-columns: 1fr;
+  }
+  .feature-list article,
+  .feature-list article:first-child,
+  .feature-list article:last-child {
+    padding-block: 24px;
+  }
+  .feature-list h3 {
+    font-size: 18px;
+  }
+  .feature-list p {
+    font-size: 13px;
+  }
+  .local-section {
+    padding-block: 32px;
+    gap: 17px;
+  }
+  .local-art {
+    min-height: 127px;
+  }
+  .local-section h2 {
+    font-size: 30px;
+  }
+  .start-section {
+    padding-block: 52px;
+  }
+  .steps p {
+    font-size: 13px;
+  }
+  .faq {
+    padding-bottom: 48px;
+  }
+  .faq-list summary {
+    font-size: 14px;
+  }
+  .faq-list details p {
+    font-size: 13px;
+  }
+  .closing {
+    padding: 30px 25px;
+    min-height: 295px;
+  }
+  .closing h2 {
+    font-size: 33px;
+  }
+  .closing-mark {
+    opacity: 0.15;
+  }
+}
+@media (max-width: 360px) {
+  .nav-shell {
+    padding-left: 12px;
+    padding-right: 7px;
+  }
+  .nav-brand {
+    font-size: 21px;
+  }
+  .nav-actions {
+    gap: 5px;
+  }
+  .nav-primary {
+    padding-inline: 10px;
+  }
+  .nav-primary img {
+    display: none;
+  }
+  .workflow-track {
+    padding-inline: 19px;
+  }
+  .workflow-item > strong {
+    font-size: 19px;
+  }
+  .workflow-item {
+    column-gap: 7px;
+  }
+  .workflow-label {
+    font-size: 12px;
+    gap: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-menu-button span,
+  .primary-nav a {
+    transition: none;
+  }
+}

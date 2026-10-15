@@ -1,90 +1,645 @@
 <!doctype html>
 <html lang="es-AR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GesKio · Tu negocio, en orden.</title>
-  <meta name="description" content="Caja, stock y fiados en un solo lugar. Conocé GesKio, la aplicación de escritorio pensada para kioscos, almacenes y comercios de barrio.">
-  <meta name="theme-color" content="#f8f9f5">
-  <meta property="og:title" content="GesKio · Tu negocio, en orden.">
-  <meta property="og:description" content="Vos conocés a tus clientes. GesKio te ayuda con las cuentas. Explorá la demo interactiva.">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="es_AR">
-  <link rel="icon" type="image/svg+xml" href="/assets/img/geskio-mark.svg">
-  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/css/landing.css">
-  <script src="/assets/js/landing.js" defer></script>
-</head>
-<body>
-  <a class="skip" href="#contenido">Saltar al contenido</a>
-  <header class="site-header"><div class="container nav-row">
-    <a class="brand" href="#" aria-label="GesKio, inicio"><img src="/assets/img/geskio-mark.svg" width="30" height="30" alt="">GesKio<span class="brand-dot">.</span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menú <img src="/assets/icons/list.svg" width="20" height="20" alt=""></button>
-    <nav id="navigation" aria-label="Navegación principal"><a href="#funciones">Qué podés hacer</a><a href="#como-empezar">Cómo empezar</a><a href="#preguntas">Preguntas</a></nav>
-    <a class="button nav-cta" href="#demo">Explorar la demo <span aria-hidden="true">↗</span></a>
-  </div></header>
-  <main id="contenido">
-    <section class="hero container" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <h1 id="hero-title">Tu negocio,<br>en <span class="word-order">orden<svg viewBox="0 0 290 17" aria-hidden="true"><path d="M4 10 Q110 -1 285 8 M20 15 Q160 7 270 13"/></svg></span>.</h1>
-        <p class="hero-description">Vos conocés a tus clientes.<br>GesKio te ayuda con las cuentas.</p>
-        <p class="hero-detail">Ventas, stock y fiados en un solo lugar.<br>Hecho para el día a día de tu comercio.</p>
-        <div class="hero-actions"><a class="button button-lg" href="#demo">Dale una vuelta <img src="/assets/icons/arrow-up-right.svg" width="20" height="20" alt=""></a><a class="text-link" href="#funciones">Conocé GesKio <span aria-hidden="true">↓</span></a></div>
-        <div class="hero-notes"><span><img src="/assets/icons/desktop.svg" alt="" width="16" height="16"> En tu computadora</span><span><img src="/assets/icons/wifi-slash.svg" alt="" width="16" height="16"> Gestión sin internet</span></div>
-      </div>
-      <div class="demo-scene" id="demo">
-        <div class="demo-topline"><span><i aria-hidden="true"></i> Un vistazo a tu próximo día</span><span>DEMO INTERACTIVA</span></div>
-        <section class="demo-app" aria-label="Demostración de GesKio con datos de ejemplo">
-          <div class="demo-sidebar">
-            <a class="demo-brand" href="#demo" aria-label="Demo GesKio"><img src="/assets/img/geskio-mark.svg" width="25" height="25" alt=""><span>GesKio</span></a>
-            <div class="demo-tabs" role="tablist" aria-label="Explorar módulos">
-              <button type="button" id="tab-caja" role="tab" aria-selected="true" aria-controls="panel-caja" data-panel="caja"><img src="/assets/icons/storefront.svg" alt="" width="19" height="19"><span>Caja</span></button>
-              <button type="button" id="tab-stock" role="tab" aria-selected="false" aria-controls="panel-stock" tabindex="-1" data-panel="stock"><img src="/assets/icons/package.svg" alt="" width="19" height="19"><span>Stock</span></button>
-              <button type="button" id="tab-fiados" role="tab" aria-selected="false" aria-controls="panel-fiados" tabindex="-1" data-panel="fiados"><img src="/assets/icons/users.svg" alt="" width="19" height="19"><span>Fiados</span></button>
-            </div>
-            <div class="demo-shop"><span class="shop-avatar">A</span><span>Almacén de Ana<small>Comercio de ejemplo</small></span></div>
-          </div>
-          <div class="demo-main">
-            <div class="demo-app-header"><span>Mi comercio</span><span class="local-status"><i aria-hidden="true"></i> Datos de ejemplo</span></div>
-            <div class="demo-panel" id="panel-caja" role="tabpanel" aria-labelledby="tab-caja" tabindex="0">
-              <div class="panel-heading"><div><p class="demo-greeting">Cada venta, en su lugar.</p><h2>Vamos con esa venta.</h2></div><span class="small-date">Hoy</span></div>
-              <div class="sale-summary"><span>Ventas de la demo<strong id="sales-total">$ 0</strong></span><span id="sales-count">0 ventas registradas</span></div>
-              <div class="products-title"><h3>Sumá un producto</h3><span>Precio por unidad</span></div>
-              <div id="product-list" class="product-list"></div>
-              <div class="cart-line"><span>Tu venta <small id="cart-count">0 productos</small></span><strong id="cart-total">$ 0</strong></div>
-              <button class="button sell-button" id="sell-button" type="button" disabled>Elegí un producto para empezar</button>
-            </div>
-            <div class="demo-panel" id="panel-stock" role="tabpanel" aria-labelledby="tab-stock" tabindex="0" hidden><div class="panel-heading"><div><p class="demo-greeting">Lo que hay, a la vista.</p><h2>Tu stock al día.</h2></div></div><p class="panel-description">Cada venta de esta demo descuenta las unidades del inventario.</p><div id="stock-list" class="stock-list"></div><p class="demo-footnote">Probá vender desde Caja y volvé a mirar.</p></div>
-            <div class="demo-panel" id="panel-fiados" role="tabpanel" aria-labelledby="tab-fiados" tabindex="0" hidden><div class="panel-heading"><div><p class="demo-greeting">Las cuentas, claras.</p><h2>El fiado, anotado.</h2></div></div><p class="panel-description">Un ejemplo de cómo consultar saldos y registrar cobros.</p><div class="debt-row"><span class="client-avatar">ML</span><span>María López<small>Saldo pendiente</small></span><strong id="debt-amount">$ 4.500</strong></div><button id="pay-debt" class="button sell-button" type="button">Registrar cobro de $ 1.500</button><p class="demo-footnote">Los nombres y saldos son ficticios.</p></div>
-            <p class="demo-message" id="demo-message" role="status" aria-live="polite">Probá sumar productos y registrar una venta.</p>
-          </div>
-        </section>
-        <noscript><p>Activá JavaScript para explorar la demo. Las funciones y la guía de instalación están disponibles más abajo.</p></noscript>
-        <div class="demo-caption"><span><img src="/assets/icons/cursor-click.svg" width="16" height="16" alt=""> Sí, podés tocar. Es para eso.</span><button id="reset-demo" type="button">Reiniciar demo <span aria-hidden="true">↺</span></button></div>
-      </div>
-    </section>
-    <div class="audience container"><span>Para el negocio que levantás todos los días.</span><div><span>Kioscos</span><i aria-hidden="true"></i><span>Almacenes</span><i aria-hidden="true"></i><span>Despensas</span><i aria-hidden="true"></i><span>Tu comercio</span></div></div>
-    <section class="neighborhood container" aria-labelledby="neighborhood-title">
-      <figure class="shop-photo"><img src="/assets/img/almacen.webp" alt="Mostrador de un almacén con productos de todos los días" width="1200" height="800" loading="lazy"><figcaption>El comercio de barrio, en el centro. Imagen ilustrativa.</figcaption><div class="photo-note" aria-hidden="true">Detrás de cada mostrador,<br>hay mucho por hacer.</div></figure>
-      <div class="neighborhood-copy"><h2 id="neighborhood-title">Menos cuentas<br>en la cabeza. <br><span>Más tiempo<br> para tu negocio.</span></h2><p>Atender, reponer, cobrar. Ya tenés bastante para hacer como para acordarte de todo.</p><p>GesKio reúne lo que pasa en tu comercio para que encuentres cada venta, cada producto y cada cuenta cuando los necesites.</p><a class="text-link" href="#funciones">Todo tiene su lugar <span aria-hidden="true">↗</span></a></div>
-    </section>
-    <section id="funciones" class="features container" aria-labelledby="features-title">
-      <div class="section-heading"><h2 id="features-title">Del primer cobro<br>al cierre del día.</h2><p>Lo que necesitás para llevar tu comercio,<br>sin perderte entre planillas.</p></div>
-      <div class="feature-layout">
-        <div class="feature-intro"><img src="/assets/icons/storefront.svg" width="42" height="42" alt=""><h3>Todo conectado.<br>Todo más claro.</h3><p>Cuando registrás una venta, también se actualiza tu stock. Cada movimiento ayuda a contar la historia de tu negocio.</p><a href="#demo" class="text-link">Probalo en la demo <span aria-hidden="true">↗</span></a></div>
-        <div class="feature-list">
-          <article><img src="/assets/icons/receipt.svg" width="25" height="25" alt=""><div><h3>Una caja que sigue tu ritmo</h3><p>Agregá productos, elegí el medio de pago y consultá el historial de tus ventas.</p></div></article>
-          <article><img src="/assets/icons/package.svg" width="25" height="25" alt=""><div><h3>Sabé qué queda en la estantería</h3><p>Consultá existencias, identificá faltantes y llevá el registro de los movimientos de stock.</p></div></article>
-          <article><img src="/assets/icons/users.svg" width="25" height="25" alt=""><div><h3>El fiado, con nombre y apellido</h3><p>Reuní clientes, saldos pendientes y pagos para tener las cuentas a mano.</p></div></article>
-          <article><img src="/assets/icons/chart-bar.svg" width="25" height="25" alt=""><div><h3>Entendé cómo viene el día</h3><p>Revisá ventas, cobros y gráficos desde el panel de tu comercio.</p></div></article>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GesKio · Tu negocio, en orden.</title>
+    <meta
+      name="description"
+      content="Caja, stock y fiados en un solo lugar. Conocé GesKio, la aplicación de escritorio pensada para kioscos, almacenes y comercios de barrio."
+    />
+    <meta name="theme-color" content="#f8f9f5" />
+    <meta property="og:title" content="GesKio · Tu negocio, en orden." />
+    <meta
+      property="og:description"
+      content="Vos conocés a tus clientes. GesKio te ayuda con las cuentas. Explorá la demo interactiva."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_AR" />
+    <link rel="icon" type="image/svg+xml" href="/assets/img/geskio-mark.svg" />
+    <link
+      rel="preload"
+      href="/assets/fonts/manrope-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/assets/css/landing.css" />
+    <link rel="stylesheet" href="/assets/css/refinements.css" />
+    <script src="/assets/js/landing.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#contenido">Saltar al contenido</a>
+    <header class="topbar">
+      <div class="container nav-shell">
+        <a class="brand nav-brand" href="#" aria-label="GesKio, inicio"
+          ><img
+            src="/assets/img/geskio-mark.svg"
+            width="28"
+            height="28"
+            alt=""
+          />GesKio</a
+        >
+        <nav
+          id="navigation"
+          class="primary-nav"
+          aria-label="Navegación principal"
+        >
+          <a href="#funciones">Funciones</a>
+          <a href="#como-empezar">Cómo empezar</a>
+          <a href="#preguntas">Preguntas</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="button nav-primary" href="#demo"
+            >Probar demo
+            <img
+              src="/assets/icons/arrow-up-right.svg"
+              width="17"
+              height="17"
+              alt=""
+          /></a>
+          <button
+            class="nav-menu-button"
+            type="button"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+            aria-controls="navigation"
+          >
+            <span></span><span></span>
+          </button>
         </div>
       </div>
-    </section>
-    <section class="local-section container" aria-labelledby="local-title"><div class="local-art" aria-hidden="true"><img src="/assets/icons/desktop.svg" width="80" height="80" alt=""><div class="connection-line"></div><img src="/assets/icons/lock-key.svg" width="30" height="30" alt=""><span>Tu computadora. Tus cuentas.</span></div><div><h2 id="local-title">El negocio es tuyo.<br>Los datos también.</h2><p>La gestión funciona en tu computadora y guarda los datos localmente. Podés exportar una copia de respaldo desde Ajustes.</p><p class="local-note">El chat con IA es opcional y pide tu permiso antes de compartir un resumen. Las copias de seguridad son manuales.</p></div></section>
-    <section id="como-empezar" class="start-section container" aria-labelledby="start-title"><div class="section-heading"><h2 id="start-title">Empezá por conocerlo.</h2><p>GesKio está en desarrollo.<br>Así podés darle una primera vuelta.</p></div><div class="steps"><article><span class="step-number">1</span><h3>Explorá la demo</h3><p>Registrá una venta acá mismo y mirá cómo cambia el stock.</p><a class="text-link" href="#demo">Abrir demo <span aria-hidden="true">↗</span></a></article><article><span class="step-number">2</span><h3>Probá la app completa</h3><p>El código y las instrucciones para ejecutarla están en GitHub. Requiere Python 3.11 o superior.</p><a class="text-link" href="https://github.com/santi2821/geskio#ejecutar-la-aplicaci%C3%B3n" target="_blank" rel="noopener noreferrer">Ver instrucciones <span aria-hidden="true">↗</span></a></article><article><span class="step-number">3</span><h3>Elegí cómo arrancar</h3><p>En la aplicación, empezá con productos de ejemplo o con un comercio vacío.</p><span class="step-note">A tu ritmo, desde tu computadora.</span></article></div></section>
-    <section id="preguntas" class="faq container" aria-labelledby="faq-title"><div><h2 id="faq-title">Por si te quedó<br>alguna duda.</h2><p>Las cosas claras, desde el principio.</p></div><div class="faq-list"><details><summary>¿Qué es GesKio?</summary><p>Es una aplicación de escritorio en desarrollo para administrar ventas, inventario, clientes y cuentas corrientes de pequeños comercios. Esta página incluye una demo web simplificada con datos ficticios.</p></details><details><summary>¿Necesito internet para usarlo?</summary><p>La gestión diaria de la aplicación funciona con datos locales. La instalación y el chat opcional con un proveedor de IA sí necesitan conexión. Esta landing y su demo se abren desde internet.</p></details><details><summary>¿Dónde quedan los datos de mi comercio?</summary><p>La aplicación guarda los datos en tu computadora. Desde Ajustes podés exportar y restaurar copias JSON. Los respaldos son manuales; todavía no hay sincronización entre dispositivos.</p></details><details><summary>¿Puedo descargar un instalador?</summary><p>Por ahora, la forma de probar la aplicación que documenta el proyecto es ejecutarla desde su código con Python 3.11 o superior. Encontrás los pasos en el repositorio de GitHub.</p></details><details><summary>¿Lo que haga en esta demo se guarda?</summary><p>No. La demo usa datos ficticios en la memoria de esta pestaña. Al recargar la página o pulsar Reiniciar demo, vuelve al estado inicial. No ingreses información real de tu comercio.</p></details><details><summary>¿Ya puedo usarlo en mi negocio?</summary><p>GesKio es un prototipo en evolución. Empezá con datos de prueba para evaluar si te sirve y conservá copias de tus registros antes de usarlo en tu operación diaria.</p></details></div></section>
-    <section class="closing container"><div><h2>Tu mostrador.<br>Un poco más liviano.</h2><p>Conocé otra forma de llevar las cuentas.</p><a href="#demo" class="button button-lg">Dale una vuelta a GesKio <img src="/assets/icons/arrow-up-right.svg" width="20" height="20" alt=""></a></div><div class="closing-mark" aria-hidden="true"><img src="/assets/img/geskio-mark.svg" width="220" height="220" alt=""></div></section>
-  </main>
-  <footer class="container footer"><div><a class="brand" href="#"><img src="/assets/img/geskio-mark.svg" width="25" height="25" alt="">GesKio<span class="brand-dot">.</span></a><p>Hecho para el comercio de todos los días.</p></div><div class="footer-links"><a href="#funciones">Funciones</a><a href="#preguntas">Preguntas</a><a href="https://github.com/santi2821/geskio" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></div><div class="footer-bottom"><span>© <span id="year">2026</span> GesKio</span><span>Un proyecto en desarrollo, con los pies en el barrio.</span></div></footer>
-</body>
+    </header>
+    <main id="contenido">
+      <section class="hero container" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">
+            Tu negocio,<br />en <span class="word-order">orden</span>.
+          </h1>
+          <p class="hero-description">
+            Vos conocés a tus clientes.<br />GesKio te ayuda con las cuentas.
+          </p>
+          <p class="hero-detail">
+            Ventas, stock y fiados en un solo lugar.<br />Hecho para el día a
+            día de tu comercio.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-lg" href="#demo"
+              >Probar la demo
+              <img
+                src="/assets/icons/arrow-up-right.svg"
+                width="20"
+                height="20"
+                alt="" /></a
+            ><a class="text-link" href="#funciones"
+              >Conocé GesKio <span aria-hidden="true">↓</span></a
+            >
+          </div>
+          <div class="hero-notes">
+            <span
+              ><img
+                src="/assets/icons/desktop.svg"
+                alt=""
+                width="16"
+                height="16"
+              />
+              En tu computadora</span
+            ><span
+              ><img
+                src="/assets/icons/wifi-slash.svg"
+                alt=""
+                width="16"
+                height="16"
+              />
+              Gestión sin internet</span
+            >
+          </div>
+        </div>
+        <div class="demo-scene" id="demo">
+          <div class="demo-topline">
+            <span><i aria-hidden="true"></i> Probá GesKio acá mismo</span
+            ><span>Demo web</span>
+          </div>
+          <section
+            class="demo-app"
+            aria-label="Demostración de GesKio con datos de ejemplo"
+          >
+            <div class="demo-sidebar">
+              <a class="demo-brand" href="#demo" aria-label="Demo GesKio"
+                ><img
+                  src="/assets/img/geskio-mark.svg"
+                  width="25"
+                  height="25"
+                  alt=""
+                /><span>GesKio</span></a
+              >
+              <div
+                class="demo-tabs"
+                role="tablist"
+                aria-label="Explorar módulos"
+              >
+                <button
+                  type="button"
+                  id="tab-caja"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="panel-caja"
+                  data-panel="caja"
+                >
+                  <img
+                    src="/assets/icons/storefront.svg"
+                    alt=""
+                    width="19"
+                    height="19"
+                  /><span>Caja</span>
+                </button>
+                <button
+                  type="button"
+                  id="tab-stock"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-stock"
+                  tabindex="-1"
+                  data-panel="stock"
+                >
+                  <img
+                    src="/assets/icons/package.svg"
+                    alt=""
+                    width="19"
+                    height="19"
+                  /><span>Stock</span>
+                </button>
+                <button
+                  type="button"
+                  id="tab-fiados"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-fiados"
+                  tabindex="-1"
+                  data-panel="fiados"
+                >
+                  <img
+                    src="/assets/icons/users.svg"
+                    alt=""
+                    width="19"
+                    height="19"
+                  /><span>Fiados</span>
+                </button>
+              </div>
+              <div class="demo-shop">
+                <span class="shop-avatar">A</span
+                ><span>Almacén de Ana<small>Comercio de ejemplo</small></span>
+              </div>
+            </div>
+            <div class="demo-main">
+              <div class="demo-app-header">
+                <span>Mi comercio</span
+                ><span class="local-status"
+                  ><i aria-hidden="true"></i> Datos de ejemplo</span
+                >
+              </div>
+              <div
+                class="demo-panel"
+                id="panel-caja"
+                role="tabpanel"
+                aria-labelledby="tab-caja"
+                tabindex="0"
+              >
+                <div class="panel-heading">
+                  <div>
+                    <p class="demo-greeting">Cada venta, en su lugar.</p>
+                    <h2>Vamos con esa venta.</h2>
+                  </div>
+                  <span class="small-date">Hoy</span>
+                </div>
+                <div class="sale-summary">
+                  <span
+                    >Ventas de la demo<strong id="sales-total"
+                      >$ 0</strong
+                    ></span
+                  ><span id="sales-count">0 ventas registradas</span>
+                </div>
+                <div class="products-title">
+                  <h3>Sumá un producto</h3>
+                  <span>Precio por unidad</span>
+                </div>
+                <div id="product-list" class="product-list"></div>
+                <div class="cart-line">
+                  <span
+                    >Tu venta <small id="cart-count">0 productos</small></span
+                  ><strong id="cart-total">$ 0</strong>
+                </div>
+                <button
+                  class="button sell-button"
+                  id="sell-button"
+                  type="button"
+                  disabled
+                >
+                  Elegí un producto para empezar
+                </button>
+              </div>
+              <div
+                class="demo-panel"
+                id="panel-stock"
+                role="tabpanel"
+                aria-labelledby="tab-stock"
+                tabindex="0"
+                hidden
+              >
+                <div class="panel-heading">
+                  <div>
+                    <p class="demo-greeting">Lo que hay, a la vista.</p>
+                    <h2>Tu stock al día.</h2>
+                  </div>
+                </div>
+                <p class="panel-description">
+                  Cada venta de esta demo descuenta las unidades del inventario.
+                </p>
+                <div id="stock-list" class="stock-list"></div>
+                <p class="demo-footnote">
+                  Probá vender desde Caja y volvé a mirar.
+                </p>
+              </div>
+              <div
+                class="demo-panel"
+                id="panel-fiados"
+                role="tabpanel"
+                aria-labelledby="tab-fiados"
+                tabindex="0"
+                hidden
+              >
+                <div class="panel-heading">
+                  <div>
+                    <p class="demo-greeting">Las cuentas, claras.</p>
+                    <h2>El fiado, anotado.</h2>
+                  </div>
+                </div>
+                <p class="panel-description">
+                  Un ejemplo de cómo consultar saldos y registrar cobros.
+                </p>
+                <div class="debt-row">
+                  <span class="client-avatar">ML</span
+                  ><span>María López<small>Saldo pendiente</small></span
+                  ><strong id="debt-amount">$ 4.500</strong>
+                </div>
+                <button id="pay-debt" class="button sell-button" type="button">
+                  Registrar cobro de $ 1.500
+                </button>
+                <p class="demo-footnote">Los nombres y saldos son ficticios.</p>
+              </div>
+              <p
+                class="demo-message"
+                id="demo-message"
+                role="status"
+                aria-live="polite"
+              >
+                Probá sumar productos y registrar una venta.
+              </p>
+            </div>
+          </section>
+          <noscript
+            ><p>
+              Activá JavaScript para explorar la demo. Las funciones y la guía
+              de instalación están disponibles más abajo.
+            </p></noscript
+          >
+          <div class="demo-caption">
+            <span
+              ><img
+                src="/assets/icons/cursor-click.svg"
+                width="16"
+                height="16"
+                alt=""
+              />
+              Datos de ejemplo. Podés probar todo.</span
+            ><button id="reset-demo" type="button">
+              Reiniciar demo <span aria-hidden="true">↺</span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <div class="audience container">
+        <span>Para el negocio que levantás todos los días.</span>
+        <div>
+          <span>Kioscos</span><i aria-hidden="true"></i><span>Almacenes</span
+          ><i aria-hidden="true"></i><span>Despensas</span
+          ><i aria-hidden="true"></i><span>Tu comercio</span>
+        </div>
+      </div>
+      <section class="workflow container" aria-labelledby="workflow-title">
+        <div class="workflow-heading">
+          <h2 id="workflow-title">Una venta.<br />Todo se acomoda.</h2>
+          <p>
+            Registrás lo que vendés y el stock se actualiza. Probalo arriba y
+            mirá cómo cambian estos datos.
+          </p>
+        </div>
+        <div class="workflow-track">
+          <article class="workflow-item">
+            <div class="workflow-label">
+              <img
+                src="/assets/icons/receipt.svg"
+                width="23"
+                height="23"
+                alt=""
+              /><span>Cobrás</span>
+            </div>
+            <strong id="workflow-sales">$ 0</strong>
+            <p id="workflow-count">Todavía no registraste ventas.</p>
+            <button type="button" class="workflow-link" data-open-panel="caja">
+              Ir a la caja <span aria-hidden="true">↗</span>
+            </button>
+          </article>
+          <article class="workflow-item">
+            <div class="workflow-label">
+              <img
+                src="/assets/icons/package.svg"
+                width="23"
+                height="23"
+                alt=""
+              /><span>Se actualiza el stock</span>
+            </div>
+            <strong id="workflow-stock">25 <small>unidades</small></strong>
+            <p>Disponibles entre los tres productos.</p>
+            <button type="button" class="workflow-link" data-open-panel="stock">
+              Revisar stock <span aria-hidden="true">↗</span>
+            </button>
+          </article>
+          <article class="workflow-item">
+            <div class="workflow-label">
+              <img
+                src="/assets/icons/users.svg"
+                width="23"
+                height="23"
+                alt=""
+              /><span>Seguís las cuentas</span>
+            </div>
+            <strong id="workflow-debt">$ 4.500</strong>
+            <p>Saldo de fiado del cliente de ejemplo.</p>
+            <button
+              type="button"
+              class="workflow-link"
+              data-open-panel="fiados"
+            >
+              Ver el fiado <span aria-hidden="true">↗</span>
+            </button>
+          </article>
+        </div>
+        <p class="workflow-note">
+          <i aria-hidden="true"></i> Conectado a la demo de esta página. Todo se
+          reinicia al recargar.
+        </p>
+      </section>
+      <section
+        id="funciones"
+        class="features container"
+        aria-labelledby="features-title"
+      >
+        <div class="section-heading">
+          <h2 id="features-title">
+            Lo que pasa en tu negocio,<br />en un solo lugar.
+          </h2>
+          <p>Caja, productos y cuentas.<br />Cada cosa con su lugar.</p>
+        </div>
+        <div class="feature-layout">
+          <div class="feature-list">
+            <article>
+              <img
+                src="/assets/icons/receipt.svg"
+                width="25"
+                height="25"
+                alt=""
+              />
+              <div>
+                <h3>Una caja que sigue tu ritmo</h3>
+                <p>
+                  Agregá productos, elegí el medio de pago y consultá el
+                  historial de tus ventas.
+                </p>
+              </div>
+            </article>
+            <article>
+              <img
+                src="/assets/icons/package.svg"
+                width="25"
+                height="25"
+                alt=""
+              />
+              <div>
+                <h3>Sabé qué queda en la estantería</h3>
+                <p>
+                  Consultá existencias, identificá faltantes y llevá el registro
+                  de los movimientos de stock.
+                </p>
+              </div>
+            </article>
+            <article>
+              <img
+                src="/assets/icons/users.svg"
+                width="25"
+                height="25"
+                alt=""
+              />
+              <div>
+                <h3>El fiado, con nombre y apellido</h3>
+                <p>
+                  Reuní clientes, saldos pendientes y pagos para tener las
+                  cuentas a mano.
+                </p>
+              </div>
+            </article>
+            <article>
+              <img
+                src="/assets/icons/chart-bar.svg"
+                width="25"
+                height="25"
+                alt=""
+              />
+              <div>
+                <h3>Entendé cómo viene el día</h3>
+                <p>
+                  Revisá ventas, cobros y gráficos desde el panel de tu
+                  comercio.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="local-section container" aria-labelledby="local-title">
+        <div class="local-art" aria-hidden="true">
+          <img src="/assets/icons/desktop.svg" width="80" height="80" alt="" />
+          <div class="connection-line"></div>
+          <img
+            src="/assets/icons/lock-key.svg"
+            width="30"
+            height="30"
+            alt=""
+          /><span>Tu computadora. Tus cuentas.</span>
+        </div>
+        <div>
+          <h2 id="local-title">El negocio es tuyo.<br />Los datos también.</h2>
+          <p>
+            La gestión funciona en tu computadora y guarda los datos localmente.
+            Podés exportar una copia de respaldo desde Ajustes.
+          </p>
+          <p class="local-note">
+            El chat con IA es opcional y pide tu permiso antes de compartir un
+            resumen. Las copias de seguridad son manuales.
+          </p>
+        </div>
+      </section>
+      <section
+        id="como-empezar"
+        class="start-section container"
+        aria-labelledby="start-title"
+      >
+        <div class="section-heading">
+          <h2 id="start-title">Empezá por conocerlo.</h2>
+          <p>
+            GesKio está en desarrollo.<br />Así podés darle una primera vuelta.
+          </p>
+        </div>
+        <div class="steps">
+          <article>
+            <span class="step-number">1</span>
+            <h3>Explorá la demo</h3>
+            <p>Registrá una venta acá mismo y mirá cómo cambia el stock.</p>
+            <a class="text-link" href="#demo"
+              >Abrir demo <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article>
+            <span class="step-number">2</span>
+            <h3>Probá la app completa</h3>
+            <p>
+              El código y las instrucciones para ejecutarla están en GitHub.
+              Requiere Python 3.11 o superior.
+            </p>
+            <a
+              class="text-link"
+              href="https://github.com/santi2821/geskio#ejecutar-la-aplicaci%C3%B3n"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Ver instrucciones <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article>
+            <span class="step-number">3</span>
+            <h3>Elegí cómo arrancar</h3>
+            <p>
+              En la aplicación, empezá con productos de ejemplo o con un
+              comercio vacío.
+            </p>
+            <span class="step-note">A tu ritmo, desde tu computadora.</span>
+          </article>
+        </div>
+      </section>
+      <section id="preguntas" class="faq container" aria-labelledby="faq-title">
+        <div>
+          <h2 id="faq-title">Lo que querés saber.</h2>
+          <p>Las cosas claras, desde el principio.</p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>¿Qué es GesKio?</summary>
+            <p>
+              Es una aplicación de escritorio en desarrollo para administrar
+              ventas, inventario, clientes y cuentas corrientes de pequeños
+              comercios. Esta página incluye una demo web simplificada con datos
+              ficticios.
+            </p>
+          </details>
+          <details>
+            <summary>¿Necesito internet para usarlo?</summary>
+            <p>
+              La gestión diaria de la aplicación funciona con datos locales. La
+              instalación y el chat opcional con un proveedor de IA sí necesitan
+              conexión. Esta landing y su demo se abren desde internet.
+            </p>
+          </details>
+          <details>
+            <summary>¿Dónde quedan los datos de mi comercio?</summary>
+            <p>
+              La aplicación guarda los datos en tu computadora. Desde Ajustes
+              podés exportar y restaurar copias JSON. Los respaldos son
+              manuales; todavía no hay sincronización entre dispositivos.
+            </p>
+          </details>
+          <details>
+            <summary>¿Puedo descargar un instalador?</summary>
+            <p>
+              Por ahora, la forma de probar la aplicación que documenta el
+              proyecto es ejecutarla desde su código con Python 3.11 o superior.
+              Encontrás los pasos en el repositorio de GitHub.
+            </p>
+          </details>
+          <details>
+            <summary>¿Lo que haga en esta demo se guarda?</summary>
+            <p>
+              No. La demo usa datos ficticios en la memoria de esta pestaña. Al
+              recargar la página o pulsar Reiniciar demo, vuelve al estado
+              inicial. No ingreses información real de tu comercio.
+            </p>
+          </details>
+          <details>
+            <summary>¿Ya puedo usarlo en mi negocio?</summary>
+            <p>
+              GesKio es un prototipo en evolución. Empezá con datos de prueba
+              para evaluar si te sirve y conservá copias de tus registros antes
+              de usarlo en tu operación diaria.
+            </p>
+          </details>
+        </div>
+      </section>
+      <section class="closing container">
+        <div>
+          <h2>Tu mostrador.<br />Un poco más liviano.</h2>
+          <p>Conocé otra forma de llevar las cuentas.</p>
+          <a href="#demo" class="button button-lg"
+            >Probá GesKio ahora
+            <img
+              src="/assets/icons/arrow-up-right.svg"
+              width="20"
+              height="20"
+              alt=""
+          /></a>
+        </div>
+        <div class="closing-mark" aria-hidden="true">
+          <img
+            src="/assets/img/geskio-mark.svg"
+            width="220"
+            height="220"
+            alt=""
+          />
+        </div>
+      </section>
+    </main>
+    <footer class="container footer">
+      <div>
+        <a class="brand" href="#"
+          ><img
+            src="/assets/img/geskio-mark.svg"
+            width="25"
+            height="25"
+            alt=""
+          />GesKio<span class="brand-dot">.</span></a
+        >
+        <p>Hecho para el comercio de todos los días.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#funciones">Funciones</a><a href="#preguntas">Preguntas</a
+        ><a
+          href="https://github.com/santi2821/geskio"
+          target="_blank"
+          rel="noopener noreferrer"
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> GesKio</span
+        ><span>Un proyecto en desarrollo, con los pies en el barrio.</span>
+      </div>
+    </footer>
+  </body>
 </html>
